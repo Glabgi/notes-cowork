@@ -1,0 +1,113 @@
+'use client';
+
+import { useState } from 'react';
+import { Copy, Share2, Check, Users, Home, Send, MessageCircle } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
+import { useRoomStore } from '@/store/roomStore';
+import { useRouter } from 'next/navigation';
+import { copyToClipboard, shareUrl } from '@/lib/utils';
+import Modal from '@/components/ui/Modal';
+import Button from '@/components/ui/Button';
+import { cn } from '@/lib/utils';
+
+export default function RoomHeader() {
+  const { room, isConnected } = useRoomStore();
+  const router = useRouter();
+  const [copied, setCopied] = useState(false);
+  const [showShare, setShowShare] = useState(false);
+
+  if (!room) return (
+    <header className="h-14 bg-[var(--bg-card)]/95 border-b border-[var(--border)] flex items-center px-4 gap-3">
+      <div className="w-2.5 h-2.5 rounded-full bg-[#F59E0B] flex-shrink-0" />
+      <span className="text-[var(--text-secondary)] text-sm">Подключение...</span>
+    </header>
+  );
+
+  const roomUrl = typeof window !== 'undefined' ? `${window.location.origin}/room/${room.slug}` : `/room/${room.slug}`;
+  const focusCount = room.participants.filter(p => p.status === 'focus').length;
+
+  const handleCopy = async () => {
+    await copyToClipboard(roomUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <>
+      <header className="h-14 bg-[var(--bg-card)]/95 backdrop-blur-sm border-b border-[var(--border)] flex items-center px-4 gap-3 flex-shrink-0 z-40">
+        {/* Connection dot */}
+        <div className={cn('w-2 h-2 rounded-full flex-shrink-0', isConnected ? 'bg-[#16A34A]' : 'bg-[#EF4444]')} />
+
+        {/* Room name */}
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          <h1 className="font-semibold text-[var(--text-primary)] text-base truncate">{room.name}</h1>
+          <span className="bg-[#F1F5F9] text-[#64748B] font-mono text-xs px-2 py-0.5 rounded-full hidden md:block flex-shrink-0">
+            #{room.slug}
+          </span>
+        </div>
+
+        {/* Focus indicator */}
+        {focusCount > 0 && (
+          <div className="hidden sm:flex items-center gap-1.5 bg-[#DCFCE7] border border-[#BBF7D0] rounded-full px-3 py-1 flex-shrink-0">
+            <div className="w-1.5 h-1.5 rounded-full bg-[#16A34A]" />
+            <span className="text-xs text-[#15803D] font-medium">{focusCount} в фокусе</span>
+          </div>
+        )}
+
+        {/* Participants count */}
+        <div className="flex items-center gap-1.5 text-[var(--text-secondary)] flex-shrink-0">
+          <Users size={15} />
+          <span className="text-sm tabular-nums">{room.participants.length}</span>
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          <Button variant="ghost" size="sm" onClick={() => router.push('/')} className="hidden sm:flex">
+            <Home size={14} />
+          </Button>
+          <Button variant="secondary" size="sm" onClick={() => setShowShare(true)}>
+            <Share2 size={14} />
+            <span className="hidden sm:inline">Поделиться</span>
+          </Button>
+          <Button variant={copied ? 'secondary' : 'primary'} size="sm" onClick={handleCopy}>
+            {copied ? <Check size={14} /> : <Copy size={14} />}
+            <span className="hidden sm:inline">{copied ? 'Скопировано!' : 'Ссылка'}</span>
+          </Button>
+        </div>
+      </header>
+
+      {/* Share modal */}
+      <Modal open={showShare} onClose={() => setShowShare(false)} title="Поделиться комнатой" size="sm">
+        <div className="p-6 space-y-5">
+          <div className="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-[12px] flex items-center gap-2 px-3 py-2">
+            <p className="flex-1 text-xs text-[var(--text-secondary)] font-mono truncate">{roomUrl}</p>
+            <button onClick={handleCopy} className="p-1.5 hover:bg-[var(--bg-hover)] rounded-lg transition-colors flex-shrink-0">
+              {copied ? <Check size={14} className="text-[#16A34A]" /> : <Copy size={14} className="text-[var(--text-muted)]" />}
+            </button>
+          </div>
+
+          <div className="flex justify-center">
+            <div className="bg-[var(--bg-subtle)] p-4 rounded-[16px] border border-[var(--border)]">
+              <QRCodeSVG value={roomUrl} size={148} level="M" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <Button variant="secondary" size="sm"
+              onClick={() => shareUrl(roomUrl, 'telegram', `Присоединяйся к «${room.name}» в Notes Cowork!`)}>
+              <Send size={14} /> Telegram
+            </Button>
+            <Button variant="secondary" size="sm"
+              onClick={() => shareUrl(roomUrl, 'whatsapp', `Присоединяйся к «${room.name}» в Notes Cowork!`)}>
+              <MessageCircle size={14} /> WhatsApp
+            </Button>
+          </div>
+
+          <p className="text-center text-xs text-[var(--text-muted)] inline-flex items-center gap-1 w-full justify-center">
+            <Users size={11} /> {room.participants.length} участников сейчас онлайн
+          </p>
+        </div>
+      </Modal>
+    </>
+  );
+}

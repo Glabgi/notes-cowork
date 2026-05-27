@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Design Improvement — Notes Cowork Session (Emoji Pass)</title>
+<style>
+  :root {
+    --text: #0F172A;
+    --muted: #64748B;
+    --border: #E2E8F0;
+    --bg: #F8FAFC;
+    --accent: #2563EB;
+    --accent-light: #EFF6FF;
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    max-width: 900px;
+    margin: 40px auto;
+    padding: 0 24px;
+    color: var(--text);
+    line-height: 1.65;
+    background: #fff;
+  }
+  h1 { font-size: 30px; margin-bottom: 4px; }
+  h2 { font-size: 22px; margin-top: 40px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  h3 { font-size: 18px; margin-top: 32px; color: var(--text); }
+  .tldr {
+    background: var(--accent-light);
+    border-left: 4px solid var(--accent);
+    padding: 18px 20px;
+    border-radius: 10px;
+    margin: 24px 0;
+    font-size: 15px;
+  }
+  img {
+    max-width: 100%;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(15,23,42,0.10);
+    margin: 16px 0;
+    display: block;
+  }
+  em { color: var(--muted); font-size: 14px; }
+  code, pre {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  code { padding: 2px 6px; font-size: 13px; }
+  pre { padding: 14px 16px; overflow-x: auto; font-size: 13px; line-height: 1.5; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+  }
+  th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); }
+  th { background: var(--bg); font-weight: 600; }
+  .idea { margin-top: 24px; padding: 20px; background: #FAFAFA; border: 1px solid var(--border); border-radius: 14px; }
+  .idea h3 { margin-top: 0; }
+  .badge { display: inline-block; background: #FDE68A; color: #92400E; padding: 2px 8px; border-radius: 6px; font-size: 12px; margin-left: 8px; }
+  hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
+  .footer { color: var(--muted); font-size: 13px; text-align: center; margin-top: 60px; }
+</style>
+</head>
+<body>
+
+<h1>Design Improvement: Session Page — Emoji & Iconography Pass</h1>
+<em>Notes Cowork · I.C-E.F Notes project · 2026-05-28</em>
+
+<div class="tldr">
+  <strong>TL;DR.</strong> Эмодзи в левой панели и на карточках участников частично заменены на Lucide, но в проекте всё ещё ~15 мест с эмодзи (помидоры на карточках, иконки активностей в расписании, иконки чата/реакций, splash/error экраны). Самый большой выигрыш — единая icon-система: один pictograph language вместо двух (Lucide + emoji). Это поднимает воспринимаемое качество на уровень Linear / Intercom / Endel.
+</div>
+
+<h2>Current State</h2>
+<img src="references/current.png" alt="Current Notes Cowork session page">
+<em>Страница сессии Notes Cowork: таймер Помодоро, статус-селектор уже на Lucide (Zap / Coffee / Ghost), мини-расписание и контролы звуков. Слева видна целевая зона — статусы и расписание стали профессиональнее, но в правой части (чат, задачи) и на карточках участников эмодзи остались.</em>
+
+<h2>Improvement Ideas</h2>
+
+<div class="idea">
+<h3>1. Status selector — цветной маркер + иконка как у Intercom <span class="badge">highest impact</span></h3>
+<p>В Notes Cowork сейчас Lucide-иконка + цветной фон активной кнопки. У Intercom используется паттерн: <strong>маленькая цветная точка состояния</strong> слева + иконка/текст. Это мгновенно читается периферийным зрением (как Slack <code>● Available</code>), работает на маленьком превью на карточке участника и не зависит от языка / эмодзи-шрифта.</p>
+<img src="references/intercom-agent-status.png" alt="Intercom agent status selector">
+<em>Intercom — agent workspace со status selector в виде маленькой цветной точки + иконки [Lazyweb]</em>
+<p><strong>Почему работает:</strong> цветовой маркер — универсальный сигнал состояния. Точка — для беглого взгляда, иконка — для смысла. Сейчас Lucide-иконка делает всю работу, и это перегруз для маленьких размеров (12–14px).</p>
+<pre>┌──────────────────────────────┐
+│ МОЙ СТАТУС                   │
+├──────────────────────────────┤
+│ ●  ⚡ В фокусе          ●    │  ← зелёная точка + Zap
+│ ●  ☕ Перерыв                │  ← янтарная точка + Coffee
+│ ●  👤 Отошёл                 │  ← серая точка + Ghost
+├──────────────────────────────┤
+│ [ Чем занимаюсь...      → ] │
+└──────────────────────────────┘</pre>
+</div>
+
+<div class="idea">
+<h3>2. Помидоры на карточке — заменить ряд ●●● на числовую метрику</h3>
+<p>Сейчас на карточке: <code>⏱ 4 ● ● ● ● +0</code>. MagicFlow показывает focus metrics как <strong>единый числовой токен с цветной полоской</strong>. Это честнее (число не растёт визуально бесконечно), считывается быстрее в гриде из 10+ участников, расширяемо на focusMinutes и achievements.</p>
+<img src="references/magicflow-focus-metrics.png" alt="MagicFlow focus metrics">
+<em>MagicFlow — productivity dashboard с метриками "97% productivity / 29 min deep work" в виде токенов с цветной шкалой [Lazyweb]</em>
+<pre>┌──────────────────┐
+│      [avatar]    │
+│        ●         │
+│      Albert      │
+│   В фокусе       │
+│ ────────────────  │
+│ 4 ⏱  ·  2ч       │  ← число + единица, без декора
+│ ▰▰▰▰▱▱▱          │  ← опциональная мини-полоска
+└──────────────────┘</pre>
+</div>
+
+<div class="idea">
+<h3>3. Иконки активностей расписания — Lucide вместо эмодзи (последний эмодзи-кластер)</h3>
+<p>В <code>lib/utils.ts</code> функция <code>getActivityIcon</code> всё ещё возвращает эмодзи (💻📖🎨🏋️🎮🧘📞). Эти эмодзи появляются в DayScheduler, селекторе активности и мини-расписании на странице сессии — разрушают консистентность с уже сделанными Lucide-иконками.</p>
+<img src="references/opal-focus-features.png" alt="Opal focus features">
+<em>Opal — focus app, только монохромная icon-система для всех features, milestones и categories [Lazyweb]</em>
+<p><strong>Маппинг для замены:</strong></p>
+<table>
+<tr><th>Активность</th><th>Эмодзи (сейчас)</th><th>Lucide (предлагается)</th></tr>
+<tr><td>work</td><td>💻</td><td>Briefcase / Code2</td></tr>
+<tr><td>reading</td><td>📖</td><td>BookOpen</td></tr>
+<tr><td>creative</td><td>🎨</td><td>Palette</td></tr>
+<tr><td>exercise</td><td>🏋️</td><td>Dumbbell</td></tr>
+<tr><td>gaming</td><td>🎮</td><td>Gamepad2</td></tr>
+<tr><td>meditation</td><td>🧘</td><td>Leaf / Sparkles</td></tr>
+<tr><td>meeting</td><td>📞</td><td>Phone / Video</td></tr>
+</table>
+</div>
+
+<div class="idea">
+<h3>4. Чат и пустые состояния — Lucide, но user-generated реакции оставить как эмодзи</h3>
+<p>Системные иконки (UI shell) — в одном языке. User-generated контент (реакции) — отдельный слой, и там эмодзи уместны. Сейчас граница размыта.</p>
+<img src="references/userguiding-team-directory.png" alt="Userguiding team directory">
+<em>Userguiding — team directory с участниками, status indicators, иконка чата — везде один stroke-based стиль [Lazyweb]</em>
+<pre>┌────────────────────────────┐
+│ Чат                        │
+│ 0 сообщений                │
+├────────────────────────────┤
+│                            │
+│       [MessageSquare]      │  ← Lucide, не 💬
+│   Пока никто не написал    │
+│                            │
+└────────────────────────────┘</pre>
+</div>
+
+<div class="idea">
+<h3>5. Звуки — добавить equalizer для активного источника</h3>
+<p>Endel — эталон ambient-UI. У вас сейчас 4 кнопки и слайдер громкости — функционально, но "статично". Активный звук можно показывать живым: 3–4 палочки equalizer пульсируют. Это особенно полезно когда звук тихий — пользователь видит, что что-то играет. Технически: 3 строки на <code>AnalyserNode</code> поверх вашего <code>ambientAudio.ts</code>.</p>
+<img src="references/endel-focus-soundscape.png" alt="Endel focus soundscape">
+<em>Endel — focus & soundscape app, активный звук показан как живая волна [Lazyweb]</em>
+<pre>┌─────────────────────────────┐
+│ 🔊 ЗВУКИ     ▁▃▅▃▁  ▮▮▮▮▮ │  ← equalizer + volume
+├─────────────────────────────┤
+│ [☕ Кафе] (active, glowing) │
+│ [🌳 Лес ]                   │
+│ [🌬 Шум ]   [💧 Дождь]      │
+└─────────────────────────────┘</pre>
+</div>
+
+<h2>What's Working</h2>
+<ul>
+  <li><strong>Pomodoro timer</strong> — круг, дисплей <code>25:00</code>, дискретные фазы — тот же шаблон, что у Focus To Do.
+    <img src="references/focustodo-pomodoro.png" alt="Focus To Do pomodoro">
+    <em>Focus To Do — Pomodoro timer (валидирует вашу метафору) [Lazyweb]</em>
+  </li>
+  <li><strong>Левая колонка как "control surface"</strong> — таймер + статус + расписание + звуки в одной колонке = всё нужное в periferal vision. Сильнее, чем у большинства pomodoro-приложений.</li>
+  <li><strong>Кастомный статус</strong> — поле ввода прямо под кнопками статуса. Редкая фича (Slack делает в отдельной модалке), и у вас она быстрее.</li>
+  <li><strong>Ambient через Web Audio API</strong> — нет внешних зависимостей, правильно для бесплатного деплоя.</li>
+  <li><strong>Брендинг "Notes Cowork / I.C-E.F Notes project"</strong> — двухстрочный логотип читается как product + parent project (как Atlassian → Jira).</li>
+</ul>
+
+<h2>All References</h2>
+<table>
+<tr><th>#</th><th>Source</th><th>Что важно</th></tr>
+<tr><td>1</td><td><strong>Intercom</strong> [Lazyweb]</td><td>Agent status selector — точка + иконка</td></tr>
+<tr><td>2</td><td><strong>MagicFlow</strong> [Lazyweb]</td><td>Focus metrics как числовые токены</td></tr>
+<tr><td>3</td><td><strong>Opal</strong> [Lazyweb]</td><td>Монохромная icon-система для всех features</td></tr>
+<tr><td>4</td><td><strong>Userguiding</strong> [Lazyweb]</td><td>Team directory, единый stroke-стиль</td></tr>
+<tr><td>5</td><td><strong>Endel</strong> [Lazyweb]</td><td>Ambient sound UI с живым визуализатором</td></tr>
+<tr><td>6</td><td><strong>Focus To Do</strong> [Lazyweb]</td><td>Pomodoro таймер (валидирует круговую метафору)</td></tr>
+</table>
+
+<div class="footer">
+  Generated by <code>/lazyweb-design-improve</code> · Notes Cowork · I.C-E.F Notes project
+</div>
+
+</body>
+</html>

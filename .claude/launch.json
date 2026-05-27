@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "virtual-cowork",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev:3002"],
+      "port": 3002
+    }
+  ]
+}
