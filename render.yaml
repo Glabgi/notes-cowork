@@ -1,0 +1,20 @@
+# Render Blueprint — automatically provisions the Socket.io server.
+# Usage: in Render dashboard click "New +" → "Blueprint" → paste the GitHub repo URL.
+# Free instance type sleeps after 15 minutes of inactivity (first req after sleep ~30s).
+services:
+  - type: web
+    name: notes-cowork-socket
+    runtime: node
+    region: frankfurt
+    plan: free
+    branch: main
+    rootDir: .
+    buildCommand: npm install
+    startCommand: node server/index.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: PORT
+        # Render injects PORT itself; this is just an override safeguard
+        value: 10000
