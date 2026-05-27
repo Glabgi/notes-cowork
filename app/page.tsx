@@ -24,6 +24,28 @@ interface ActiveRoom {
   participants: { id: string; avatarId: string }[];
 }
 
+/* ─── Footer (gated) ─────────────────────────────────────────────────── */
+function HomeFooterLinks({ router }: { router: any }) {
+  const { user, configured } = useAuth();
+  const isAnonymous = configured && !user;
+  if (isAnonymous) {
+    return (
+      <div className="flex items-center justify-center gap-2 text-xs text-[var(--text-muted)] pt-2">
+        <span className="opacity-60">I.C-E.F Notes project</span>
+      </div>
+    );
+  }
+  return (
+    <div className="flex items-center justify-center gap-4 text-xs text-[var(--text-muted)] pt-2">
+      <button onClick={() => router.push('/dashboard')} className="hover:text-[var(--accent)] transition-colors">Мой прогресс</button>
+      <span>·</span>
+      <button onClick={() => router.push('/settings')} className="hover:text-[var(--accent)] transition-colors">Настройки</button>
+      <span>·</span>
+      <span className="opacity-60">I.C-E.F Notes</span>
+    </div>
+  );
+}
+
 /* ─── Auth Badge ────────────────────────────────────────────────────── */
 function AuthBadge() {
   const router = useRouter();
@@ -415,18 +437,8 @@ export default function HomePage() {
           <ActiveRoomsList />
         </div>
 
-        {/* Footer links */}
-        <div className="flex items-center justify-center gap-4 text-xs text-[var(--text-muted)] pt-2">
-          <button onClick={() => router.push('/dashboard')} className="hover:text-[var(--accent)] transition-colors">
-            Мой прогресс
-          </button>
-          <span>·</span>
-          <button onClick={() => router.push('/settings')} className="hover:text-[var(--accent)] transition-colors">
-            Настройки
-          </button>
-          <span>·</span>
-          <span className="opacity-60">I.C-E.F Notes</span>
-        </div>
+        {/* Footer links — gated for anonymous */}
+        <HomeFooterLinks router={router} />
       </main>
 
       <CreateRoomModal open={showCreate} onClose={() => setShowCreate(false)} />

@@ -7,6 +7,7 @@ import {
   Coffee, TreePine, Wind, VolumeX, AlertTriangle, BarChart3, Calendar, Home,
 } from 'lucide-react';
 import AppHeader from '@/components/AppHeader';
+import AuthGate from '@/components/AuthGate';
 import { useSettingsStore } from '@/store/settingsStore';
 import { AVATARS, getAvatarSvg } from '@/lib/avatars';
 import Button from '@/components/ui/Button';
@@ -76,11 +77,14 @@ function Section({ icon: Icon, title, children, delay = 0 }: {
   );
 }
 
-function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
+function Toggle({ on, onToggle, disabled = false }: { on: boolean; onToggle: () => void; disabled?: boolean }) {
   return (
     <button
-      onClick={onToggle}
-      className={cn('relative w-11 h-6 rounded-full transition-colors duration-150 flex-shrink-0',
+      type="button"
+      onClick={(e) => { e.preventDefault(); e.stopPropagation(); if (!disabled) onToggle(); }}
+      disabled={disabled}
+      aria-pressed={on}
+      className={cn('relative w-11 h-6 rounded-full transition-colors duration-150 flex-shrink-0 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed',
         on ? 'bg-[var(--accent)]' : 'bg-[var(--border)]'
       )}
     >
@@ -127,36 +131,46 @@ export default function SettingsPage() {
     } catch {}
   }, [s.userName, s.avatarId]);
 
-  const togglePush = async () => {
+  const togglePush = () => {
     if (typeof window === 'undefined' || !('Notification' in window)) {
       alert('Уведомления не поддерживаются в этом браузере');
       return;
     }
-    // Already on → just turn off
+    // Currently ON → just flip OFF (no permission needed)
     if (s.pushNotifications) {
       s.setPushNotifications(false);
       return;
     }
-    // Off → request permission
     const current = window.Notification.permission;
     if (current === 'denied') {
       setNotifBlocked(true);
-      alert('Уведомления заблокированы в настройках браузера. Разрешите их и перезагрузите страницу.');
+      alert('Уведомления заблокированы в настройках браузера. Откройте настройки сайта → Уведомления → Разрешить, затем перезагрузите страницу.');
       return;
     }
     if (current === 'granted') {
       s.setPushNotifications(true);
+      // Test notification so user sees it worked
+      try { new Notification('Уведомления включены ✓', { body: 'Вы получите сигнал при окончании таймера' }); } catch {}
       return;
     }
-    // 'default' → ask
-    const perm = await window.Notification.requestPermission();
-    s.setPushNotifications(perm === 'granted');
-    setNotifBlocked(perm === 'denied');
+    // 'default' — request permission. Must be called synchronously from click for some browsers.
+    window.Notification.requestPermission().then(perm => {
+      s.setPushNotifications(perm === 'granted');
+      setNotifBlocked(perm === 'denied');
+      if (perm === 'granted') {
+        try { new Notification('Уведомления включены ✓', { body: 'Вы получите сигнал при окончании таймера' }); } catch {}
+      } else if (perm === 'denied') {
+        alert('Вы отклонили разрешение. Включить можно через настройки браузера для этого сайта.');
+      }
+    }).catch(() => {
+      alert('Не удалось запросить разрешение на уведомления');
+    });
   };
 
   return (
+    <AuthGate pageName="Настройки">
     <div className="min-h-screen bg-[var(--bg-page)]">
-      <AppHeader title="Настройки" />
+      <AppHeader title="Настройки" showBack />
 
       <div className="max-w-xl mx-auto px-6 sm:px-8 py-4 space-y-4 pb-12">
 
@@ -274,14 +288,21 @@ export default function SettingsPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-[var(--text-primary)]">Push-уведомления</p>
-              <p className="text-xs text-[var(--text-muted)] mt-0.5">При переключении фаз таймера</p>
+              <p className="text-xs text-[var(--text-muted)] mt-0.5">При окончании фазы таймера</p>
             </div>
-            <Toggle on={s.pushNotifications} onToggle={togglePush} />
+            <Toggle
+              on={s.pushNotifications}
+              onToggle={togglePush}
+              disabled={notifBlocked}
+            />
           </div>
           {notifBlocked && (
             <div className="text-xs text-[#B45309] bg-[#FFFBEB] border border-[#FDE68A] rounded-[10px] px-3 py-2.5 flex items-start gap-2">
               <AlertTriangle size={13} className="flex-shrink-0 mt-0.5" />
-              <span>Уведомления заблокированы. Разрешите их в настройках браузера.</span>
+              <div>
+                <p className="font-semibold">Уведомления заблокированы браузером</p>
+                <p className="mt-0.5">Кликните иконку 🔒/🔔 слева от URL → разрешите уведомления → обновите страницу.</p>
+              </div>
             </div>
           )}
         </Section>
@@ -296,5 +317,6 @@ export default function SettingsPage() {
         </div>
       </div>
     </div>
+    </AuthGate>
   );
 }

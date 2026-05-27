@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Send, SmilePlus, ThumbsUp, Heart, Smile, Flame, PartyPopper, Timer, Dumbbell, CheckCircle2, MessageSquare,
+  Send, SmilePlus, ThumbsUp, Heart, Smile, Flame, PartyPopper, Timer, Dumbbell, CheckCircle2, MessageSquare, Trash2,
 } from 'lucide-react';
 import { useRoomStore } from '@/store/roomStore';
 import { getSocket } from '@/lib/socket';
@@ -30,12 +30,20 @@ export default function ChatPanel() {
   const [input, setInput] = useState('');
   const [showReactionPicker, setShowReactionPicker] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesScrollRef = useRef<HTMLDivElement>(null);
   const sendingRef = useRef(false);
   const lastSendTimeRef = useRef(0);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // Scroll the messages container only — never bubble up to the page
+    const el = messagesScrollRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
   }, [messages]);
+
+  const deleteMessage = (messageId: string) => {
+    if (!room) return;
+    (getSocket() as any).emit('chat:delete', { roomId: room.slug, messageId });
+  };
 
   const sendMessage = () => {
     const content = input.trim();
@@ -65,14 +73,17 @@ export default function ChatPanel() {
     new Date(ts).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
 
   return (
-    <div className="flex flex-col h-full bg-[var(--bg-card)]">
-      <div className="px-4 py-3 border-b border-[var(--border)] bg-[var(--bg-subtle)]">
+    <div className="flex flex-col h-full bg-[var(--bg-card)] min-h-0">
+      <div className="px-4 py-3 border-b border-[var(--border)] bg-[var(--bg-subtle)] flex-shrink-0">
         <h3 className="font-semibold text-[var(--text-primary)] text-sm">Чат</h3>
         <p className="text-xs text-[var(--text-muted)]">{messages.length} сообщений</p>
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3">
+      {/* Messages — bounded by min-h-0 + flex-1 so scroll stays inside this div */}
+      <div
+        ref={messagesScrollRef}
+        className="flex-1 min-h-0 overflow-y-auto px-3 py-3 space-y-3"
+      >
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-[var(--text-muted)] gap-2">
             <MessageSquare size={28} />
@@ -105,13 +116,25 @@ export default function ChatPanel() {
                       {formatTime(msg.createdAt)}
                     </span>
 
-                    {/* Reaction button */}
-                    <button
-                      onClick={() => setShowReactionPicker(showReactionPicker === msg.id ? null : msg.id)}
-                      className="absolute -bottom-3 right-2 opacity-0 group-hover:opacity-100 transition-opacity p-1 bg-[var(--bg-card)] border border-[var(--border)] rounded-full shadow-sm"
-                    >
-                      <SmilePlus size={12} className="text-[var(--text-muted)]" />
-                    </button>
+                    {/* Hover action row */}
+                    <div className="absolute -bottom-3 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                      <button
+                        onClick={() => setShowReactionPicker(showReactionPicker === msg.id ? null : msg.id)}
+                        className="p-1 bg-[var(--bg-card)] border border-[var(--border)] rounded-full shadow-sm hover:bg-[var(--bg-hover)]"
+                        title="Реакция"
+                      >
+                        <SmilePlus size={12} className="text-[var(--text-muted)]" />
+                      </button>
+                      {isMe && (
+                        <button
+                          onClick={() => { if (confirm('Удалить сообщение?')) deleteMessage(msg.id); }}
+                          className="p-1 bg-[var(--bg-card)] border border-[var(--border)] rounded-full shadow-sm hover:bg-[#FEE2E2] hover:border-[#FCA5A5]"
+                          title="Удалить"
+                        >
+                          <Trash2 size={12} className="text-[#DC2626]" />
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   {/* Reactions */}

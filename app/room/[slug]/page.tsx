@@ -604,13 +604,33 @@ export default function RoomPage() {
     };
 
     const onRoomState = (roomData: any) => {
+      // Fallback: if server lost state and returns just the slug as name,
+      // try to recover the human-readable name from localStorage recents.
+      let nameFromCache: string | undefined;
+      try {
+        const recent = JSON.parse(localStorage.getItem('vc_recent_rooms') || '[]');
+        const entry = recent.find((r: any) => r.slug === slug);
+        if (entry?.name && entry.name !== slug) nameFromCache = entry.name;
+      } catch {}
+      const finalName =
+        (roomData.name && roomData.name !== slug) ? roomData.name
+        : (nameFromCache || roomData.name || slug);
+
+      // Remember it for future joins
+      try {
+        const recent = JSON.parse(localStorage.getItem('vc_recent_rooms') || '[]');
+        const filtered = recent.filter((r: any) => r.slug !== slug);
+        filtered.unshift({ slug, name: finalName, visitedAt: Date.now() });
+        localStorage.setItem('vc_recent_rooms', JSON.stringify(filtered.slice(0, 20)));
+      } catch {}
+
       const room: Room = {
         id: roomData.id || slug,
         slug,
-        name: roomData.name || slug,
+        name: finalName,
         ownerId: roomData.ownerId || participant.id,
-        isPrivate: false,
-        maxParticipants: 50,
+        isPrivate: !!roomData.isPrivate,
+        maxParticipants: roomData.maxParticipants || 50,
         participants: roomData.participants || [],
         createdAt: Date.now(),
         lastActivity: Date.now(),
@@ -634,8 +654,12 @@ export default function RoomPage() {
     socket.on('room:participant-left', store.removeParticipant);
     socket.on('room:participant-updated', store.updateParticipant);
     socket.on('chat:message', store.addMessage);
+    socket.on('chat:deleted' as any, ({ messageId }: any) => store.removeMessage(messageId));
     socket.on('chat:reaction', ({ messageId, reaction }) => store.updateMessageReaction(messageId, reaction));
-    socket.on('game:invite', addInvite);
+    socket.on('game:invite', (invite: any) => {
+      console.log('[game:invite RECEIVED]', invite);
+      addInvite(invite);
+    });
   }, [slug, store, addInvite]);
 
   const handleJoin = (name: string, avatarId: string) => {
@@ -720,11 +744,11 @@ export default function RoomPage() {
         </div>
 
         {/* Right (with edge padding) */}
-        <div className="pr-3 py-3 hidden lg:block">
+        <div className="pr-3 py-3 hidden lg:flex h-full overflow-hidden">
           <SidePanel />
         </div>
         {/* On smaller screens, no right padding wrapper */}
-        <div className="lg:hidden">
+        <div className="lg:hidden h-full overflow-hidden">
           <SidePanel />
         </div>
       </div>

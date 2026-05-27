@@ -17,6 +17,7 @@ import {
   Tag, Castle,
 } from 'lucide-react';
 import AppHeader from '@/components/AppHeader';
+import AuthGate from '@/components/AuthGate';
 
 type AchievementMeta = {
   id: string;
@@ -151,8 +152,9 @@ export default function DashboardPage() {
   const unlockedCount = ACHIEVEMENTS.filter(a => a.unlock(pomodoroCount, completedTasks.length)).length;
 
   return (
+    <AuthGate pageName="Мой прогресс">
     <div className="min-h-screen bg-[var(--bg-page)]">
-      <AppHeader title="Мой прогресс" showDashboard={false} />
+      <AppHeader title="Мой прогресс" showBack showDashboard={false} />
 
       <div className="max-w-3xl mx-auto px-6 sm:px-8 py-6 space-y-5">
         {/* Top stats */}
@@ -329,5 +331,6 @@ export default function DashboardPage() {
         </div>
       </div>
     </div>
+    </AuthGate>
   );
 }

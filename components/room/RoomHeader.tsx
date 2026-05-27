@@ -39,11 +39,24 @@ export default function RoomHeader() {
         <div className={cn('w-2 h-2 rounded-full flex-shrink-0', isConnected ? 'bg-[#16A34A]' : 'bg-[#EF4444]')} />
 
         {/* Room name */}
-        <div className="flex items-center gap-2 min-w-0 flex-1">
-          <h1 className="font-semibold text-[var(--text-primary)] text-base truncate">{room.name}</h1>
-          <span className="bg-[#F1F5F9] text-[#64748B] font-mono text-xs px-2 py-0.5 rounded-full hidden md:block flex-shrink-0">
+        <div className="flex items-baseline gap-2 min-w-0 flex-1">
+          <h1
+            className="font-bold text-[var(--text-primary)] text-lg truncate leading-tight"
+            title={room.name}
+          >
+            {room.name}
+          </h1>
+          <span
+            className="bg-[#F1F5F9] text-[#64748B] font-mono text-[11px] px-2 py-0.5 rounded-full hidden md:inline-block flex-shrink-0"
+            title="Код сессии"
+          >
             #{room.slug}
           </span>
+          {room.isPrivate && (
+            <span className="text-[10px] font-semibold text-[#B45309] bg-[#FFFBEB] border border-[#FDE68A] px-1.5 py-0.5 rounded-full uppercase tracking-wider flex-shrink-0">
+              приватная
+            </span>
+          )}
         </div>
 
         {/* Focus indicator */}

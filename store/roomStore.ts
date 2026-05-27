@@ -17,6 +17,7 @@ interface RoomState {
   removeParticipant: (participantId: string) => void;
   updateParticipant: (participant: Participant) => void;
   addMessage: (message: ChatMessage) => void;
+  removeMessage: (messageId: string) => void;
   updateMessageReaction: (messageId: string, reaction: { emoji: string; count: number; users: string[] }) => void;
   setConnected: (connected: boolean) => void;
   setLoading: (loading: boolean) => void;
@@ -72,6 +73,11 @@ export const useRoomStore = create<RoomState>()(
         if (state.messages.length > 200) {
           state.messages = state.messages.slice(-200);
         }
+      }),
+
+    removeMessage: (messageId) =>
+      set((state) => {
+        state.messages = state.messages.filter(m => m.id !== messageId);
       }),
 
     updateMessageReaction: (messageId, reaction) =>

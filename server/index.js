@@ -218,6 +218,17 @@ io.on('connection', (socket) => {
     io.to(roomId).emit('chat:message', message);
   });
 
+  socket.on('chat:delete', ({ roomId, messageId }) => {
+    const room = rooms.get(roomId);
+    if (!room || !currentUserId) return;
+    const idx = room.messages.findIndex(m => m.id === messageId);
+    if (idx === -1) return;
+    // Only author may delete their own message
+    if (room.messages[idx].userId !== currentUserId) return;
+    room.messages.splice(idx, 1);
+    io.to(roomId).emit('chat:deleted', { messageId });
+  });
+
   socket.on('chat:react', ({ roomId, messageId, emoji }) => {
     const room = rooms.get(roomId);
     if (!room || !currentUserId) return;
@@ -287,25 +298,51 @@ io.on('connection', (socket) => {
   });
 
   // Game events
-  socket.on('game:invite', (invite) => {
+  socket.on('game:invite', (invite, ack) => {
+    console.log('[game:invite] from=%s to=%s game=%s room=%s', currentUserId, invite?.toUserId, invite?.gameType, invite?.roomId);
+    const room = rooms.get(invite.roomId);
+    if (!room) {
+      if (typeof ack === 'function') ack({ ok: false, error: 'room_not_found' });
+      return;
+    }
+    const fromP = room.participants.find(p => p.id === currentUserId);
+    if (!fromP) {
+      if (typeof ack === 'function') ack({ ok: false, error: 'sender_not_in_room' });
+      return;
+    }
     const fullInvite = {
       ...invite,
       id: uuidv4(),
       fromUserId: currentUserId,
+      fromUserName: fromP.name,
+      fromUserAvatarId: fromP.avatarId,
       createdAt: Date.now(),
     };
-    const room = rooms.get(invite.roomId);
-    if (!room) return;
-    const fromP = room.participants.find(p => p.id === currentUserId);
-    if (fromP) {
-      fullInvite.fromUserName = fromP.name;
-      fullInvite.fromUserAvatarId = fromP.avatarId;
-    }
     if (invite.toUserId) {
       const target = room.participants.find(p => p.id === invite.toUserId);
-      if (target?.socketId) io.to(target.socketId).emit('game:invite', fullInvite);
+      if (!target) {
+        console.log('[game:invite] target user not in room', invite.toUserId);
+        if (typeof ack === 'function') ack({ ok: false, error: 'recipient_not_in_room' });
+        return;
+      }
+      if (!target.socketId) {
+        console.log('[game:invite] target has no socketId', invite.toUserId);
+        if (typeof ack === 'function') ack({ ok: false, error: 'recipient_offline' });
+        return;
+      }
+      // Check the socket is still connected
+      const targetSocket = io.sockets.sockets.get(target.socketId);
+      if (!targetSocket || !targetSocket.connected) {
+        console.log('[game:invite] target socket not connected', target.socketId);
+        if (typeof ack === 'function') ack({ ok: false, error: 'recipient_offline' });
+        return;
+      }
+      targetSocket.emit('game:invite', fullInvite);
+      console.log('[game:invite] delivered to socket=%s', target.socketId);
+      if (typeof ack === 'function') ack({ ok: true });
     } else {
       socket.to(invite.roomId).emit('game:invite', fullInvite);
+      if (typeof ack === 'function') ack({ ok: true });
     }
   });
 

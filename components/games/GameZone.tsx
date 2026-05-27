@@ -33,7 +33,13 @@ export function GameSelector() {
       {GAMES.map(game => (
         <button
           key={game.id}
-          onClick={() => { setActiveGame({ type: game.id, id: 'local' }); setGameOpen(true); }}
+          onClick={() => {
+            // Open the GameZone modal at the mode picker (no preset → user picks Bot/Friend)
+            setActiveGame(null);
+            setGameOpen(true);
+            // Hint which game was clicked via a custom event picked up by GameZone
+            window.dispatchEvent(new CustomEvent('gamezone:preselect', { detail: { type: game.id } }));
+          }}
           className="w-full flex items-center gap-3 p-3 bg-[var(--bg-card)] hover:bg-[var(--bg-hover)] border border-[var(--border)] hover:border-[var(--border-accent)] rounded-[14px] text-left transition-all duration-150 group"
         >
           <div className="w-10 h-10 rounded-[10px] bg-[var(--accent-light)] flex items-center justify-center flex-shrink-0 group-hover:bg-[var(--border-accent)] transition-colors">
@@ -83,6 +89,22 @@ export default function GameZone() {
   // Listen for game start (when friend accepts) or invite declined
   const { setChessGame, setTicTacToeGame, setBattleshipGame } = useGameStore();
 
+  // Pre-select game when user clicked one in side panel
+  useEffect(() => {
+    const onPreselect = (e: any) => {
+      const t = e?.detail?.type as GameType;
+      if (t) {
+        setSelectedGame(t);
+        setMode(null);
+        setWaitingFor(null);
+        setActiveGameId(null);
+        setInviteError(null);
+      }
+    };
+    window.addEventListener('gamezone:preselect', onPreselect);
+    return () => window.removeEventListener('gamezone:preselect', onPreselect);
+  }, []);
+
   useEffect(() => {
     const s: any = getSocket();
     const onStart = ({ gameType, gameId, game }: { gameType: GameType; gameId: string; game: any }) => {
@@ -126,14 +148,29 @@ export default function GameZone() {
     setActiveGame(null);
   };
 
+  const [inviteError, setInviteError] = useState<string | null>(null);
+
   const handleInvite = (toUser: { id: string; name: string; avatarId: string }) => {
     if (!room || !currentUser || !selectedGame) return;
+    setInviteError(null);
     (getSocket() as any).emit('game:invite', {
       roomId: room.slug,
       toUserId: toUser.id,
       gameType: selectedGame,
+    }, (resp: any) => {
+      if (!resp || resp.ok === false) {
+        const map: any = {
+          room_not_found: 'Сессия не найдена',
+          sender_not_in_room: 'Сначала подключитесь к сессии',
+          recipient_not_in_room: `${toUser.name} вышел из сессии`,
+          recipient_offline: `${toUser.name} сейчас оффлайн`,
+        };
+        setInviteError(map[resp?.error] || 'Не удалось отправить приглашение');
+        setWaitingFor(null);
+        return;
+      }
+      setWaitingFor({ name: toUser.name, avatarId: toUser.avatarId });
     });
-    setWaitingFor({ name: toUser.name, avatarId: toUser.avatarId });
   };
 
   return (
@@ -225,6 +262,11 @@ export default function GameZone() {
             <ArrowLeft size={12} /> Выбрать режим
           </button>
           <p className="text-sm font-medium text-[var(--text-primary)]">Кого пригласить?</p>
+          {inviteError && (
+            <div className="text-xs text-[#DC2626] bg-[#FEF2F2] border border-[#FECACA] rounded-[10px] px-3 py-2">
+              {inviteError}
+            </div>
+          )}
           <div className="space-y-2 max-h-80 overflow-y-auto">
             {otherParticipants.map(p => (
               <button

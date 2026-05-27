@@ -2,8 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Calendar, Settings, BarChart3, ArrowLeft } from 'lucide-react';
-import Button from '@/components/ui/Button';
+import { Calendar, Settings, BarChart3, ArrowLeft, LogIn, LogOut } from 'lucide-react';
 import { useAuth } from '@/components/AuthProvider';
 import { signOut, isSupabaseConfigured } from '@/lib/supabase';
 import { getAvatarSvg } from '@/lib/avatars';
@@ -17,9 +16,11 @@ interface Props {
 }
 
 /**
- * Unified top bar used across home / dashboard / schedule / settings.
- * Always renders the I.C-E.F Notes brand on the left and a consistent
- * row of icon-buttons on the right.
+ * Unified top bar.
+ * - Logo always present (links to /).
+ * - Private feature buttons (Schedule, Dashboard, Settings) are hidden
+ *   for anonymous visitors when Supabase is configured — they only see "Войти".
+ * - When Supabase is NOT configured, everything is open (dev/no-auth mode).
  */
 export default function AppHeader({
   title,
@@ -29,15 +30,23 @@ export default function AppHeader({
   rightExtra,
 }: Props) {
   const router = useRouter();
-  const { user, profile, configured } = useAuth();
+  const { user, profile, configured, loading } = useAuth();
+
+  // Auth gate: if Supabase IS configured but user is not signed in, hide
+  // personal feature buttons (Schedule, Dashboard, Settings).
+  const isAnonymous = configured && !user && !loading;
 
   return (
-    <header className="h-14 bg-[var(--bg-card)]/95 backdrop-blur-sm border-b border-[var(--border)] flex items-center px-4 gap-3 sticky top-0 z-30">
+    <header className="h-14 bg-[var(--bg-card)]/95 backdrop-blur-sm border-b border-[var(--border)] flex items-center px-3 sm:px-4 gap-2 sticky top-0 z-30">
       {/* Back button */}
       {showBack && (
-        <Button variant="ghost" size="sm" onClick={() => router.back()}>
-          <ArrowLeft size={15} /> Назад
-        </Button>
+        <button
+          onClick={() => router.back()}
+          className="h-9 w-9 inline-flex items-center justify-center text-[var(--text-secondary)] bg-[var(--bg-card)] border border-[var(--border)] rounded-[10px] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)] transition-colors"
+          title="Назад"
+        >
+          <ArrowLeft size={14} />
+        </button>
       )}
 
       {/* Logo — always */}
@@ -59,62 +68,67 @@ export default function AppHeader({
         </>
       )}
 
-      {/* Right cluster — consistent icon-style buttons */}
+      {/* Right cluster */}
       <div className="ml-auto flex items-center gap-1.5">
         {rightExtra}
 
-        {showSchedule && (
-          <button
-            onClick={() => router.push('/schedule')}
-            className="h-9 px-3 inline-flex items-center gap-1.5 text-xs font-medium text-[var(--text-secondary)] bg-[var(--bg-card)] border border-[var(--border)] rounded-[10px] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)] transition-colors"
-          >
-            <Calendar size={13} />
-            <span className="hidden sm:inline">Расписание</span>
-          </button>
+        {/* Personal feature buttons — hidden when anonymous */}
+        {!isAnonymous && (
+          <>
+            {showSchedule && (
+              <button
+                onClick={() => router.push('/schedule')}
+                className="h-9 px-3 inline-flex items-center gap-1.5 text-xs font-medium text-[var(--text-secondary)] bg-[var(--bg-card)] border border-[var(--border)] rounded-[10px] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)] transition-colors"
+              >
+                <Calendar size={13} />
+                <span className="hidden sm:inline">Расписание</span>
+              </button>
+            )}
+            {showDashboard && (
+              <button
+                onClick={() => router.push('/dashboard')}
+                className="h-9 px-3 inline-flex items-center gap-1.5 text-xs font-medium text-[var(--text-secondary)] bg-[var(--bg-card)] border border-[var(--border)] rounded-[10px] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)] transition-colors"
+              >
+                <BarChart3 size={13} />
+                <span className="hidden sm:inline">Прогресс</span>
+              </button>
+            )}
+            <button
+              onClick={() => router.push('/settings')}
+              className="h-9 px-3 inline-flex items-center gap-1.5 text-xs font-medium text-[var(--text-secondary)] bg-[var(--bg-card)] border border-[var(--border)] rounded-[10px] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)] transition-colors"
+              title="Настройки"
+            >
+              <Settings size={13} />
+              <span className="hidden sm:inline">Настройки</span>
+            </button>
+          </>
         )}
 
-        {showDashboard && (
-          <button
-            onClick={() => router.push('/dashboard')}
-            className="h-9 px-3 inline-flex items-center gap-1.5 text-xs font-medium text-[var(--text-secondary)] bg-[var(--bg-card)] border border-[var(--border)] rounded-[10px] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)] transition-colors"
-          >
-            <BarChart3 size={13} />
-            <span className="hidden sm:inline">Прогресс</span>
-          </button>
-        )}
-
-        {/* Auth pill */}
+        {/* Auth pill — primary CTA when anonymous */}
         {configured && (
           user ? (
             <button
               onClick={async () => { if (confirm('Выйти из аккаунта?')) { await signOut(); router.refresh(); } }}
               className="h-9 px-2 inline-flex items-center gap-1.5 bg-[var(--bg-card)] border border-[var(--border)] rounded-[10px] hover:border-[var(--border-strong)] transition-colors"
-              title={profile?.username || user.email || 'Профиль'}
+              title={profile?.username || 'Профиль'}
             >
               <div className="w-6 h-6 rounded-full overflow-hidden"
                 dangerouslySetInnerHTML={{ __html: getAvatarSvg(profile?.avatar_id || 'fox', 24) }} />
               <span className="text-xs font-medium text-[var(--text-secondary)] hidden md:inline max-w-[80px] truncate">
                 {profile?.username || 'Профиль'}
               </span>
+              <LogOut size={12} className="text-[var(--text-muted)]" />
             </button>
           ) : (
             <button
               onClick={() => router.push('/login')}
-              className="h-9 px-3 inline-flex items-center gap-1.5 text-xs font-medium text-[var(--accent)] bg-[var(--accent-light)] border border-[var(--border-accent)] rounded-[10px] hover:bg-[var(--accent)] hover:text-white transition-colors"
+              className="h-9 px-4 inline-flex items-center gap-1.5 text-xs font-semibold text-white bg-[var(--accent)] hover:bg-[var(--accent-hover)] rounded-[10px] transition-colors shadow-[0_2px_6px_rgba(37,99,235,0.25)]"
             >
+              <LogIn size={13} />
               Войти
             </button>
           )
         )}
-
-        {/* Settings — same icon-button style */}
-        <button
-          onClick={() => router.push('/settings')}
-          className="h-9 w-9 inline-flex items-center justify-center text-[var(--text-secondary)] bg-[var(--bg-card)] border border-[var(--border)] rounded-[10px] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)] transition-colors"
-          title="Настройки"
-        >
-          <Settings size={14} />
-        </button>
       </div>
     </header>
   );
