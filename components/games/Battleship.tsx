@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Anchor, Dice5, ArrowRight, Trophy, Skull, X as XIcon, Hourglass } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Button from '@/components/ui/Button';
+import { getSocket } from '@/lib/socket';
 import type { BattleshipGame, BattleshipPlayer, Ship, BattleshipCell } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 import { useRoomStore } from '@/store/roomStore';
@@ -144,7 +145,12 @@ function Grid({
   );
 }
 
-export default function Battleship() {
+interface BattleshipProps {
+  vsBot?: boolean;
+  gameId?: string | null;
+}
+
+export default function Battleship({ vsBot: vsBotProp, gameId }: BattleshipProps = {}) {
   const { currentUser } = useRoomStore();
   const { battleshipGame, setBattleshipGame } = useGameStore();
   const [setupShips, setSetupShips] = useState<Ship[]>([]);
@@ -156,6 +162,32 @@ export default function Battleship() {
   const [winner, setWinner] = useState<'me' | 'opponent' | null>(null);
   // Tracks who got the first shot last game — alternates next game
   const lastFirstRef = useRef<'me' | 'opponent'>('opponent');
+  const isMultiplayer = !!gameId && !vsBotProp;
+  const myShipsRef = useRef<Ship[]>([]);
+
+  // Multiplayer: subscribe to server updates
+  useEffect(() => {
+    if (!isMultiplayer) return;
+    const socket: any = getSocket();
+    const onUpdate = (g: any) => {
+      // Server sends per-viewer view: { me, opponent, currentTurn, status, winner }
+      setMyBoard(g.me.board);
+      setOpponentBoard(g.opponent.board);
+      const myTurn = g.currentTurn === currentUser?.id;
+      setIsMyTurn(myTurn);
+      if (g.status === 'setup') setPhase('setup');
+      else if (g.status === 'active') setPhase('playing');
+      else if (g.status === 'finished') {
+        setPhase('result');
+        setWinner(g.winner === currentUser?.id ? 'me' : 'opponent');
+      }
+      setBattleshipGame(g);
+    };
+    socket.off('battleship:update');
+    socket.on('battleship:update', onUpdate);
+    return () => { socket.off('battleship:update', onUpdate); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMultiplayer, currentUser]);
 
   const handleRandomPlace = () => {
     const ships = randomPlacement();
@@ -167,6 +199,15 @@ export default function Battleship() {
     const ships = setupShips.length > 0 ? setupShips : randomPlacement();
     if (setupShips.length === 0) setMyBoard(applyShipsToBoard(ships));
     setSetupShips(ships);
+    myShipsRef.current = ships;
+
+    if (isMultiplayer && gameId) {
+      // Multiplayer: send ready to server; opponent must also send their ships
+      (getSocket() as any).emit('battleship:ready', { gameId, ships });
+      // UI stays in setup until both sides ready (server transitions phase via update)
+      return;
+    }
+
     const oppShips = randomPlacement();
     setOpponentShips(oppShips);
     setOpponentBoard(createEmptyBoard());
@@ -176,7 +217,6 @@ export default function Battleship() {
     lastFirstRef.current = meStartsThisTime ? 'me' : 'opponent';
     setIsMyTurn(meStartsThisTime);
     if (!meStartsThisTime) {
-      // Bot fires first after a brief delay
       setTimeout(() => botShoot(ships), 700);
     }
     setWinner(null);
@@ -185,6 +225,12 @@ export default function Battleship() {
   const shoot = (cell: number) => {
     if (!isMyTurn || phase !== 'playing') return;
     if (opponentBoard[cell] !== 'empty') return;
+
+    if (isMultiplayer && gameId) {
+      // Multiplayer: server resolves the shot and broadcasts the new boards
+      (getSocket() as any).emit('battleship:shoot', { gameId, cell });
+      return;
+    }
 
     const newBoard = [...opponentBoard];
     const newShips = opponentShips.map(s => ({ ...s, hits: [...s.hits] }));
@@ -254,6 +300,10 @@ export default function Battleship() {
   }, []);
 
   const reset = () => {
+    if (isMultiplayer && gameId) {
+      (getSocket() as any).emit('battleship:rematch', { gameId });
+      return;
+    }
     setSetupShips([]);
     setMyBoard(createEmptyBoard());
     setOpponentBoard(createEmptyBoard());
@@ -271,7 +321,11 @@ export default function Battleship() {
         <div>
           <h2 className="font-bold text-[#0F172A] text-base leading-tight">Морской бой</h2>
           <p className="text-xs text-[#94A3B8]">
-            {phase === 'setup' ? 'Расставьте корабли' : phase === 'result' ? 'Игра окончена' : isMyTurn ? 'Ваш ход — стреляйте!' : 'Бот думает...'}
+            {phase === 'setup'
+              ? (isMultiplayer && (battleshipGame as any)?.me?.ready ? 'Ожидаем готовности соперника...' : 'Расставьте корабли')
+              : phase === 'result' ? 'Игра окончена'
+              : isMyTurn ? 'Ваш ход — стреляйте!'
+              : (isMultiplayer ? 'Ход соперника...' : 'Бот думает...')}
           </p>
         </div>
       </div>

@@ -6,6 +6,9 @@ import { Chess as ChessEngine } from 'chess.js';
 import { Bot, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Button from '@/components/ui/Button';
+import { getSocket } from '@/lib/socket';
+import { useRoomStore } from '@/store/roomStore';
+import { useGameStore } from '@/store/gameStore';
 
 type Piece = { type: string; color: string } | null;
 type Board = (Piece)[][];
@@ -22,7 +25,12 @@ const RANKS = ['8','7','6','5','4','3','2','1'];
 const LIGHT_CELL = '#E8EDF2';
 const DARK_CELL  = '#6B8FA8';
 
-export default function ChessGame() {
+interface ChessProps {
+  vsBot?: boolean;
+  gameId?: string | null;
+}
+
+export default function ChessGame({ vsBot: vsBotProp, gameId }: ChessProps = {}) {
   const [engine] = useState(() => new ChessEngine());
   const [board, setBoard] = useState<Board>(engine.board());
   const [selected, setSelected] = useState<[number, number] | null>(null);
@@ -30,11 +38,50 @@ export default function ChessGame() {
   const [status, setStatus] = useState('Ход белых');
   const [history, setHistory] = useState<string[]>([]);
   const [promotionPending, setPromotionPending] = useState<string | null>(null);
-  const [vsBot, setVsBot] = useState(true);
+  const [vsBot, setVsBot] = useState(vsBotProp !== undefined ? vsBotProp : true);
   const [gameOver, setGameOver] = useState(false);
   // Player color alternates each new game ('w' = player plays white, 'b' = black)
   const [playerColor, setPlayerColor] = useState<'w' | 'b'>('w');
   const flipped = playerColor === 'b';
+  const { currentUser, room } = useRoomStore();
+  const { chessGame, setChessGame } = useGameStore();
+  const isMultiplayer = !!gameId && !vsBotProp;
+
+  // Multiplayer: listen for chess:update from server and sync engine
+  useEffect(() => {
+    if (!isMultiplayer) return;
+    const socket: any = getSocket();
+    const onUpdate = (g: any) => {
+      try {
+        engine.load(g.fen);
+      } catch (e) { console.error('Chess load fen:', e); }
+      setBoard(engine.board());
+      setHistory(engine.history({ verbose: false }));
+      setChessGame(g);
+      // Determine my color from server-assigned roles
+      const myId = currentUser?.id;
+      if (myId === g.white) setPlayerColor('w');
+      else if (myId === g.black) setPlayerColor('b');
+      if (g.status === 'checkmate' || g.status === 'draw' || g.status === 'stalemate') {
+        setGameOver(true);
+        if (g.status === 'checkmate') setStatus(`Мат! ${g.winner === myId ? 'Вы победили!' : 'Соперник победил'}`);
+        else if (g.status === 'stalemate') setStatus('Пат — ничья');
+        else setStatus('Ничья');
+      } else {
+        setGameOver(false);
+        if (g.status === 'check') setStatus(`Шах! Ход ${g.turn === 'w' ? 'белых' : 'чёрных'}`);
+        else setStatus(`Ход ${g.turn === 'w' ? 'белых' : 'чёрных'}`);
+      }
+      setSelected(null);
+      setLegalMoves([]);
+    };
+    socket.off('chess:update');
+    socket.on('chess:update', onUpdate);
+    // Seed from store if already set
+    if (chessGame) onUpdate(chessGame);
+    return () => { socket.off('chess:update', onUpdate); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMultiplayer, gameId]);
 
   const updateGame = useCallback(() => {
     setBoard(engine.board());
@@ -72,19 +119,41 @@ export default function ChessGame() {
   }, [engine, updateGame]);
 
   useEffect(() => {
+    if (isMultiplayer) return; // never run bot in multiplayer
     const botColor = playerColor === 'w' ? 'b' : 'w';
     if (vsBot && engine.turn() === botColor && !engine.isGameOver()) {
       const t = setTimeout(makeBotMove, 500);
       return () => clearTimeout(t);
     }
-  }, [board, vsBot, playerColor, makeBotMove, engine]);
+  }, [board, vsBot, playerColor, makeBotMove, engine, isMultiplayer]);
 
   const handleCellClick = (rank: number, file: number) => {
     if (gameOver) return;
     const botColor = playerColor === 'w' ? 'b' : 'w';
-    if (vsBot && engine.turn() === botColor) return;
+    // In multiplayer: only allow clicks on YOUR turn
+    if (isMultiplayer && engine.turn() !== playerColor) return;
+    if (vsBot && !isMultiplayer && engine.turn() === botColor) return;
     const square = FILES[file] + RANKS[rank] as any;
     const piece = engine.get(square);
+
+    const sendMove = (from: string, to: string, promotion?: string) => {
+      const move: any = { from, to };
+      if (promotion) move.promotion = promotion;
+      if (isMultiplayer && gameId) {
+        // Pre-validate locally for snappy UX, but server is the source of truth
+        try {
+          const test = new ChessEngine(engine.fen());
+          if (!test.move(move)) return false;
+        } catch { return false; }
+        (getSocket() as any).emit('chess:move', { gameId, move });
+        return true;
+      }
+      try {
+        const result = engine.move(move);
+        if (result) { updateGame(); return true; }
+      } catch {}
+      return false;
+    };
 
     if (selected) {
       const [selRank, selFile] = selected;
@@ -95,10 +164,11 @@ export default function ChessGame() {
         const isPromotion = (movingPiece.color === 'w' && targetRank === 8) || (movingPiece.color === 'b' && targetRank === 1);
         if (isPromotion) { setPromotionPending(`${fromSq}${square}`); return; }
       }
-      try {
-        const result = engine.move({ from: fromSq as any, to: square });
-        if (result) { updateGame(); setSelected(null); setLegalMoves([]); return; }
-      } catch {}
+      if (sendMove(fromSq, square)) {
+        setSelected(null); setLegalMoves([]);
+        return;
+      }
+      // Re-select if clicked own piece
       if (piece && piece.color === engine.turn()) {
         setSelected([rank, file]);
         const moves = engine.moves({ square, verbose: true });
@@ -115,17 +185,27 @@ export default function ChessGame() {
 
   const handlePromotion = (p: string) => {
     if (!promotionPending) return;
-    try {
-      engine.move({ from: promotionPending.slice(0,2) as any, to: promotionPending.slice(2,4) as any, promotion: p as any });
-      updateGame();
-    } catch {}
+    const from = promotionPending.slice(0,2);
+    const to   = promotionPending.slice(2,4);
+    if (isMultiplayer && gameId) {
+      (getSocket() as any).emit('chess:move', { gameId, move: { from, to, promotion: p } });
+    } else {
+      try {
+        engine.move({ from: from as any, to: to as any, promotion: p as any });
+        updateGame();
+      } catch {}
+    }
     setPromotionPending(null); setSelected(null); setLegalMoves([]);
   };
 
   const resetGame = () => {
+    if (isMultiplayer && gameId) {
+      (getSocket() as any).emit('chess:rematch', { gameId });
+      return;
+    }
     engine.reset(); updateGame(); setSelected(null); setLegalMoves([]);
     setGameOver(false); setPromotionPending(null);
-    // Alternate player color each new game
+    // Alternate player color each new game (single-player only)
     setPlayerColor(prev => (prev === 'w' ? 'b' : 'w'));
   };
 
@@ -257,9 +337,19 @@ export default function ChessGame() {
         {/* Controls */}
         <div className="flex gap-2">
           <Button className="flex-1" onClick={resetGame}>Новая игра</Button>
-          <Button variant="secondary" className="flex-1" onClick={() => setVsBot(!vsBot)}>
-            {vsBot ? <><Bot size={14} /> Бот</> : <><User size={14} /> Человек</>}
-          </Button>
+          {!isMultiplayer && (
+            <Button variant="secondary" className="flex-1" onClick={() => setVsBot(!vsBot)}>
+              {vsBot ? <><Bot size={14} /> Бот</> : <><User size={14} /> Человек</>}
+            </Button>
+          )}
+          {isMultiplayer && room && (
+            <div className="flex-1 flex items-center justify-center text-xs text-[var(--text-muted)] px-2 py-1.5 bg-[var(--bg-subtle)] rounded-[10px] border border-[var(--border)]">
+              {(() => {
+                const opp = chessGame && room.participants.find(p => p.id === (currentUser?.id === (chessGame as any).white ? (chessGame as any).black : (chessGame as any).white));
+                return `Вы: ${playerColor === 'w' ? '♔ белые' : '♚ чёрные'} · ${opp?.name || 'Соперник'}`;
+              })()}
+            </div>
+          )}
         </div>
       </div>
 

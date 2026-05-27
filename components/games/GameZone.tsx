@@ -81,14 +81,20 @@ export default function GameZone() {
   const otherParticipants = (room?.participants || []).filter(p => p.id !== currentUser?.id);
 
   // Listen for game start (when friend accepts) or invite declined
+  const { setChessGame, setTicTacToeGame, setBattleshipGame } = useGameStore();
+
   useEffect(() => {
     const s: any = getSocket();
-    const onStart = ({ gameType, gameId }: { gameType: GameType; gameId: string }) => {
+    const onStart = ({ gameType, gameId, game }: { gameType: GameType; gameId: string; game: any }) => {
       setActiveGameId(gameId);
       setSelectedGame(gameType);
       setMode('friend');
       setWaitingFor(null);
       setGameOpen(true);
+      // Seed the store so the game component reads multiplayer state immediately
+      if (gameType === 'chess')      setChessGame(game);
+      if (gameType === 'tictactoe')  setTicTacToeGame(game);
+      if (gameType === 'battleship') setBattleshipGame(game);
     };
     const onDeclined = () => {
       setWaitingFor(null);
@@ -253,8 +259,8 @@ export default function GameZone() {
             </button>
           </div>
           {currentGame === 'tictactoe'  && <TicTacToe vsBot={mode === 'bot'} gameId={activeGameId} />}
-          {currentGame === 'battleship' && <Battleship />}
-          {currentGame === 'chess'      && <Chess />}
+          {currentGame === 'battleship' && <Battleship vsBot={mode === 'bot'} gameId={activeGameId} />}
+          {currentGame === 'chess'      && <Chess vsBot={mode === 'bot'} gameId={activeGameId} />}
         </div>
       )}
     </Modal>

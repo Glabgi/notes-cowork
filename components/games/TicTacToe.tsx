@@ -82,10 +82,24 @@ export default function TicTacToe({ vsBot: vsBotProp, gameId }: TicTacToeProps =
 
   const game = tictactoeGame || localGame;
 
+  // Multiplayer mode: gameId set AND not playing vs bot
+  const isMultiplayer = !!gameId && !vsBotProp;
+
   useEffect(() => {
-    const socket = getSocket();
-    socket.on('tictactoe:update', (g) => { setTicTacToeGame(g); });
+    const socket: any = getSocket();
+    socket.off('tictactoe:update');
+    socket.on('tictactoe:update', (g: any) => {
+      // Server uses playerX/playerO; we normalize to xPlayerId/oPlayerId for the component
+      setTicTacToeGame({
+        ...g,
+        xPlayerId: g.playerX || g.xPlayerId,
+        oPlayerId: g.playerO || g.oPlayerId,
+        status: g.status === 'finished' ? 'finished' : 'active',
+        mode: g.mode || 'classic',
+      });
+    });
     return () => { socket.off('tictactoe:update'); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Auto-start vs bot when GameZone passes vsBot prop
@@ -123,6 +137,12 @@ export default function TicTacToe({ vsBot: vsBotProp, gameId }: TicTacToeProps =
       ? game.xPlayerId === (currentUser?.id || 'player1')
       : game.oPlayerId === (currentUser?.id || 'player1');
     if (!isMyTurn && !vsBot) return;
+
+    // Multiplayer: server is the source of truth — emit and let tictactoe:update sync state
+    if (isMultiplayer) {
+      (getSocket() as any).emit('tictactoe:move', { gameId, cell: idx });
+      return;
+    }
 
     const newBoard = [...game.board];
     newBoard[idx] = game.currentTurn;
@@ -179,9 +199,7 @@ export default function TicTacToe({ vsBot: vsBotProp, gameId }: TicTacToeProps =
       }, 400);
     }
 
-    if (room && !vsBot) {
-      getSocket().emit('tictactoe:move', { gameId: game.id, cell: idx });
-    }
+    // (legacy local broadcast removed — multiplayer handled above with isMultiplayer)
   };
 
   const winLine = game ? findWinningLine(game.board) : null;
@@ -233,21 +251,31 @@ export default function TicTacToe({ vsBot: vsBotProp, gameId }: TicTacToeProps =
   return (
     <div className="flex flex-col items-center gap-5 p-5">
       {/* Score board */}
-      <div className="flex items-center gap-3 bg-[#F8FAFF] border border-[#E2E8F0] rounded-[16px] px-5 py-3">
-        <div className="text-center min-w-[56px]">
-          <div className="text-2xl font-black text-[#2563EB]">{game.xScore}</div>
-          <div className="text-xs text-[#64748B] font-medium mt-0.5">× {vsBot ? 'Вы' : 'X'}</div>
-        </div>
-        <div className="w-px h-8 bg-[#E2E8F0]" />
-        <div className="text-center min-w-[40px]">
-          <div className="text-sm text-[#94A3B8] font-medium">VS</div>
-        </div>
-        <div className="w-px h-8 bg-[#E2E8F0]" />
-        <div className="text-center min-w-[56px]">
-          <div className="text-2xl font-black text-[#E11D48]">{game.oScore}</div>
-          <div className="text-xs text-[#64748B] font-medium mt-0.5">○ {vsBot ? 'Бот' : 'O'}</div>
-        </div>
-      </div>
+      {(() => {
+        const myId = currentUser?.id || 'player1';
+        const iAmX = game.xPlayerId === myId;
+        // In multiplayer label the opposite side with opponent's name if available
+        const opp = room?.participants.find(p => p.id === (iAmX ? game.oPlayerId : game.xPlayerId));
+        const xLabel = isMultiplayer ? (iAmX ? 'Вы' : (opp?.name || 'Соперник')) : (vsBot ? 'Вы' : 'X');
+        const oLabel = isMultiplayer ? (iAmX ? (opp?.name || 'Соперник') : 'Вы') : (vsBot ? 'Бот' : 'O');
+        return (
+          <div className="flex items-center gap-3 bg-[#F8FAFF] border border-[#E2E8F0] rounded-[16px] px-5 py-3">
+            <div className="text-center min-w-[56px]">
+              <div className="text-2xl font-black text-[#2563EB]">{game.xScore}</div>
+              <div className="text-xs text-[#64748B] font-medium mt-0.5 truncate max-w-[80px]">× {xLabel}</div>
+            </div>
+            <div className="w-px h-8 bg-[#E2E8F0]" />
+            <div className="text-center min-w-[40px]">
+              <div className="text-sm text-[#94A3B8] font-medium">VS</div>
+            </div>
+            <div className="w-px h-8 bg-[#E2E8F0]" />
+            <div className="text-center min-w-[56px]">
+              <div className="text-2xl font-black text-[#E11D48]">{game.oScore}</div>
+              <div className="text-xs text-[#64748B] font-medium mt-0.5 truncate max-w-[80px]">○ {oLabel}</div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Status */}
       <AnimatePresence mode="wait">
@@ -285,7 +313,16 @@ export default function TicTacToe({ vsBot: vsBotProp, gameId }: TicTacToeProps =
                 : 'bg-[#FFF1F2] border-[#FECDD3] text-[#E11D48]'
             )}
           >
-            Ход: <span className="font-bold">{game.currentTurn === 'X' ? (vsBot ? 'Вы (×)' : '× X') : (vsBot ? 'Бот (○)' : '○ O')}</span>
+            {(() => {
+              const myId = currentUser?.id || 'player1';
+              const turnUser = game.currentTurn === 'X' ? game.xPlayerId : game.oPlayerId;
+              const isMyTurn = turnUser === myId;
+              if (isMultiplayer) {
+                const opp = room?.participants.find(p => p.id === turnUser);
+                return <>Ход: <span className="font-bold">{isMyTurn ? `Ваш (${game.currentTurn === 'X' ? '×' : '○'})` : `${opp?.name || 'Соперник'} (${game.currentTurn === 'X' ? '×' : '○'})`}</span></>;
+              }
+              return <>Ход: <span className="font-bold">{game.currentTurn === 'X' ? (vsBot ? 'Вы (×)' : '× X') : (vsBot ? 'Бот (○)' : '○ O')}</span></>;
+            })()}
           </motion.div>
         )}
       </AnimatePresence>
@@ -338,7 +375,13 @@ export default function TicTacToe({ vsBot: vsBotProp, gameId }: TicTacToeProps =
 
       {/* Actions */}
       <div className="flex gap-2 w-full max-w-[304px]">
-        <Button className="flex-1" onClick={() => startNewGame(vsBot)}>Реванш</Button>
+        <Button className="flex-1" onClick={() => {
+          if (isMultiplayer && gameId) {
+            (getSocket() as any).emit('tictactoe:rematch', { gameId });
+          } else {
+            startNewGame(vsBot);
+          }
+        }}>Реванш</Button>
         <Button variant="ghost" onClick={() => { setLocalGame(null); setTicTacToeGame(null); }}>
           Выйти
         </Button>

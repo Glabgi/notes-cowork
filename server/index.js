@@ -390,7 +390,10 @@ io.on('connection', (socket) => {
   // Chess
   socket.on('chess:move', ({ gameId, move }) => {
     const game = games.get(gameId);
-    if (!game) return;
+    if (!game || game.type !== 'chess') return;
+    // Only the player whose turn it is may move
+    const expectedUser = game.turn === 'w' ? game.white : game.black;
+    if (expectedUser !== currentUserId) return;
 
     try {
       const chess = new Chess(game.fen);
@@ -400,21 +403,46 @@ io.on('connection', (socket) => {
       game.fen = chess.fen();
       game.pgn = chess.pgn();
       game.turn = chess.turn();
+      game.lastMove = { from: result.from, to: result.to };
 
-      if (chess.isCheckmate()) game.status = 'checkmate';
-      else if (chess.isDraw()) game.status = 'draw';
+      if (chess.isCheckmate())      { game.status = 'checkmate'; game.winner = result.color === 'w' ? game.white : game.black; }
+      else if (chess.isStalemate()) { game.status = 'stalemate'; }
+      else if (chess.isDraw())      { game.status = 'draw'; }
+      else if (chess.isCheck())     { game.status = 'check'; }
+      else                          { game.status = 'active'; }
 
-      io.to(game.roomId).emit('chess:update', game);
+      io.to('game:' + gameId).emit('chess:update', game);
     } catch (e) {
       console.error('Chess move error:', e);
     }
   });
 
+  // Chess: rematch (alternates colors)
+  socket.on('chess:rematch', ({ gameId }) => {
+    const game = games.get(gameId);
+    if (!game || game.type !== 'chess') return;
+    // Swap colors
+    const oldWhite = game.white;
+    game.white = game.black;
+    game.black = oldWhite;
+    game.fen = new Chess().fen();
+    game.turn = 'w';
+    game.status = 'active';
+    game.lastMove = null;
+    game.winner = null;
+    io.to('game:' + gameId).emit('chess:update', game);
+  });
+
   // TicTacToe
   socket.on('tictactoe:move', ({ gameId, cell }) => {
     const game = games.get(gameId);
-    if (!game) return;
+    if (!game || game.type !== 'tictactoe') return;
+    if (game.status === 'finished') return;
+    if (typeof cell !== 'number' || cell < 0 || cell > 8) return;
     if (game.board[cell] !== null) return;
+    // Validate: only the player whose turn it is may move
+    const expectedUser = game.currentTurn === 'X' ? game.playerX : game.playerO;
+    if (expectedUser !== currentUserId) return;
 
     const symbol = game.currentTurn;
     game.board[cell] = symbol;
@@ -445,39 +473,88 @@ io.on('connection', (socket) => {
       game.currentTurn = symbol === 'X' ? 'O' : 'X';
     }
 
-    io.to(game.roomId).emit('tictactoe:update', game);
+    io.to('game:' + gameId).emit('tictactoe:update', game);
   });
 
-  // Battleship
+  // TicTacToe: rematch — swap sides
+  socket.on('tictactoe:rematch', ({ gameId }) => {
+    const game = games.get(gameId);
+    if (!game || game.type !== 'tictactoe') return;
+    const oldX = game.playerX;
+    game.playerX = game.playerO;
+    game.playerO = oldX;
+    game.board = Array(9).fill(null);
+    game.currentTurn = 'X';
+    game.winner = null;
+    game.status = 'playing';
+    io.to('game:' + gameId).emit('tictactoe:update', game);
+  });
+
+  // Battleship — strip private opponent ship positions before broadcasting
+  function publicBattleshipView(game, viewerId) {
+    const cloneSide = (side, isMe) => ({
+      id: side.id,
+      ready: side.ready,
+      board: side.board,
+      shipsLeft: side.ships.filter(s => !s.sunk).length,
+      // Only show ship positions to their owner; opponents see only board cells
+      ships: isMe ? side.ships : side.ships.filter(s => s.sunk),
+    });
+    return {
+      id: game.id,
+      roomId: game.roomId,
+      type: 'battleship',
+      status: game.status,
+      currentTurn: game.currentTurn,
+      winner: game.winner,
+      me:       cloneSide(game.player1.id === viewerId ? game.player1 : game.player2, true),
+      opponent: cloneSide(game.player1.id === viewerId ? game.player2 : game.player1, false),
+    };
+  }
+
+  function broadcastBattleship(game) {
+    const room = rooms.get(game.roomId);
+    if (!room) return;
+    [game.player1, game.player2].forEach(side => {
+      const p = room.participants.find(pp => pp.id === side.id);
+      if (p?.socketId) {
+        io.to(p.socketId).emit('battleship:update', publicBattleshipView(game, side.id));
+      }
+    });
+  }
+
   socket.on('battleship:ready', ({ gameId, ships }) => {
     const game = games.get(gameId);
-    if (!game) return;
+    if (!game || game.type !== 'battleship') return;
+    if (game.player1.id !== currentUserId && game.player2.id !== currentUserId) return;
 
-    if (game.player1.id === currentUserId) {
-      game.player1.ships = ships;
-      game.player1.ready = true;
-    } else {
-      game.player2.ships = ships;
-      game.player2.ready = true;
-    }
+    const side = game.player1.id === currentUserId ? game.player1 : game.player2;
+    side.ships = ships;
+    side.ready = true;
+    // Mark ship cells on private board for owner reference
+    side.board = Array(100).fill('empty');
+    ships.forEach(s => s.positions.forEach(p => { side.board[p] = 'ship'; }));
 
     if (game.player1.ready && game.player2.ready) {
       game.status = 'active';
     }
 
-    io.to(game.roomId).emit('battleship:update', game);
+    broadcastBattleship(game);
   });
 
   socket.on('battleship:shoot', ({ gameId, cell }) => {
     const game = games.get(gameId);
-    if (!game || game.currentTurn !== currentUserId) return;
+    if (!game || game.type !== 'battleship') return;
+    if (game.currentTurn !== currentUserId) return;
+    if (game.status !== 'active') return;
 
     const opponent = game.player1.id === currentUserId ? game.player2 : game.player1;
+    if (opponent.board[cell] === 'hit' || opponent.board[cell] === 'miss' || opponent.board[cell] === 'sunk') return;
+
     const isHit = opponent.ships.some(ship => ship.positions.includes(cell));
 
     if (isHit) {
       opponent.board[cell] = 'hit';
-      // Check if ship is sunk
       opponent.ships.forEach(ship => {
         if (ship.positions.includes(cell)) {
           ship.hits.push(cell);
@@ -488,18 +565,33 @@ io.on('connection', (socket) => {
         }
       });
 
-      // Check win condition
       if (opponent.ships.every(s => s.sunk)) {
         game.status = 'finished';
         game.winner = currentUserId;
       }
     } else {
       opponent.board[cell] = 'miss';
-      // Switch turn
-      game.currentTurn = opponent.id;
+      game.currentTurn = opponent.id; // switch turn
     }
 
-    io.to(game.roomId).emit('battleship:update', game);
+    broadcastBattleship(game);
+  });
+
+  // Battleship: rematch — fresh boards, alternate first turn
+  socket.on('battleship:rematch', ({ gameId }) => {
+    const game = games.get(gameId);
+    if (!game || game.type !== 'battleship') return;
+    game.player1.ships = [];
+    game.player1.ready = false;
+    game.player1.board = Array(100).fill('empty');
+    game.player2.ships = [];
+    game.player2.ready = false;
+    game.player2.board = Array(100).fill('empty');
+    game.status = 'setup';
+    game.winner = null;
+    // Alternate first turn
+    game.currentTurn = game.currentTurn === game.player1.id ? game.player2.id : game.player1.id;
+    broadcastBattleship(game);
   });
 
   socket.on('disconnect', () => {
