@@ -43,17 +43,26 @@ export const supabase: SupabaseClient = new Proxy({} as SupabaseClient, {
 
 /* ─── AUTH ──────────────────────────────────────────────────────────────── */
 
-export async function signUp(params: { email: string; password: string; username: string; avatarId?: string }) {
-  const { email, password, username, avatarId } = params;
+// Supabase requires email format — we synthesize one from the username
+// so the user only sees "Login + Password" UX. The "@" makes it valid; the
+// domain is non-routable so password reset is impossible by design.
+const SYNTH_DOMAIN = 'notes-cowork.local';
+const usernameToEmail = (u: string) => `${u.trim().toLowerCase().replace(/[^a-z0-9_.-]/g, '')}@${SYNTH_DOMAIN}`;
+
+export async function signUp(params: { username: string; password: string; avatarId?: string }) {
+  const { username, password, avatarId } = params;
   return supabase.auth.signUp({
-    email,
+    email: usernameToEmail(username),
     password,
-    options: { data: { username, avatar_id: avatarId || 'fox' } },
+    options: { data: { username: username.trim(), avatar_id: avatarId || 'fox' } },
   });
 }
 
-export async function signIn(email: string, password: string) {
-  return supabase.auth.signInWithPassword({ email, password });
+export async function signIn(username: string, password: string) {
+  return supabase.auth.signInWithPassword({
+    email: usernameToEmail(username),
+    password,
+  });
 }
 
 export async function signOut() {

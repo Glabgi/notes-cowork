@@ -6,6 +6,7 @@ import {
   ArrowLeft, Bell, Palette, Volume2, User, Check, Settings as SettingsIcon,
   Coffee, TreePine, Wind, VolumeX, AlertTriangle, BarChart3, Calendar, Home,
 } from 'lucide-react';
+import AppHeader from '@/components/AppHeader';
 import { useSettingsStore } from '@/store/settingsStore';
 import { AVATARS, getAvatarSvg } from '@/lib/avatars';
 import Button from '@/components/ui/Button';
@@ -95,30 +96,69 @@ export default function SettingsPage() {
   const s = useSettingsStore();
   const [notifBlocked, setNotifBlocked] = useState(false);
 
+  // Pull initial name/avatar from vc_user on first load (so settings shows current session identity)
   useEffect(() => {
+    try {
+      const stored = localStorage.getItem('vc_user');
+      if (stored) {
+        const u = JSON.parse(stored);
+        if (u.name && !s.userName) s.setUserName(u.name);
+        if (u.avatarId && s.avatarId === 'fox') s.setAvatarId(u.avatarId);
+      }
+    } catch {}
     if (typeof window !== 'undefined' && 'Notification' in window) {
       setNotifBlocked(window.Notification.permission === 'denied');
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const requestNotifications = async () => {
-    if (typeof window !== 'undefined' && 'Notification' in window) {
-      const perm = await window.Notification.requestPermission();
-      s.setPushNotifications(perm === 'granted');
-      setNotifBlocked(perm === 'denied');
+  // Sync name + avatar to vc_user (so room joins reflect changes immediately)
+  useEffect(() => {
+    if (!s.userName) return;
+    try {
+      const stored = localStorage.getItem('vc_user');
+      const u = stored ? JSON.parse(stored) : {};
+      const updated = { ...u, name: s.userName, avatarId: s.avatarId };
+      if (!updated.id) {
+        // Generate stable id if missing (anonymous flow)
+        updated.id = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2);
+      }
+      localStorage.setItem('vc_user', JSON.stringify(updated));
+    } catch {}
+  }, [s.userName, s.avatarId]);
+
+  const togglePush = async () => {
+    if (typeof window === 'undefined' || !('Notification' in window)) {
+      alert('Уведомления не поддерживаются в этом браузере');
+      return;
     }
+    // Already on → just turn off
+    if (s.pushNotifications) {
+      s.setPushNotifications(false);
+      return;
+    }
+    // Off → request permission
+    const current = window.Notification.permission;
+    if (current === 'denied') {
+      setNotifBlocked(true);
+      alert('Уведомления заблокированы в настройках браузера. Разрешите их и перезагрузите страницу.');
+      return;
+    }
+    if (current === 'granted') {
+      s.setPushNotifications(true);
+      return;
+    }
+    // 'default' → ask
+    const perm = await window.Notification.requestPermission();
+    s.setPushNotifications(perm === 'granted');
+    setNotifBlocked(perm === 'denied');
   };
 
   return (
     <div className="min-h-screen bg-[var(--bg-page)]">
-      <header className="sticky top-0 z-10 h-14 bg-[var(--bg-card)]/95 backdrop-blur-sm border-b border-[var(--border)] flex items-center px-4 gap-3">
-        <Button variant="ghost" size="sm" onClick={() => router.back()}>
-          <ArrowLeft size={15} /> Назад
-        </Button>
-        <h1 className="font-bold text-[var(--text-primary)] flex items-center gap-2"><SettingsIcon size={16} className="text-[var(--accent)]" /> Настройки</h1>
-      </header>
+      <AppHeader title="Настройки" />
 
-      <div className="max-w-xl mx-auto p-4 space-y-4 pb-12">
+      <div className="max-w-xl mx-auto px-6 sm:px-8 py-4 space-y-4 pb-12">
 
         {/* Profile */}
         <Section icon={User} title="Профиль" delay={0}>
@@ -236,10 +276,7 @@ export default function SettingsPage() {
               <p className="text-sm font-medium text-[var(--text-primary)]">Push-уведомления</p>
               <p className="text-xs text-[var(--text-muted)] mt-0.5">При переключении фаз таймера</p>
             </div>
-            <Toggle on={s.pushNotifications} onToggle={() => {
-              if (!s.pushNotifications) requestNotifications();
-              else s.setPushNotifications(false);
-            }} />
+            <Toggle on={s.pushNotifications} onToggle={togglePush} />
           </div>
           {notifBlocked && (
             <div className="text-xs text-[#B45309] bg-[#FFFBEB] border border-[#FDE68A] rounded-[10px] px-3 py-2.5 flex items-start gap-2">

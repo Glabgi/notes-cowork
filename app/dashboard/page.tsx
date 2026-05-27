@@ -16,6 +16,7 @@ import {
   Briefcase, GraduationCap, Home, Palette, FolderOpen, ListChecks, Trophy,
   Tag, Castle,
 } from 'lucide-react';
+import AppHeader from '@/components/AppHeader';
 
 type AchievementMeta = {
   id: string;
@@ -151,34 +152,9 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-[var(--bg-page)]">
-      {/* Header */}
-      <header className="sticky top-0 z-10 h-14 bg-[var(--bg-card)]/95 backdrop-blur-sm border-b border-[var(--border)] flex items-center px-4 gap-3">
-        <Button variant="ghost" size="sm" onClick={() => router.back()}>
-          <ArrowLeft size={15} /> Назад
-        </Button>
-        <h1 className="font-bold text-[var(--text-primary)] flex items-center gap-2">
-          <BarChart3 size={16} className="text-[var(--accent)]" /> Мой прогресс
-          {user && profile && (
-            <span className="text-xs font-normal text-[var(--text-muted)] ml-1">· {profile.username}</span>
-          )}
-        </h1>
-        <div className="ml-auto flex gap-2">
-          {!user && (
-            <Button variant="outline" size="sm" onClick={() => router.push('/login')}>
-              Войти, чтобы сохранять
-            </Button>
-          )}
-          <Button variant="ghost" size="sm" onClick={() => router.push('/schedule')}>
-            <Calendar size={14} />
-            <span className="hidden sm:inline">Расписание</span>
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => router.push('/settings')}>
-            <Settings size={14} />
-          </Button>
-        </div>
-      </header>
+      <AppHeader title="Мой прогресс" showDashboard={false} />
 
-      <div className="max-w-3xl mx-auto px-4 py-6 space-y-5">
+      <div className="max-w-3xl mx-auto px-6 sm:px-8 py-6 space-y-5">
         {/* Top stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <StatCard Icon={Timer}        label="Помидорок" value={pomodoroCount}                sub="всего завершено" delay={0} />

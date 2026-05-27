@@ -20,14 +20,20 @@ const rooms = new Map(); // slug -> room
 const games = new Map(); // gameId -> game
 const timers = new Map(); // roomId -> timer interval
 
-function getOrCreateRoom(slug) {
+function getOrCreateRoom(slug, config) {
   if (!rooms.has(slug)) {
     rooms.set(slug, {
       id: slug,
       slug,
-      name: slug,
+      name: (config && config.name) || slug,
+      isPrivate: !!(config && config.isPrivate),
+      isPublic:  !!(config && config.isPublic),
+      password:  (config && config.password) || null,
+      maxParticipants: (config && config.maxParticipants) || 50,
+      ownerId: (config && config.ownerId) || null,
       participants: [],
       messages: [],
+      gamePairs: {}, // key: sorted "userA|userB" → { chess: 'a'|'b', ttt: 'a'|'b', battleship: 'a'|'b' } last-starter
       timerMode: 'group',
       createdAt: Date.now(),
       timer: {
@@ -118,19 +124,37 @@ io.on('connection', (socket) => {
   let currentRoom = null;
   let currentUserId = null;
 
-  socket.on('room:join', ({ slug, participant }) => {
-    const room = getOrCreateRoom(slug);
+  socket.on('room:join', ({ slug, participant, roomConfig, password }, ack) => {
+    const existed = rooms.has(slug);
+    const room = getOrCreateRoom(slug, roomConfig);
+
+    // First-joiner becomes owner; their config is applied
+    if (!existed && roomConfig) {
+      room.ownerId = participant.id;
+      participant.isOwner = true;
+    }
+
+    // Password check for private rooms
+    if (room.isPrivate && room.ownerId !== participant.id) {
+      if (!room.password || room.password !== password) {
+        if (typeof ack === 'function') ack({ ok: false, error: 'invalid_password' });
+        socket.emit('room:join-error', { reason: 'invalid_password' });
+        return;
+      }
+    }
 
     // Remove old connection for same user if any
     room.participants = room.participants.filter(p => p.id !== participant.id);
 
-    const fullParticipant = { ...participant, socketId: socket.id };
+    const fullParticipant = { ...participant, socketId: socket.id, isOwner: participant.id === room.ownerId };
     room.participants.push(fullParticipant);
 
     currentRoom = slug;
     currentUserId = participant.id;
 
     socket.join(slug);
+
+    if (typeof ack === 'function') ack({ ok: true });
 
     // Send current state
     socket.emit('room:state', {
@@ -264,25 +288,103 @@ io.on('connection', (socket) => {
 
   // Game events
   socket.on('game:invite', (invite) => {
-    const fullInvite = { ...invite, id: uuidv4(), createdAt: Date.now() };
+    const fullInvite = {
+      ...invite,
+      id: uuidv4(),
+      fromUserId: currentUserId,
+      createdAt: Date.now(),
+    };
+    const room = rooms.get(invite.roomId);
+    if (!room) return;
+    const fromP = room.participants.find(p => p.id === currentUserId);
+    if (fromP) {
+      fullInvite.fromUserName = fromP.name;
+      fullInvite.fromUserAvatarId = fromP.avatarId;
+    }
     if (invite.toUserId) {
-      const room = rooms.get(invite.roomId);
-      if (room) {
-        const target = room.participants.find(p => p.id === invite.toUserId);
-        if (target?.socketId) {
-          io.to(target.socketId).emit('game:invite', fullInvite);
-        }
-      }
+      const target = room.participants.find(p => p.id === invite.toUserId);
+      if (target?.socketId) io.to(target.socketId).emit('game:invite', fullInvite);
     } else {
       socket.to(invite.roomId).emit('game:invite', fullInvite);
     }
   });
 
-  socket.on('game:accept', ({ inviteId, roomId }) => {
-    // Game creation would happen here
-    // For now, emit a start event
+  socket.on('game:decline', ({ inviteId, fromUserId, roomId }) => {
+    const room = rooms.get(roomId);
+    if (!room) return;
+    const target = room.participants.find(p => p.id === fromUserId);
+    if (target?.socketId) {
+      io.to(target.socketId).emit('game:declined', { inviteId, byUserId: currentUserId });
+    }
+  });
+
+  // Helper: determine starter side based on previous pair history
+  function pickStarter(room, userA, userB, gameType) {
+    const key = [userA, userB].sort().join('|');
+    if (!room.gamePairs[key]) room.gamePairs[key] = {};
+    const last = room.gamePairs[key][gameType];
+    let starter;
+    if (!last) {
+      starter = [userA, userB].sort()[0]; // deterministic first time
+    } else {
+      // Alternate
+      starter = last === userA ? userB : userA;
+    }
+    room.gamePairs[key][gameType] = starter;
+    return starter;
+  }
+
+  socket.on('game:accept', ({ inviteId, roomId, fromUserId, gameType }) => {
+    const room = rooms.get(roomId);
+    if (!room) return;
+    const userA = fromUserId;          // inviter
+    const userB = currentUserId;       // accepter
     const gameId = uuidv4();
-    socket.to(roomId).emit('game:start', { gameType: 'tictactoe', gameId });
+
+    if (gameType === 'chess') {
+      const starter = pickStarter(room, userA, userB, 'chess');
+      const game = {
+        id: gameId, roomId, type: 'chess',
+        white: starter,                          // white moves first
+        black: starter === userA ? userB : userA,
+        fen: new Chess().fen(),
+        turn: 'w',
+        status: 'active',
+        createdAt: Date.now(),
+      };
+      games.set(gameId, game);
+    } else if (gameType === 'tictactoe') {
+      const starter = pickStarter(room, userA, userB, 'tictactoe');
+      const game = {
+        id: gameId, roomId, type: 'tictactoe',
+        playerX: starter,
+        playerO: starter === userA ? userB : userA,
+        board: Array(9).fill(null),
+        currentTurn: 'X',
+        xScore: 0, oScore: 0,
+        status: 'playing', winner: null,
+        createdAt: Date.now(),
+      };
+      games.set(gameId, game);
+    } else if (gameType === 'battleship') {
+      const starter = pickStarter(room, userA, userB, 'battleship');
+      const game = {
+        id: gameId, roomId, type: 'battleship',
+        player1: { id: userA, ships: [], board: Array(100).fill('empty'), ready: false },
+        player2: { id: userB, ships: [], board: Array(100).fill('empty'), ready: false },
+        currentTurn: starter,
+        status: 'setup', winner: null,
+        createdAt: Date.now(),
+      };
+      games.set(gameId, game);
+    }
+
+    // Both players join a game-specific room and get start event
+    const inviterSocket = room.participants.find(p => p.id === userA)?.socketId;
+    const accepterSocket = socket.id;
+    if (inviterSocket) io.sockets.sockets.get(inviterSocket)?.join('game:' + gameId);
+    socket.join('game:' + gameId);
+    io.to('game:' + gameId).emit('game:start', { gameType, gameId, game: games.get(gameId) });
   });
 
   // Chess
@@ -427,10 +529,10 @@ io.on('connection', (socket) => {
 
 app.get('/health', (_, res) => res.json({ status: 'ok', rooms: rooms.size }));
 
-// REST: list active rooms (for homepage)
+// REST: list active rooms (for homepage) — only public ones
 app.get('/rooms', (_, res) => {
   const active = Array.from(rooms.values())
-    .filter(r => r.participants.length > 0)
+    .filter(r => r.participants.length > 0 && r.isPublic !== false && !r.isPrivate)
     .map(r => ({
       slug: r.slug,
       name: r.name,
@@ -440,6 +542,19 @@ app.get('/rooms', (_, res) => {
     }))
     .slice(0, 20);
   res.json(active);
+});
+
+// REST: check room info (visibility / privacy) before joining
+app.get('/rooms/:slug', (req, res) => {
+  const room = rooms.get(req.params.slug);
+  if (!room) return res.json({ exists: false });
+  res.json({
+    exists: true,
+    name: room.name,
+    isPrivate: !!room.isPrivate,
+    isPublic: !!room.isPublic,
+    participantCount: room.participants.length,
+  });
 });
 
 const PORT = process.env.SOCKET_PORT || 3001;

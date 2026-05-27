@@ -66,6 +66,8 @@ export const useRoomStore = create<RoomState>()(
 
     addMessage: (message) =>
       set((state) => {
+        // Dedupe by id (server may broadcast or component may double-register on reconnect)
+        if (state.messages.find(m => m.id === message.id)) return;
         state.messages.push(message);
         if (state.messages.length > 200) {
           state.messages = state.messages.slice(-200);

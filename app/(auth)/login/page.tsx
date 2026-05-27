@@ -10,7 +10,7 @@ import { signIn, isSupabaseConfigured } from '@/lib/supabase';
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [err, setErr] = useState('');
   const [loading, setLoading] = useState(false);
@@ -19,13 +19,14 @@ export default function LoginPage() {
     e.preventDefault();
     setErr('');
     if (!isSupabaseConfigured) {
-      setErr('Supabase не настроен. Заполните NEXT_PUBLIC_SUPABASE_URL и NEXT_PUBLIC_SUPABASE_ANON_KEY.');
+      setErr('БД не настроена. Заполните NEXT_PUBLIC_SUPABASE_* и примените supabase/schema.sql.');
       return;
     }
+    if (!username.trim() || !password.trim()) { setErr('Введите логин и пароль'); return; }
     setLoading(true);
-    const { error } = await signIn(email.trim(), password);
+    const { error } = await signIn(username.trim(), password);
     setLoading(false);
-    if (error) { setErr(error.message); return; }
+    if (error) { setErr('Неверный логин или пароль'); return; }
     router.push('/dashboard');
   };
 
@@ -38,12 +39,12 @@ export default function LoginPage() {
               <LogIn size={24} className="text-[var(--accent)]" />
             </div>
             <h2 className="text-xl font-bold text-[var(--text-primary)]">Вход в Notes Cowork</h2>
-            <p className="text-[var(--text-muted)] text-sm mt-1">Войдите, чтобы сохранять прогресс</p>
+            <p className="text-[var(--text-muted)] text-sm mt-1">Только логин и пароль — никаких данных</p>
           </div>
 
           <form onSubmit={submit} className="space-y-5">
-            <Input label="Email" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" autoFocus required />
-            <Input label="Пароль" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" required />
+            <Input label="Логин" value={username} onChange={e => setUsername(e.target.value)} placeholder="Ваш логин" autoFocus required autoComplete="username" />
+            <Input label="Пароль" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" required autoComplete="current-password" />
 
             {err && (
               <p className="text-sm text-[#DC2626] bg-[#FEF2F2] border border-[#FECACA] rounded-[10px] px-3 py-2 flex items-start gap-2">

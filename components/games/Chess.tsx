@@ -32,6 +32,9 @@ export default function ChessGame() {
   const [promotionPending, setPromotionPending] = useState<string | null>(null);
   const [vsBot, setVsBot] = useState(true);
   const [gameOver, setGameOver] = useState(false);
+  // Player color alternates each new game ('w' = player plays white, 'b' = black)
+  const [playerColor, setPlayerColor] = useState<'w' | 'b'>('w');
+  const flipped = playerColor === 'b';
 
   const updateGame = useCallback(() => {
     setBoard(engine.board());
@@ -50,7 +53,9 @@ export default function ChessGame() {
   }, [engine]);
 
   const makeBotMove = useCallback(() => {
-    if (engine.turn() !== 'b' || engine.isGameOver()) return;
+    // Bot plays the opposite color of the player
+    const botColor = playerColor === 'w' ? 'b' : 'w';
+    if (engine.turn() !== botColor || engine.isGameOver()) return;
     const moves = engine.moves();
     if (!moves.length) return;
     const captures = moves.filter(m => m.includes('x'));
@@ -67,15 +72,17 @@ export default function ChessGame() {
   }, [engine, updateGame]);
 
   useEffect(() => {
-    if (vsBot && engine.turn() === 'b' && !engine.isGameOver()) {
+    const botColor = playerColor === 'w' ? 'b' : 'w';
+    if (vsBot && engine.turn() === botColor && !engine.isGameOver()) {
       const t = setTimeout(makeBotMove, 500);
       return () => clearTimeout(t);
     }
-  }, [board, vsBot, makeBotMove, engine]);
+  }, [board, vsBot, playerColor, makeBotMove, engine]);
 
   const handleCellClick = (rank: number, file: number) => {
     if (gameOver) return;
-    if (vsBot && engine.turn() === 'b') return;
+    const botColor = playerColor === 'w' ? 'b' : 'w';
+    if (vsBot && engine.turn() === botColor) return;
     const square = FILES[file] + RANKS[rank] as any;
     const piece = engine.get(square);
 
@@ -118,6 +125,8 @@ export default function ChessGame() {
   const resetGame = () => {
     engine.reset(); updateGame(); setSelected(null); setLegalMoves([]);
     setGameOver(false); setPromotionPending(null);
+    // Alternate player color each new game
+    setPlayerColor(prev => (prev === 'w' ? 'b' : 'w'));
   };
 
   const lastMoveSquares = engine.history({ verbose: true }).slice(-1)[0];

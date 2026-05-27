@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRoomStore } from '@/store/roomStore';
 import { useGameStore } from '@/store/gameStore';
@@ -67,11 +67,18 @@ function getBestMove(board: TicTacToeCell[]): number {
   return bestMove;
 }
 
-export default function TicTacToe() {
+interface TicTacToeProps {
+  vsBot?: boolean;       // when set, skip the mode picker and auto-start vs bot
+  gameId?: string | null; // multiplayer game id (server-driven)
+}
+
+export default function TicTacToe({ vsBot: vsBotProp, gameId }: TicTacToeProps = {}) {
   const { room, currentUser } = useRoomStore();
   const { tictactoeGame, setTicTacToeGame } = useGameStore();
   const [localGame, setLocalGame] = useState<TicTacToeGame | null>(null);
-  const [vsBot, setVsBot] = useState(false);
+  const [vsBot, setVsBot] = useState(!!vsBotProp);
+  // Tracks who started the last finished game — for alternating sides on rematch
+  const lastStarterRef = useRef<'me' | 'them'>('me');
 
   const game = tictactoeGame || localGame;
 
@@ -81,12 +88,21 @@ export default function TicTacToe() {
     return () => { socket.off('tictactoe:update'); };
   }, []);
 
+  // Auto-start vs bot when GameZone passes vsBot prop
+  useEffect(() => {
+    if (vsBotProp && !game) startNewGame(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vsBotProp]);
+
   const startNewGame = (bot = false) => {
+    // Alternating sides: previous game's starter becomes the other side
+    const meStartsThisTime = lastStarterRef.current === 'them';
+    lastStarterRef.current = meStartsThisTime ? 'me' : 'them';
     const newGame: TicTacToeGame = {
       id: uuidv4(),
       roomId: room?.slug || 'local',
-      xPlayerId: currentUser?.id || 'player1',
-      oPlayerId: bot ? 'bot' : 'player2',
+      xPlayerId: meStartsThisTime ? (currentUser?.id || 'player1') : (bot ? 'bot' : 'player2'),
+      oPlayerId: meStartsThisTime ? (bot ? 'bot' : 'player2') : (currentUser?.id || 'player1'),
       board: Array(9).fill(null),
       currentTurn: 'X',
       winner: null,

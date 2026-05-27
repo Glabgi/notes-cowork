@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Anchor, Dice5, ArrowRight, Trophy, Skull, X as XIcon, Hourglass } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -154,6 +154,8 @@ export default function Battleship() {
   const [opponentShips, setOpponentShips] = useState<Ship[]>([]);
   const [isMyTurn, setIsMyTurn] = useState(true);
   const [winner, setWinner] = useState<'me' | 'opponent' | null>(null);
+  // Tracks who got the first shot last game — alternates next game
+  const lastFirstRef = useRef<'me' | 'opponent'>('opponent');
 
   const handleRandomPlace = () => {
     const ships = randomPlacement();
@@ -169,7 +171,14 @@ export default function Battleship() {
     setOpponentShips(oppShips);
     setOpponentBoard(createEmptyBoard());
     setPhase('playing');
-    setIsMyTurn(true);
+    // Alternate first move each new game
+    const meStartsThisTime = lastFirstRef.current === 'opponent';
+    lastFirstRef.current = meStartsThisTime ? 'me' : 'opponent';
+    setIsMyTurn(meStartsThisTime);
+    if (!meStartsThisTime) {
+      // Bot fires first after a brief delay
+      setTimeout(() => botShoot(ships), 700);
+    }
     setWinner(null);
   };
 

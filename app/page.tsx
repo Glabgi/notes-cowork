@@ -14,6 +14,7 @@ import { Settings, Calendar, Plus, ArrowRight, AlertTriangle, Home, LogIn, LogOu
 import { useAuth } from '@/components/AuthProvider';
 import { signOut, isSupabaseConfigured } from '@/lib/supabase';
 import { getAvatarSvg as getAvatarSvgHeader } from '@/lib/avatars';
+import AppHeader from '@/components/AppHeader';
 
 /* ─── Types ─────────────────────────────────────────────────────────── */
 interface ActiveRoom {
@@ -58,7 +59,8 @@ function CreateRoomModal({ open, onClose }: { open: boolean; onClose: () => void
   const [name, setName] = useState('');
   const [avatarId, setAvatarId] = useState('fox');
   const [roomName, setRoomName] = useState('');
-  const [isPrivate, setIsPrivate] = useState(false);
+  const [visibility, setVisibility] = useState<'public' | 'private'>('public');
+  const [password, setPassword] = useState('');
   const [maxParticipants, setMaxParticipants] = useState(10);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -72,14 +74,26 @@ function CreateRoomModal({ open, onClose }: { open: boolean; onClose: () => void
     } catch {}
   }, [open]);
 
+  const isPrivate = visibility === 'private';
+
   const handleCreate = () => {
     if (!name.trim()) { setError('Введите ваше имя'); return; }
     if (!roomName.trim()) { setError('Введите название комнаты'); return; }
+    if (isPrivate && !password.trim()) { setError('Для приватной сессии задайте пароль'); return; }
     setLoading(true);
     const slug = generateSlug();
     const userId = uuidv4();
     localStorage.setItem('vc_user', JSON.stringify({ id: userId, name: name.trim(), avatarId }));
-    localStorage.setItem('vc_create_room', JSON.stringify({ slug, name: roomName.trim(), isPrivate, maxParticipants }));
+    localStorage.setItem('vc_create_room', JSON.stringify({
+      slug, name: roomName.trim(),
+      isPrivate, isPublic: !isPrivate,
+      password: isPrivate ? password.trim() : null,
+      maxParticipants,
+    }));
+    if (isPrivate) {
+      // Save the password so creator doesn't get prompted
+      try { sessionStorage.setItem('vc_room_pw_' + slug, password.trim()); } catch {}
+    }
     // Save to recent rooms
     try {
       const recent = JSON.parse(localStorage.getItem('vc_recent_rooms') || '[]');
@@ -131,31 +145,66 @@ function CreateRoomModal({ open, onClose }: { open: boolean; onClose: () => void
           </div>
         </div>
 
-        {/* Options row */}
-        <div className="flex items-center gap-4">
-          <label className="flex items-center gap-2 cursor-pointer select-none">
+        {/* Visibility radio */}
+        <div>
+          <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">Доступ</label>
+          <div className="grid grid-cols-2 gap-2">
             <button
               type="button"
-              onClick={() => setIsPrivate(!isPrivate)}
-              className={cn('relative w-9 h-5 rounded-full transition-colors duration-150',
-                isPrivate ? 'bg-[var(--accent)]' : 'bg-[var(--border)]'
+              onClick={() => setVisibility('public')}
+              className={cn(
+                'flex flex-col items-start gap-1 p-3 rounded-[12px] border-2 transition-all duration-150 text-left',
+                visibility === 'public'
+                  ? 'border-[var(--accent)] bg-[var(--accent-light)]'
+                  : 'border-[var(--border)] bg-[var(--bg-card)] hover:border-[var(--border-strong)]'
               )}
             >
-              <span className={cn('absolute top-0.5 w-4 h-4 bg-white rounded-full transition-transform duration-150 shadow-sm',
-                isPrivate ? 'translate-x-4' : 'translate-x-0.5')} />
+              <div className="flex items-center gap-1.5">
+                <Home size={13} className={visibility === 'public' ? 'text-[var(--accent)]' : 'text-[var(--text-secondary)]'} />
+                <span className={cn('text-sm font-semibold', visibility === 'public' ? 'text-[var(--accent)]' : 'text-[var(--text-primary)]')}>Публичная</span>
+              </div>
+              <span className="text-[10px] text-[var(--text-muted)] leading-tight">Видна на главной, открыта всем</span>
             </button>
-            <span className="text-sm text-[var(--text-secondary)]">Приватная</span>
-          </label>
-          <div className="flex items-center gap-2 ml-auto">
-            <span className="text-sm text-[var(--text-muted)]">Макс:</span>
-            <select
-              value={maxParticipants}
-              onChange={e => setMaxParticipants(+e.target.value)}
-              className="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-[8px] px-2 py-1 text-sm text-[var(--text-primary)] focus:outline-none"
+            <button
+              type="button"
+              onClick={() => setVisibility('private')}
+              className={cn(
+                'flex flex-col items-start gap-1 p-3 rounded-[12px] border-2 transition-all duration-150 text-left',
+                visibility === 'private'
+                  ? 'border-[var(--accent)] bg-[var(--accent-light)]'
+                  : 'border-[var(--border)] bg-[var(--bg-card)] hover:border-[var(--border-strong)]'
+              )}
             >
-              {[5, 10, 20, 50].map(n => <option key={n} value={n}>{n}</option>)}
-            </select>
+              <div className="flex items-center gap-1.5">
+                <Settings size={13} className={visibility === 'private' ? 'text-[var(--accent)]' : 'text-[var(--text-secondary)]'} />
+                <span className={cn('text-sm font-semibold', visibility === 'private' ? 'text-[var(--accent)]' : 'text-[var(--text-primary)]')}>Приватная</span>
+              </div>
+              <span className="text-[10px] text-[var(--text-muted)] leading-tight">Только по коду + пароль</span>
+            </button>
           </div>
+        </div>
+
+        {/* Password field — only for private */}
+        {isPrivate && (
+          <Input
+            label="Пароль сессии"
+            value={password}
+            type="password"
+            onChange={e => { setPassword(e.target.value); setError(''); }}
+            placeholder="Минимум 4 символа"
+          />
+        )}
+
+        {/* Max participants */}
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-[var(--text-secondary)] flex-1">Максимум участников</span>
+          <select
+            value={maxParticipants}
+            onChange={e => setMaxParticipants(+e.target.value)}
+            className="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-[8px] px-2 py-1 text-sm text-[var(--text-primary)] focus:outline-none"
+          >
+            {[5, 10, 20, 50].map(n => <option key={n} value={n}>{n}</option>)}
+          </select>
         </div>
 
         {error && (
@@ -318,33 +367,10 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-[var(--bg-page)]">
-      {/* Header */}
-      <header className="h-14 bg-[var(--bg-card)] border-b border-[var(--border)] flex items-center px-4 gap-3">
-        {/* Logo */}
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 bg-[var(--accent)] rounded-[8px] flex items-center justify-center flex-shrink-0">
-            <span className="text-white text-[10px] font-black leading-none">NC</span>
-          </div>
-          <div className="hidden sm:flex flex-col leading-none">
-            <span className="font-bold text-[var(--text-primary)] text-sm">Notes Cowork</span>
-            <span className="text-[10px] text-[var(--text-muted)] font-medium tracking-wide">I.C-E.F Notes project</span>
-          </div>
-        </div>
-
-        <div className="ml-auto flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => router.push('/schedule')}>
-            <Calendar size={14} />
-            <span className="hidden sm:inline">Расписание</span>
-          </Button>
-          <AuthBadge />
-          <Button variant="ghost" size="sm" onClick={() => router.push('/settings')}>
-            <Settings size={14} />
-          </Button>
-        </div>
-      </header>
+      <AppHeader showDashboard={true} />
 
       {/* Body */}
-      <main className="max-w-2xl mx-auto px-4 py-8 space-y-6">
+      <main className="max-w-2xl mx-auto px-6 sm:px-8 py-8 space-y-6">
 
         {/* Create card */}
         <button

@@ -147,6 +147,7 @@ export default function PomodoroTimer() {
           onClick={handlePlayPause}
           className="relative group rounded-full focus:outline-none focus-visible:ring-4 focus-visible:ring-[var(--accent)]/20"
           title={isRunning ? 'Пауза' : 'Запустить'}
+          style={{ width: 168, height: 168 }}
         >
           {isRunning && (
             <motion.div
@@ -156,7 +157,11 @@ export default function PomodoroTimer() {
               transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
             />
           )}
-          <svg width="168" height="168" className="rotate-[-90deg] relative">
+          {/* SVG positioned absolutely, container is the perfect square */}
+          <svg
+            width="168" height="168" viewBox="0 0 168 168"
+            className="absolute inset-0 -rotate-90"
+          >
             <circle cx="84" cy="84" r={RADIUS} fill="none" stroke="var(--border)" strokeWidth="6" />
             <motion.circle
               cx="84" cy="84" r={RADIUS}
@@ -170,25 +175,27 @@ export default function PomodoroTimer() {
               style={{ filter: isRunning ? `drop-shadow(0 0 6px ${phaseColors.stroke}60)` : 'none' }}
             />
           </svg>
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span
-              className="text-[40px] font-black tabular-nums tracking-tight transition-colors leading-none"
-              style={{ color: isRunning ? phaseColors.text : 'var(--text-primary)' }}
-            >
-              {formatTime(timeLeft)}
-            </span>
-            <span
-              className="text-[10px] font-semibold uppercase tracking-[0.2em] mt-1 transition-colors"
-              style={{ color: phaseColors.dot, opacity: 0.7 }}
-            >
-              {phaseColors.label}
-            </span>
-            {/* hover hint when paused */}
-            {!isRunning && (
-              <span className="text-[9px] text-[var(--text-muted)] mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                нажмите для старта
+          {/* Content perfectly centered via absolute + grid */}
+          <div className="absolute inset-0 grid place-items-center">
+            <div className="flex flex-col items-center justify-center text-center leading-none">
+              <span
+                className="text-[40px] font-black tabular-nums tracking-tight transition-colors leading-none block"
+                style={{ color: isRunning ? phaseColors.text : 'var(--text-primary)' }}
+              >
+                {formatTime(timeLeft)}
               </span>
-            )}
+              <span
+                className="text-[10px] font-semibold uppercase tracking-[0.2em] mt-1.5 transition-colors block"
+                style={{ color: phaseColors.dot, opacity: 0.75 }}
+              >
+                {phaseColors.label}
+              </span>
+              {!isRunning && (
+                <span className="text-[9px] text-[var(--text-muted)] mt-1 opacity-0 group-hover:opacity-100 transition-opacity block">
+                  нажмите для старта
+                </span>
+              )}
+            </div>
           </div>
         </button>
 

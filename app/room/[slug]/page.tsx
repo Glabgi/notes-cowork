@@ -15,30 +15,48 @@ import RoomHeader from '@/components/room/RoomHeader';
 import ParticipantsGrid from '@/components/room/ParticipantsGrid';
 import SidePanel from '@/components/room/SidePanel';
 import PomodoroTimer from '@/components/timer/PomodoroTimer';
+import IncomingInviteToast from '@/components/games/IncomingInviteToast';
 import { cn } from '@/lib/utils';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 import {
   WifiOff, Zap, Coffee, Ghost, BarChart2, Calendar,
   ChevronRight, Volume2, VolumeX, Wind, TreePine, Waves,
-  ArrowRight, ArrowLeft,
+  ArrowRight, ArrowLeft, Settings,
 } from 'lucide-react';
 import { ActivityIcon } from '@/lib/icons';
 import { getSocket as gs } from '@/lib/socket';
 import { getAmbientEngine } from '@/lib/ambientAudio';
 
-/* ─── Mini Schedule ───────────────────────────────────────────────────────── */
+/* ─── Mini Schedule (horizontal scroll with live now-line) ───────────────── */
+const HOUR_PX = 90; // 90px per hour in mini schedule
 function MiniSchedule() {
   const router = useRouter();
   const { blocks } = useScheduleStore();
-  const [expanded, setExpanded] = useState(false);
+  const trackRef = useRef<HTMLDivElement>(null);
+
+  // Tick every 30s for live position
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    const i = setInterval(() => setTick(t => t + 1), 30000);
+    return () => clearInterval(i);
+  }, []);
 
   const now = new Date();
   const currentHour = now.getHours() + now.getMinutes() / 60;
+  const currentLabel = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
 
-  const todayBlocks = [...blocks]
-    .sort((a, b) => a.startHour - b.startHour)
-    .filter(b => b.startHour + b.duration / 60 > currentHour - 0.5);
+  // Sort and constrain blocks to 6:00-24:00 view
+  const todayBlocks = [...blocks].sort((a, b) => a.startHour - b.startHour);
+  const HOURS = Array.from({ length: 19 }, (_, i) => i + 6); // 6..24
+
+  // Auto-scroll to current hour on mount and when tick changes (gently)
+  useEffect(() => {
+    const el = trackRef.current; if (!el) return;
+    const x = (currentHour - 6) * HOUR_PX - 60;
+    el.scrollTo({ left: Math.max(0, x), behavior: 'smooth' });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tick]);
 
   const formatHour = (h: number) => {
     const hh = Math.floor(h);
@@ -47,92 +65,92 @@ function MiniSchedule() {
   };
 
   return (
-    <div className="border border-[var(--border)] rounded-[14px] overflow-hidden bg-[var(--bg-card)] shadow-[0_1px_3px_rgba(15,23,42,0.04)]">
-      <button
-        onClick={() => setExpanded(v => !v)}
-        className="w-full flex items-center justify-between px-3.5 py-3 bg-gradient-to-r from-[var(--bg-subtle)] to-[var(--bg-card)] hover:from-[var(--bg-hover)] hover:to-[var(--bg-subtle)] transition-colors group"
-      >
-        <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-[8px] bg-[var(--accent-light)] flex items-center justify-center group-hover:scale-105 transition-transform">
-            <Calendar size={14} className="text-[var(--accent)]" />
+    <div className="border border-[var(--border)] rounded-[14px] overflow-hidden bg-[var(--bg-card)] shadow-[0_1px_3px_rgba(15,23,42,0.04)] flex flex-col">
+      <div className="flex items-center justify-between px-3.5 py-2 bg-gradient-to-r from-[var(--bg-subtle)] to-[var(--bg-card)] border-b border-[var(--border)]">
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 rounded-[7px] bg-[var(--accent-light)] flex items-center justify-center">
+            <Calendar size={12} className="text-[var(--accent)]" />
           </div>
           <span className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-[0.08em]">Расписание</span>
-          {todayBlocks.length > 0 && (
-            <span className="text-[10px] font-semibold text-[var(--accent)] bg-[var(--accent-light)] border border-[var(--border-accent)] px-1.5 py-0.5 rounded-full tabular-nums">
-              {todayBlocks.length}
-            </span>
-          )}
+          <span className="text-[10px] text-[var(--accent)] font-mono font-semibold tabular-nums">{currentLabel}</span>
         </div>
-        <ChevronRight
-          size={14}
-          className={cn('text-[var(--text-muted)] transition-transform duration-200', expanded && 'rotate-90')}
-        />
-      </button>
+        <button
+          onClick={() => router.push('/schedule')}
+          className="text-[10px] text-[var(--text-muted)] hover:text-[var(--accent)] font-medium transition-colors inline-flex items-center gap-1"
+        >
+          <Calendar size={10} /> Изменить
+        </button>
+      </div>
 
-      <AnimatePresence initial={false}>
-        {expanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.18 }}
-          >
-            <div className="px-2 py-2 space-y-1 max-h-72 overflow-y-auto">
-              {todayBlocks.length === 0 ? (
-                <button
-                  onClick={() => router.push('/schedule')}
-                  className="w-full flex items-center justify-center gap-1.5 text-xs text-[var(--text-muted)] py-3 hover:text-[var(--accent)] transition-colors"
-                >
-                  <Calendar size={12} /> Добавить активность
-                </button>
-              ) : (
-                todayBlocks.slice(0, 10).map(block => {
-                  const endHour = block.startHour + block.duration / 60;
-                  const isNow = block.startHour <= currentHour && endHour > currentHour;
-                  const Icon = ActivityIcon[block.type] || ActivityIcon.other;
-                  return (
-                    <div
-                      key={block.id}
-                      className={cn(
-                        'flex items-center gap-2 px-2.5 py-2 rounded-[10px] transition-colors',
-                        isNow
-                          ? 'bg-[var(--accent-light)] border border-[var(--border-accent)]'
-                          : 'hover:bg-[var(--bg-hover)] border border-transparent'
-                      )}
-                    >
-                      <div
-                        className="w-7 h-7 rounded-[8px] flex items-center justify-center flex-shrink-0"
-                        style={{ backgroundColor: block.color + '20', color: block.color }}
-                      >
-                        <Icon size={13} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className={cn(
-                          'text-xs truncate font-medium leading-tight',
-                          isNow ? 'text-[var(--accent)]' : 'text-[var(--text-primary)]'
-                        )}>
-                          {block.title}
-                        </p>
-                        <p className="text-[10px] text-[var(--text-muted)] font-mono mt-0.5">
-                          {formatHour(block.startHour)} · {block.duration < 60 ? `${block.duration}м` : `${(block.duration/60).toFixed(1)}ч`}
-                        </p>
-                      </div>
-                      {isNow && <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] animate-pulse flex-shrink-0" />}
-                    </div>
-                  );
-                })
-              )}
+      <div ref={trackRef} className="relative overflow-x-auto overflow-y-hidden">
+        <div className="relative" style={{ width: HOURS.length * HOUR_PX, height: 72 }}>
+          {/* Hour grid */}
+          {HOURS.map((h, i) => (
+            <div
+              key={h}
+              className="absolute top-0 bottom-0 border-l border-[var(--border)]/60"
+              style={{ left: i * HOUR_PX }}
+            >
+              <span className="absolute top-1 left-1 text-[10px] text-[var(--text-muted)] tabular-nums font-mono">
+                {h.toString().padStart(2,'0')}:00
+              </span>
+            </div>
+          ))}
+
+          {/* Blocks */}
+          {todayBlocks.map(block => {
+            const leftPx = (block.startHour - 6) * HOUR_PX;
+            const widthPx = (block.duration / 60) * HOUR_PX;
+            const Icon = ActivityIcon[block.type] || ActivityIcon.other;
+            const endHour = block.startHour + block.duration / 60;
+            const isNow = block.startHour <= currentHour && endHour > currentHour;
+            return (
+              <div
+                key={block.id}
+                className={cn(
+                  'absolute top-7 bottom-1 rounded-[8px] px-2 py-1 flex items-center gap-1.5 overflow-hidden border',
+                  isNow ? 'ring-2 ring-[var(--accent)]/50' : ''
+                )}
+                style={{
+                  left: leftPx + 1,
+                  width: Math.max(widthPx - 2, 30),
+                  backgroundColor: block.color + '20',
+                  borderColor: block.color + '60',
+                }}
+                title={`${block.title} · ${formatHour(block.startHour)}`}
+              >
+                <Icon size={11} style={{ color: block.color }} className="flex-shrink-0" />
+                <span className="text-[11px] font-medium truncate" style={{ color: block.color }}>
+                  {block.title}
+                </span>
+              </div>
+            );
+          })}
+
+          {/* Live now line */}
+          {currentHour >= 6 && currentHour <= 24 && (
+            <div
+              className="absolute top-0 bottom-0 z-10 pointer-events-none"
+              style={{ left: (currentHour - 6) * HOUR_PX }}
+            >
+              <div className="w-[2px] h-full bg-[#EF4444] shadow-[0_0_4px_rgba(239,68,68,0.5)]" />
+              <div className="absolute -top-0.5 -left-1 w-2.5 h-2.5 rounded-full bg-[#EF4444]" />
+            </div>
+          )}
+
+          {/* Empty state */}
+          {todayBlocks.length === 0 && (
+            <div className="absolute inset-0 flex items-center justify-center">
               <button
                 onClick={() => router.push('/schedule')}
-                className="w-full flex items-center justify-center gap-1.5 text-[11px] text-[var(--text-muted)] hover:text-[var(--accent)] py-1.5 mt-1 transition-colors border-t border-[var(--border)]"
+                className="text-xs text-[var(--text-muted)] hover:text-[var(--accent)] inline-flex items-center gap-1.5 transition-colors"
               >
-                <Calendar size={11} />
-                Открыть расписание
+                <Calendar size={12} /> Добавить активности на сегодня
               </button>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
@@ -170,82 +188,117 @@ function AmbientControl() {
   };
 
   return (
-    <div className="border border-[var(--border)] rounded-[14px] overflow-hidden bg-[var(--bg-card)] shadow-[0_1px_3px_rgba(15,23,42,0.04)]">
-      <div className="flex items-center justify-between px-3.5 py-3 bg-gradient-to-r from-[var(--bg-subtle)] to-[var(--bg-card)]">
-        <div className="flex items-center gap-2.5">
+    <div className="border border-[var(--border)] rounded-[14px] overflow-hidden bg-[var(--bg-card)] shadow-[0_1px_3px_rgba(15,23,42,0.04)] flex flex-col">
+      <div className="flex items-center justify-between px-3.5 py-2 bg-gradient-to-r from-[var(--bg-subtle)] to-[var(--bg-card)] border-b border-[var(--border)]">
+        <div className="flex items-center gap-2">
           <div className={cn(
-            'w-7 h-7 rounded-[8px] flex items-center justify-center transition-colors',
+            'w-6 h-6 rounded-[7px] flex items-center justify-center transition-colors',
             active === 'none' ? 'bg-[var(--bg-subtle)]' : 'bg-[var(--accent-light)]'
           )}>
             {active === 'none'
-              ? <VolumeX size={14} className="text-[var(--text-muted)]" />
-              : <Volume2 size={14} className="text-[var(--accent)]" />
+              ? <VolumeX size={12} className="text-[var(--text-muted)]" />
+              : <Volume2 size={12} className="text-[var(--accent)]" />
             }
           </div>
-          <span className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-[0.08em]">Фоновые звуки</span>
-        </div>
-        {active !== 'none' && (
-          <span className="inline-flex items-end gap-[2px] h-4">
-            {[0,1,2,3].map(i => (
-              <motion.span
-                key={i}
-                className="w-[2px] bg-[var(--accent)] rounded-full"
-                animate={{ height: ['25%', '95%', '45%', '85%', '25%'] }}
-                transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.12, ease: 'easeInOut' }}
-              />
-            ))}
-          </span>
-        )}
-      </div>
-
-      <div className="p-2 grid grid-cols-2 gap-1.5">
-        {sounds.map(({ id, label, Icon }) => (
-          <button
-            key={id}
-            onClick={() => toggle(id)}
-            className={cn(
-              'flex items-center gap-2 px-2.5 py-2 rounded-[10px] text-left transition-all duration-150 border',
-              active === id
-                ? 'bg-[var(--accent-light)] border-[var(--border-accent)]'
-                : 'border-transparent hover:bg-[var(--bg-hover)] border-[var(--border)]/40'
-            )}
-          >
-            <div className={cn(
-              'w-7 h-7 rounded-[8px] flex items-center justify-center flex-shrink-0 transition-colors',
-              active === id
-                ? 'bg-[var(--accent)] text-white'
-                : 'bg-[var(--bg-subtle)] text-[var(--text-muted)]'
-            )}>
-              <Icon size={13} />
-            </div>
-            <span className={cn(
-              'text-xs font-semibold leading-tight flex-1 truncate',
-              active === id ? 'text-[var(--accent)]' : 'text-[var(--text-primary)]'
-            )}>
-              {label}
+          <span className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-[0.08em]">Звуки</span>
+          {active !== 'none' && (
+            <span className="inline-flex items-end gap-[2px] h-3">
+              {[0,1,2,3].map(i => (
+                <motion.span
+                  key={i}
+                  className="w-[2px] bg-[var(--accent)] rounded-full"
+                  animate={{ height: ['25%', '95%', '45%', '85%', '25%'] }}
+                  transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.12, ease: 'easeInOut' }}
+                />
+              ))}
             </span>
-            {active === id && (
-              <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] animate-pulse flex-shrink-0" />
-            )}
-          </button>
-        ))}
-      </div>
-
-      {active !== 'none' && (
-        <div className="px-3 py-2.5 border-t border-[var(--border)] bg-[var(--bg-subtle)]/50">
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider font-semibold">Громкость</span>
-            <span className="text-[10px] text-[var(--text-secondary)] tabular-nums font-medium">{Math.round(ambientVolume * 100)}%</span>
-          </div>
+          )}
+        </div>
+        <div className="flex items-center gap-1.5">
+          <VolumeX size={10} className="text-[var(--text-muted)]" />
           <input
             type="range"
             min={0} max={1} step={0.05}
             value={ambientVolume}
             onChange={e => handleVolume(+e.target.value)}
-            className="w-full h-1.5 accent-[var(--accent)] cursor-pointer"
+            disabled={active === 'none'}
+            className="w-20 h-1 accent-[var(--accent)] cursor-pointer disabled:opacity-40"
+            title={`Громкость: ${Math.round(ambientVolume * 100)}%`}
           />
+          <Volume2 size={10} className="text-[var(--text-muted)]" />
+          <span className="text-[10px] text-[var(--text-secondary)] tabular-nums font-medium w-7 text-right">
+            {Math.round(ambientVolume * 100)}%
+          </span>
         </div>
-      )}
+      </div>
+
+      <div className="p-2 grid grid-cols-4 gap-1.5 flex-1">
+        {sounds.map(({ id, label, Icon }) => (
+          <button
+            key={id}
+            onClick={() => toggle(id)}
+            className={cn(
+              'flex flex-col items-center justify-center gap-1 px-2 py-2 rounded-[10px] transition-all duration-150 border min-h-[52px]',
+              active === id
+                ? 'bg-[var(--accent-light)] border-[var(--border-accent)] shadow-[0_1px_3px_rgba(37,99,235,0.15)]'
+                : 'border-[var(--border)]/40 hover:bg-[var(--bg-hover)] hover:border-[var(--border)]'
+            )}
+          >
+            <Icon size={14} className={active === id ? 'text-[var(--accent)]' : 'text-[var(--text-muted)]'} />
+            <span className={cn(
+              'text-[10px] font-semibold leading-none',
+              active === id ? 'text-[var(--accent)]' : 'text-[var(--text-primary)]'
+            )}>
+              {label}
+            </span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ─── Password Prompt (for private rooms) ─────────────────────────────── */
+function PasswordPrompt({ slug, onSubmit }: { slug: string; onSubmit: (pw: string) => void }) {
+  const router = useRouter();
+  const [pw, setPw] = useState('');
+  const [err, setErr] = useState('');
+  return (
+    <div className="min-h-screen bg-[var(--bg-page)] flex items-center justify-center p-4">
+      <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[24px] p-8 max-w-sm w-full shadow-[0_8px_32px_rgba(15,23,42,0.10)] space-y-5">
+        <div className="text-center">
+          <div className="w-14 h-14 bg-[var(--accent-light)] rounded-[14px] flex items-center justify-center mx-auto mb-3">
+            <Settings size={24} className="text-[var(--accent)]" />
+          </div>
+          <h2 className="text-lg font-bold text-[var(--text-primary)]">Приватная сессия</h2>
+          <p className="text-[var(--text-muted)] text-sm mt-1">Введите пароль для входа</p>
+          <p className="text-[10px] text-[var(--text-muted)] font-mono mt-1">#{slug}</p>
+        </div>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!pw.trim()) { setErr('Введите пароль'); return; }
+            onSubmit(pw.trim());
+          }}
+          className="space-y-3"
+        >
+          <Input
+            label="Пароль"
+            type="password"
+            value={pw}
+            onChange={e => { setPw(e.target.value); setErr(''); }}
+            placeholder="••••••••"
+            autoFocus
+          />
+          {err && <p className="text-xs text-[#DC2626]">{err}</p>}
+          <Button type="submit" className="w-full" size="lg">
+            Войти <ArrowRight size={14} />
+          </Button>
+          <Button type="button" variant="ghost" className="w-full" onClick={() => router.push('/')}>
+            <ArrowLeft size={14} /> На главную
+          </Button>
+        </form>
+      </div>
     </div>
   );
 }
@@ -342,9 +395,14 @@ function StatusSelector({ slug }: { slug: string }) {
     gs().emit('room:update-status', { roomId: slug, status, currentTask: task ?? currentUser?.currentTask });
   };
 
+  const [justSent, setJustSent] = useState(false);
   const submitCustom = () => {
     const task = customText.trim();
+    if (!task) return;
     emitStatus(currentUser?.status as any ?? 'focus', task);
+    setCustomText('');         // clear input (status broadcast — not persisted on panel)
+    setJustSent(true);
+    setTimeout(() => setJustSent(false), 1500);
   };
 
   const STATUS_DOTS: Record<string, string> = {
@@ -387,25 +445,54 @@ function StatusSelector({ slug }: { slug: string }) {
         ))}
       </div>
 
-      {/* Custom status text */}
-      <div className="px-2 pb-2 pt-1 border-t border-[var(--border)] bg-[var(--bg-subtle)]/40">
+      {/* Custom status text — ephemeral, broadcasts to others without saving on panel */}
+      <div className="px-2 pb-2 pt-1 border-t border-[var(--border)] bg-[var(--bg-subtle)]/40 space-y-1">
+        {/* Current active custom task (read-only badge) */}
+        {currentUser?.currentTask && (
+          <div className="flex items-center gap-1.5 px-2 py-1 text-[10px] text-[var(--accent)] bg-[var(--accent-light)] border border-[var(--border-accent)] rounded-[8px]">
+            <span className="w-1 h-1 rounded-full bg-[var(--accent)] animate-pulse" />
+            <span className="truncate">{currentUser.currentTask}</span>
+            <button
+              onClick={() => emitStatus(currentUser?.status as any ?? 'focus', '')}
+              className="ml-auto text-[var(--text-muted)] hover:text-[#EF4444]"
+              title="Очистить"
+            >×</button>
+          </div>
+        )}
         <div className="relative">
           <input
             value={customText}
             onChange={e => setCustomText(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter') submitCustom(); }}
-            placeholder="Чем занимаюсь..."
+            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); submitCustom(); } }}
+            placeholder={justSent ? 'Отправлено ✓' : 'Чем занимаюсь...'}
             maxLength={60}
-            className="w-full text-xs bg-[var(--bg-card)] border border-[var(--border)] rounded-[10px] px-3 py-2 text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/15 transition-all pr-8"
+            className={cn(
+              'w-full text-xs bg-[var(--bg-card)] border rounded-[10px] px-3 py-2 text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/15 transition-all pr-8',
+              justSent ? 'border-[var(--accent)] placeholder:text-[var(--accent)]' : 'border-[var(--border)]'
+            )}
           />
           <button
+            type="button"
             onClick={submitCustom}
-            className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1 text-[var(--text-muted)] hover:text-[var(--accent)] hover:bg-[var(--accent-light)] rounded-[6px] transition-colors"
-            aria-label="Сохранить"
+            disabled={!customText.trim()}
+            className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1 text-[var(--text-muted)] hover:text-[var(--accent)] hover:bg-[var(--accent-light)] rounded-[6px] transition-colors disabled:opacity-30"
+            aria-label="Отправить"
           >
             <ChevronRight size={12} />
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Bottom Dock: Schedule + Ambient ─────────────────────────────────────── */
+function BottomDock() {
+  return (
+    <div className="border-t border-[var(--border)] bg-[var(--bg-card)] px-4 py-3 hidden lg:block">
+      <div className="grid grid-cols-2 gap-3 max-w-[920px] mx-auto">
+        <MiniSchedule />
+        <AmbientControl />
       </div>
     </div>
   );
@@ -423,6 +510,7 @@ export default function RoomPage() {
 
   const [showJoin, setShowJoin] = useState(false);
   const [connError, setConnError] = useState('');
+  const [needsPassword, setNeedsPassword] = useState(false);
 
   useEffect(() => {
     if (initialized.current) return;
@@ -476,6 +564,8 @@ export default function RoomPage() {
       store.setConnected(true);
       store.setLoading(false);
       setConnError('');
+      let roomConfig: any = null;
+      let password: string | undefined = undefined;
       try {
         const cd = localStorage.getItem('vc_create_room');
         if (cd) {
@@ -484,10 +574,25 @@ export default function RoomPage() {
             localStorage.removeItem('vc_create_room');
             participant.isOwner = true;
             store.setCurrentUser({ ...participant, isOwner: true });
+            roomConfig = {
+              name: rd.name,
+              isPrivate: !!rd.isPrivate,
+              isPublic: !!rd.isPublic,
+              password: rd.password || null,
+              maxParticipants: rd.maxParticipants || 50,
+              ownerId: participant.id,
+            };
           }
         }
+        // Saved password for this slug (from password prompt)
+        const pw = sessionStorage.getItem('vc_room_pw_' + slug);
+        if (pw) password = pw;
       } catch {}
-      socket.emit('room:join', { slug, participant: { ...participant } });
+      (socket as any).emit('room:join', { slug, participant: { ...participant }, roomConfig, password }, (resp: any) => {
+        if (resp && resp.ok === false) {
+          if (resp.error === 'invalid_password') setNeedsPassword(true);
+        }
+      });
     };
 
     const onDisconnect = () => store.setConnected(false);
@@ -515,6 +620,12 @@ export default function RoomPage() {
       store.setLoading(false);
     };
 
+    // Remove any prior listeners before adding (defensive against StrictMode double-mount)
+    socket.off('connect'); socket.off('disconnect'); socket.off('connect_error');
+    socket.off('room:state'); socket.off('room:participant-joined');
+    socket.off('room:participant-left'); socket.off('room:participant-updated');
+    socket.off('chat:message'); socket.off('chat:reaction'); socket.off('game:invite');
+
     socket.on('connect', onConnect);
     socket.on('disconnect', onDisconnect);
     socket.on('connect_error', onConnectError);
@@ -532,6 +643,13 @@ export default function RoomPage() {
     try { id = JSON.parse(localStorage.getItem('vc_user') || '{}').id || uuidv4(); } catch { id = uuidv4(); }
     initSocket(name, avatarId, id);
   };
+
+  if (needsPassword) return <PasswordPrompt slug={slug} onSubmit={(pw) => {
+    sessionStorage.setItem('vc_room_pw_' + slug, pw);
+    setNeedsPassword(false);
+    initialized.current = false;
+    window.location.reload();
+  }} />;
 
   if (showJoin) return <JoinModal slug={slug} onJoin={handleJoin} />;
 
@@ -579,12 +697,10 @@ export default function RoomPage() {
       <RoomHeader />
 
       <div className="flex flex-1 overflow-hidden">
-        {/* Left: Timer + Status + Schedule + Sounds */}
-        <aside className="w-[340px] flex-shrink-0 bg-[var(--bg-card)] border-r border-[var(--border)] p-3 overflow-y-auto hidden lg:flex flex-col gap-2.5">
+        {/* Left: Timer + Status only */}
+        <aside className="w-[300px] flex-shrink-0 bg-[var(--bg-card)] border-r border-[var(--border)] p-3 overflow-y-auto hidden lg:flex flex-col gap-2.5">
           <PomodoroTimer />
           <StatusSelector slug={slug} />
-          <MiniSchedule />
-          <AmbientControl />
           <button
             onClick={() => router.push('/dashboard')}
             className="mt-auto flex items-center gap-2 px-3 py-2 rounded-[10px] text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] transition-colors duration-150"
@@ -594,13 +710,28 @@ export default function RoomPage() {
           </button>
         </aside>
 
-        {/* Center */}
-        <ParticipantsGrid />
+        {/* Center column: participants + bottom dock */}
+        <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+          <div className="flex-1 overflow-hidden">
+            <ParticipantsGrid />
+          </div>
+          {/* Bottom dock: schedule + ambient */}
+          <BottomDock />
+        </div>
 
-        {/* Right */}
-        <SidePanel />
+        {/* Right (with edge padding) */}
+        <div className="pr-3 py-3 hidden lg:block">
+          <SidePanel />
+        </div>
+        {/* On smaller screens, no right padding wrapper */}
+        <div className="lg:hidden">
+          <SidePanel />
+        </div>
       </div>
 
+
+      {/* Floating game invite toast */}
+      <IncomingInviteToast />
 
       {/* Reconnect banner */}
       <AnimatePresence>

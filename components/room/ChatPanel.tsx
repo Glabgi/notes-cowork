@@ -30,15 +30,29 @@ export default function ChatPanel() {
   const [input, setInput] = useState('');
   const [showReactionPicker, setShowReactionPicker] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const sendingRef = useRef(false);
+  const lastSendTimeRef = useRef(0);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   const sendMessage = () => {
-    if (!input.trim() || !room || !currentUser) return;
-    getSocket().emit('chat:send', { roomId: room.slug, content: input.trim() });
-    setInput('');
+    const content = input.trim();
+    if (!content || !room || !currentUser) return;
+    // Guards against double-fire (form submit + button click + keydown)
+    if (sendingRef.current) return;
+    const now = Date.now();
+    if (now - lastSendTimeRef.current < 250) return;
+    sendingRef.current = true;
+    lastSendTimeRef.current = now;
+    try {
+      getSocket().emit('chat:send', { roomId: room.slug, content });
+      setInput('');
+    } finally {
+      // Release lock after short delay so user can send next message quickly
+      setTimeout(() => { sendingRef.current = false; }, 200);
+    }
   };
 
   const handleReaction = (messageId: string, emoji: string) => {
@@ -146,16 +160,29 @@ export default function ChatPanel() {
 
       {/* Input */}
       <div className="p-3 bg-[var(--bg-subtle)] border-t border-[var(--border)]">
-        <form onSubmit={(e) => { e.preventDefault(); sendMessage(); }} className="flex gap-2">
+        <form
+          onSubmit={(e) => { e.preventDefault(); e.stopPropagation(); sendMessage(); }}
+          className="flex gap-2"
+        >
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+              }
+            }}
             placeholder="Написать сообщение..."
             maxLength={500}
             className="flex-1 bg-[var(--bg-card)] border border-[var(--border)] rounded-[12px] px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[#94A3B8] focus:outline-none focus:border-[var(--accent)] focus:ring-4 focus:ring-[#DBEAFE]/50 transition-all"
           />
-          <button type="submit" disabled={!input.trim()}
-            className="w-9 h-9 bg-[var(--accent)] hover:bg-[var(--accent-hover)] disabled:opacity-40 rounded-[10px] flex items-center justify-center transition-colors duration-150">
+          <button
+            type="button"
+            onClick={sendMessage}
+            disabled={!input.trim()}
+            className="w-9 h-9 bg-[var(--accent)] hover:bg-[var(--accent-hover)] disabled:opacity-40 rounded-[10px] flex items-center justify-center transition-colors duration-150 flex-shrink-0"
+          >
             <Send size={15} className="text-white" />
           </button>
         </form>
