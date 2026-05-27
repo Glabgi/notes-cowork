@@ -85,7 +85,7 @@ export default function TaskPanel() {
             'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border',
             currentTagOption?.color
           )}>
-            <span>{TAG_ICONS[selectedTag]}</span>
+            {(() => { const Icon = TAG_ICONS[selectedTag] || FolderOpen; return <Icon size={11} />; })()}
             <span>{currentTagOption?.label}</span>
           </div>
         )}
@@ -107,7 +107,7 @@ export default function TaskPanel() {
                     : 'bg-[var(--bg-card)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--border-strong)]'
                 )}
               >
-                <span>{TAG_ICONS[t.value]}</span>
+                {(() => { const Icon = TAG_ICONS[t.value] || FolderOpen; return <Icon size={11} />; })()}
                 <span>{t.label}</span>
               </button>
             ))}
