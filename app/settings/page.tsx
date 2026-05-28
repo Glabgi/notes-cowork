@@ -81,16 +81,18 @@ function Toggle({ on, onToggle, disabled = false }: { on: boolean; onToggle: () 
   return (
     <button
       type="button"
+      role="switch"
       onClick={(e) => { e.preventDefault(); e.stopPropagation(); if (!disabled) onToggle(); }}
       disabled={disabled}
       aria-pressed={on}
-      className={cn('relative w-11 h-6 rounded-full transition-colors duration-150 flex-shrink-0 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed',
-        on ? 'bg-[var(--accent)]' : 'bg-[var(--border)]'
+      // Inline-flex track with the knob as a flex child — no absolute positioning,
+      // so it can never drift/overflow across browsers.
+      className={cn(
+        'inline-flex items-center w-12 h-7 rounded-full p-1 transition-colors duration-200 flex-shrink-0 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed',
+        on ? 'bg-[var(--accent)] justify-end' : 'bg-[var(--border)] justify-start'
       )}
     >
-      <span className={cn('absolute top-1 w-4 h-4 bg-white rounded-full transition-transform duration-150 shadow-sm',
-        on ? 'translate-x-6' : 'translate-x-1'
-      )} />
+      <span className="block w-5 h-5 bg-white rounded-full shadow-[0_1px_3px_rgba(15,23,42,0.25)] transition-transform duration-200" />
     </button>
   );
 }
