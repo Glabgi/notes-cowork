@@ -7,3 +7,5 @@ out
 .vercel
 .turbo
 tsconfig.tsbuildinfo
+sfu/node_modules
+sfu/.env

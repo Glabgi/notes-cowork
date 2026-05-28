@@ -1,0 +1,16 @@
+{
+  "name": "notes-cowork-sfu",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Self-hosted mediasoup SFU for Notes Cowork voice + screen share",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "mediasoup": "^3.14.5",
+    "socket.io": "^4.7.4"
+  }
+}

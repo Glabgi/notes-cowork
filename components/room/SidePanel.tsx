@@ -1,26 +1,30 @@
 'use client';
 
 import { useState } from 'react';
-import { Users, MessageSquare, CheckSquare, Settings, Gamepad2, Crown, Timer } from 'lucide-react';
+import { Users, MessageSquare, CheckSquare, Settings, Gamepad2, Crown, Timer, Volume2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import ChatPanel from './ChatPanel';
 import { useRoomStore } from '@/store/roomStore';
+import { useVoiceStore } from '@/store/voiceStore';
 import Avatar from '@/components/ui/Avatar';
 import { getStatusLabel, getStatusColor } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import TaskPanel from '@/components/tasks/TaskPanel';
 import GameZone, { GameSelector } from '@/components/games/GameZone';
+import VoicePanel from '@/components/voice/VoicePanel';
 
-type Tab = 'participants' | 'chat' | 'tasks' | 'games';
+type Tab = 'participants' | 'chat' | 'tasks' | 'games' | 'voice';
 
 export default function SidePanel() {
   const [tab, setTab] = useState<Tab>('chat');
   const { room, currentUser } = useRoomStore();
+  const voiceCount = useVoiceStore(s => s.inVoice ? Object.keys(s.peers).length + 1 : 0);
   const router = useRouter();
 
   const tabs: { id: Tab; icon: React.ElementType; label: string; badge?: number }[] = [
-    { id: 'participants', icon: Users,         label: 'Люди',   badge: room?.participants.length },
+    { id: 'voice',        icon: Volume2,       label: 'Голос',  badge: voiceCount || undefined },
     { id: 'chat',         icon: MessageSquare, label: 'Чат' },
+    { id: 'participants', icon: Users,         label: 'Люди',   badge: room?.participants.length },
     { id: 'tasks',        icon: CheckSquare,   label: 'Задачи' },
     { id: 'games',        icon: Gamepad2,      label: 'Игры' },
   ];
@@ -103,6 +107,7 @@ export default function SidePanel() {
             </div>
           )}
 
+          {tab === 'voice' && <VoicePanel />}
           {tab === 'chat'  && <ChatPanel />}
           {tab === 'tasks' && <TaskPanel />}
           {tab === 'games' && (

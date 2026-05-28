@@ -16,6 +16,7 @@ import ParticipantsGrid from '@/components/room/ParticipantsGrid';
 import SidePanel from '@/components/room/SidePanel';
 import PomodoroTimer from '@/components/timer/PomodoroTimer';
 import IncomingInviteToast from '@/components/games/IncomingInviteToast';
+import ScreenShareTile from '@/components/voice/ScreenShareTile';
 import { cn } from '@/lib/utils';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
@@ -752,9 +753,10 @@ export default function RoomPage() {
           </button>
         </aside>
 
-        {/* Center column: participants + bottom dock */}
+        {/* Center column: screen share + participants + bottom dock */}
         <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-          <div className="flex-1 overflow-hidden">
+          <div className="flex-1 overflow-y-auto">
+            <ScreenShareTile />
             <ParticipantsGrid />
           </div>
           {/* Bottom dock: schedule + ambient */}
