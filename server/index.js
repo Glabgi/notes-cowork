@@ -134,6 +134,27 @@ io.on('connection', (socket) => {
       participant.isOwner = true;
     }
 
+    // Robustness: if the room exists but has no owner yet (e.g. created by a
+    // race-condition join without config), and THIS joiner brought a config,
+    // adopt them as owner and apply their config. Prevents public rooms being
+    // stuck as private/unlisted when the initial 'connect' raced the handler.
+    if (existed && roomConfig && !room.ownerId) {
+      room.ownerId = participant.id;
+      room.name = roomConfig.name || room.name;
+      room.isPrivate = !!roomConfig.isPrivate;
+      room.isPublic = !!roomConfig.isPublic;
+      room.password = roomConfig.password || null;
+      room.maxParticipants = roomConfig.maxParticipants || room.maxParticipants;
+      participant.isOwner = true;
+    }
+    // Owner re-joining with config can also refresh visibility settings
+    if (existed && roomConfig && room.ownerId === participant.id) {
+      room.name = roomConfig.name || room.name;
+      room.isPrivate = !!roomConfig.isPrivate;
+      room.isPublic = !!roomConfig.isPublic;
+      room.password = roomConfig.password || null;
+    }
+
     // Password check for private rooms
     if (room.isPrivate && room.ownerId !== participant.id) {
       if (!room.password || room.password !== password) {

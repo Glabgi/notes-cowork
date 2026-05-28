@@ -558,37 +558,39 @@ export default function RoomPage() {
     store.setCurrentUser(participant);
 
     const socket = getSocket();
-    connectSocket();
+
+    // Read create-config ONCE here (not inside onConnect) so reconnections
+    // don't lose it. If this user created the room, mark them owner now.
+    let roomConfig: any = null;
+    let joinPassword: string | undefined = undefined;
+    try {
+      const cd = localStorage.getItem('vc_create_room');
+      if (cd) {
+        const rd = JSON.parse(cd);
+        if (rd.slug === slug) {
+          localStorage.removeItem('vc_create_room');
+          participant.isOwner = true;
+          store.setCurrentUser({ ...participant, isOwner: true });
+          roomConfig = {
+            name: rd.name,
+            isPrivate: !!rd.isPrivate,
+            isPublic: !!rd.isPublic,
+            password: rd.password || null,
+            maxParticipants: rd.maxParticipants || 50,
+            ownerId: participant.id,
+          };
+        }
+      }
+      const pw = sessionStorage.getItem('vc_room_pw_' + slug);
+      if (pw) joinPassword = pw;
+    } catch {}
 
     const onConnect = () => {
       store.setConnected(true);
       store.setLoading(false);
       setConnError('');
-      let roomConfig: any = null;
-      let password: string | undefined = undefined;
-      try {
-        const cd = localStorage.getItem('vc_create_room');
-        if (cd) {
-          const rd = JSON.parse(cd);
-          if (rd.slug === slug) {
-            localStorage.removeItem('vc_create_room');
-            participant.isOwner = true;
-            store.setCurrentUser({ ...participant, isOwner: true });
-            roomConfig = {
-              name: rd.name,
-              isPrivate: !!rd.isPrivate,
-              isPublic: !!rd.isPublic,
-              password: rd.password || null,
-              maxParticipants: rd.maxParticipants || 50,
-              ownerId: participant.id,
-            };
-          }
-        }
-        // Saved password for this slug (from password prompt)
-        const pw = sessionStorage.getItem('vc_room_pw_' + slug);
-        if (pw) password = pw;
-      } catch {}
-      (socket as any).emit('room:join', { slug, participant: { ...participant }, roomConfig, password }, (resp: any) => {
+      // roomConfig captured in outer scope — survives reconnects
+      (socket as any).emit('room:join', { slug, participant: { ...participant }, roomConfig, password: joinPassword }, (resp: any) => {
         if (resp && resp.ok === false) {
           if (resp.error === 'invalid_password') setNeedsPassword(true);
         }
@@ -657,9 +659,16 @@ export default function RoomPage() {
     socket.on('chat:deleted' as any, ({ messageId }: any) => store.removeMessage(messageId));
     socket.on('chat:reaction', ({ messageId, reaction }) => store.updateMessageReaction(messageId, reaction));
     socket.on('game:invite', (invite: any) => {
-      console.log('[game:invite RECEIVED]', invite);
       addInvite(invite);
     });
+
+    // Connect AFTER all handlers are registered, so the initial 'connect'
+    // event is never missed (which previously dropped the room:join config).
+    if (socket.connected) {
+      onConnect();
+    } else {
+      connectSocket();
+    }
   }, [slug, store, addInvite]);
 
   const handleJoin = (name: string, avatarId: string) => {
