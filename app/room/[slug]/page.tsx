@@ -559,28 +559,28 @@ export default function RoomPage() {
 
     const socket = getSocket();
 
-    // Read create-config ONCE here (not inside onConnect) so reconnections
-    // don't lose it. If this user created the room, mark them owner now.
-    let roomConfig: any = null;
+    // Build the room config from localStorage. Done as a fresh function so we
+    // can call it on every (re)connect — and we only clear vc_create_room AFTER
+    // the server acknowledges the join, so a dropped first connect never loses it.
+    const buildRoomConfig = (): any => {
+      try {
+        const cd = localStorage.getItem('vc_create_room');
+        if (!cd) return null;
+        const rd = JSON.parse(cd);
+        if (rd.slug !== slug) return null;
+        return {
+          name: rd.name,
+          isPrivate: !!rd.isPrivate,
+          isPublic: !!rd.isPublic,
+          password: rd.password || null,
+          maxParticipants: rd.maxParticipants || 50,
+          ownerId: participant.id,
+        };
+      } catch { return null; }
+    };
+
     let joinPassword: string | undefined = undefined;
     try {
-      const cd = localStorage.getItem('vc_create_room');
-      if (cd) {
-        const rd = JSON.parse(cd);
-        if (rd.slug === slug) {
-          localStorage.removeItem('vc_create_room');
-          participant.isOwner = true;
-          store.setCurrentUser({ ...participant, isOwner: true });
-          roomConfig = {
-            name: rd.name,
-            isPrivate: !!rd.isPrivate,
-            isPublic: !!rd.isPublic,
-            password: rd.password || null,
-            maxParticipants: rd.maxParticipants || 50,
-            ownerId: participant.id,
-          };
-        }
-      }
       const pw = sessionStorage.getItem('vc_room_pw_' + slug);
       if (pw) joinPassword = pw;
     } catch {}
@@ -589,11 +589,20 @@ export default function RoomPage() {
       store.setConnected(true);
       store.setLoading(false);
       setConnError('');
-      // roomConfig captured in outer scope — survives reconnects
-      (socket as any).emit('room:join', { slug, participant: { ...participant }, roomConfig, password: joinPassword }, (resp: any) => {
+      const roomConfig = buildRoomConfig();
+      // NEVER mutate `participant` directly — Immer freezes store objects, so
+      // `participant.isOwner = true` throws "object is not extensible" and aborts
+      // the whole join. Always build a fresh object instead.
+      const joinParticipant = roomConfig ? { ...participant, isOwner: true } : { ...participant };
+      if (roomConfig) {
+        store.setCurrentUser(joinParticipant);
+      }
+      (socket as any).emit('room:join', { slug, participant: joinParticipant, roomConfig, password: joinPassword }, (resp: any) => {
         if (resp && resp.ok === false) {
           if (resp.error === 'invalid_password') setNeedsPassword(true);
+          return;
         }
+        try { if (roomConfig) localStorage.removeItem('vc_create_room'); } catch {}
       });
     };
 
