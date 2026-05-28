@@ -761,12 +761,10 @@ export default function RoomPage() {
           <BottomDock />
         </div>
 
-        {/* Right (with edge padding) */}
-        <div className="pr-3 py-3 hidden lg:flex h-full overflow-hidden">
-          <SidePanel />
-        </div>
-        {/* On smaller screens, no right padding wrapper */}
-        <div className="lg:hidden h-full overflow-hidden">
+        {/* Right panel — rendered ONCE. Responsive edge padding via classes
+            (rendering it twice previously created two GameZone instances whose
+            socket listeners clobbered each other, breaking game:start). */}
+        <div className="h-full overflow-hidden lg:pr-3 lg:py-3">
           <SidePanel />
         </div>
       </div>
