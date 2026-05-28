@@ -1,10 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { Users, MessageSquare, CheckSquare, Settings, Gamepad2, Crown, Timer, Volume2 } from 'lucide-react';
+import { Users, MessageSquare, CheckSquare, Settings, Gamepad2, Crown, Timer, Volume2, UserX } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import ChatPanel from './ChatPanel';
 import { useRoomStore } from '@/store/roomStore';
+import { getSocket } from '@/lib/socket';
 import { useVoiceStore } from '@/store/voiceStore';
 import Avatar from '@/components/ui/Avatar';
 import { getStatusLabel, getStatusColor } from '@/lib/utils';
@@ -68,7 +69,9 @@ export default function SidePanel() {
         <div className="flex-1 overflow-hidden">
           {tab === 'participants' && (
             <div className="h-full overflow-y-auto p-3 space-y-0.5">
-              {room?.participants.map(p => (
+              {(() => {
+                const iAmOwner = currentUser?.isOwner === true || (currentUser?.id != null && currentUser?.id === room?.ownerId);
+                return room?.participants.map(p => (
                 <div
                   key={p.id}
                   className="flex items-center gap-3 px-2 py-2 rounded-[10px] hover:bg-[var(--bg-hover)] transition-colors group"
@@ -88,6 +91,30 @@ export default function SidePanel() {
                       </p>
                     )}
                   </div>
+                  {iAmOwner && p.id !== currentUser?.id && (
+                    <div className="flex items-center gap-0.5 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={() => {
+                          if (!confirm('Передать права главы?')) return;
+                          getSocket().emit('room:transfer-owner', { roomId: room?.slug, targetUserId: p.id });
+                        }}
+                        title="Передать права главы"
+                        className="p-1.5 rounded-[8px] text-[#D97706] hover:bg-[#FFFBEB] transition-colors"
+                      >
+                        <Crown size={14} />
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (!confirm('Удалить участника?')) return;
+                          getSocket().emit('room:kick', { roomId: room?.slug, targetUserId: p.id });
+                        }}
+                        title="Удалить участника"
+                        className="p-1.5 rounded-[8px] text-[#DC2626] hover:bg-[#FEF2F2] transition-colors"
+                      >
+                        <UserX size={14} />
+                      </button>
+                    </div>
+                  )}
                   <div className="flex flex-col items-end gap-1 flex-shrink-0">
                     <div className={cn('w-2 h-2 rounded-full', getStatusColor(p.status))} />
                     {p.pomodoroCount > 0 && (
@@ -97,7 +124,8 @@ export default function SidePanel() {
                     )}
                   </div>
                 </div>
-              ))}
+                ));
+              })()}
               {(!room?.participants.length) && (
                 <div className="flex flex-col items-center justify-center h-40 text-[var(--text-muted)]">
                   <Users size={28} className="mb-2" />

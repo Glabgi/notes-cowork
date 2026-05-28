@@ -7,7 +7,7 @@ import { LogIn, ArrowRight, AlertTriangle } from 'lucide-react';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 import { signIn, isSupabaseConfigured } from '@/lib/supabase';
-import { localLogin } from '@/lib/localAuth';
+import { localLogin, syncVcUser } from '@/lib/localAuth';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -25,10 +25,12 @@ export default function LoginPage() {
       const { error } = await signIn(username.trim(), password);
       setLoading(false);
       if (error) { setErr('Неверный логин или пароль'); return; }
+      syncVcUser(username.trim());
     } else {
       const res = await localLogin(username, password);
       setLoading(false);
       if (!res.ok) { setErr(res.error || 'Ошибка входа'); return; }
+      syncVcUser(username.trim());
       window.dispatchEvent(new Event('vc-auth-changed'));
     }
     router.push('/');

@@ -64,6 +64,24 @@ export function getLocalSession(): LocalProfile | null {
   } catch { return null; }
 }
 
+// Bind the room nickname (vc_user.name) to the account username so the name
+// shown in rooms always matches who you logged in as. Preserves an existing
+// vc_user.id if present (so the same person keeps a stable participant id).
+export function syncVcUser(username: string, avatarId = 'fox') {
+  try {
+    let existingId: string | undefined;
+    try {
+      const cur = JSON.parse(localStorage.getItem('vc_user') || '{}');
+      if (cur && cur.id) existingId = cur.id;
+    } catch {}
+    localStorage.setItem('vc_user', JSON.stringify({
+      id: existingId || username,
+      name: username,
+      avatarId,
+    }));
+  } catch {}
+}
+
 export function setLocalAvatar(avatarId: string) {
   try {
     const u = localStorage.getItem(SESSION_KEY);

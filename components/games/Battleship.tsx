@@ -357,7 +357,7 @@ export default function Battleship({ vsBot: vsBotProp, gameId }: BattleshipProps
             {isMyTurn ? (
               <span className="inline-flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-[#2563EB]" /> Ваш ход</span>
             ) : (
-              <span className="inline-flex items-center gap-1.5"><Hourglass size={12} /> Бот думает...</span>
+              <span className="inline-flex items-center gap-1.5"><Hourglass size={12} /> {isMultiplayer ? 'Ход соперника…' : 'Бот думает…'}</span>
             )}
           </div>
 
@@ -420,7 +420,7 @@ export default function Battleship({ vsBot: vsBotProp, gameId }: BattleshipProps
               {winner === 'me' ? 'Победа!' : 'Поражение'}
             </h3>
             <p className="text-sm text-[#94A3B8] mt-1">
-              {winner === 'me' ? 'Вы потопили весь флот противника' : 'Бот потопил ваш флот'}
+              {winner === 'me' ? 'Вы потопили весь флот противника' : (isMultiplayer ? 'Соперник потопил ваш флот' : 'Бот потопил ваш флот')}
             </p>
           </div>
           <Button onClick={reset}>Новая игра</Button>

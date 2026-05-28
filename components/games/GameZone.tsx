@@ -182,7 +182,7 @@ export default function GameZone() {
           ? GAMES.find(g => g.id === currentGame)?.name || 'Игра'
           : 'Игровая зона'
       }
-      size={currentGame === 'chess' ? 'full' : 'lg'}
+      size={currentGame === 'chess' || currentGame === 'battleship' ? 'full' : 'lg'}
     >
       {/* Step 1: Pick game type */}
       {!currentGame && (

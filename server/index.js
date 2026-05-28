@@ -134,28 +134,28 @@ io.on('connection', (socket) => {
       participant.isOwner = true;
     }
 
-    // Robustness: if the room exists but has no owner yet (e.g. created by a
-    // race-condition join without config), and THIS joiner brought a config,
-    // adopt them as owner and apply their config. Prevents public rooms being
-    // stuck as private/unlisted when the initial 'connect' raced the handler.
-    if (existed && roomConfig && !room.ownerId) {
+    // Owner config re-apply on reconnect/recreate.
+    // The room may get recreated after a server restart, or the owner may
+    // briefly drop and rejoin. If THIS joiner brought a config AND they are
+    // (or can claim) the owner, re-apply visibility settings so the room's
+    // public/private flags are restored. Conditions:
+    //   - the room has no owner yet (race-condition / fresh recreate), OR
+    //   - this joiner is already the recorded owner, OR
+    //   - the config itself names this joiner as the owner.
+    // This guarantees the client re-sending config on every reconnect restores
+    // the public flag and keeps the room listed.
+    if (roomConfig && (!room.ownerId || room.ownerId === participant.id || roomConfig.ownerId === participant.id)) {
       room.ownerId = participant.id;
       room.name = roomConfig.name || room.name;
       room.isPrivate = !!roomConfig.isPrivate;
       room.isPublic = !!roomConfig.isPublic;
-      room.password = roomConfig.password || null;
+      room.password = roomConfig.password ?? room.password;
       room.maxParticipants = roomConfig.maxParticipants || room.maxParticipants;
       participant.isOwner = true;
     }
-    // Owner re-joining with config can also refresh visibility settings
-    if (existed && roomConfig && room.ownerId === participant.id) {
-      room.name = roomConfig.name || room.name;
-      room.isPrivate = !!roomConfig.isPrivate;
-      room.isPublic = !!roomConfig.isPublic;
-      room.password = roomConfig.password || null;
-    }
 
-    // Password check for private rooms
+    // Password check for private rooms (runs AFTER owner-config-apply so the
+    // owner can never be locked out of their own room)
     if (room.isPrivate && room.ownerId !== participant.id) {
       if (!room.password || room.password !== password) {
         if (typeof ack === 'function') ack({ ok: false, error: 'invalid_password' });
@@ -172,6 +172,11 @@ io.on('connection', (socket) => {
 
     currentRoom = slug;
     currentUserId = participant.id;
+
+    // Activity / grace tracking: mark active and clear any "emptied" marker so
+    // a (re)join keeps the room visible in the public list.
+    room.lastActive = Date.now();
+    room.emptyAt = null;
 
     socket.join(slug);
 
@@ -198,6 +203,7 @@ io.on('connection', (socket) => {
     if (room) {
       room.participants = room.participants.filter(p => p.id !== currentUserId);
       socket.to(roomSlug).emit('room:participant-left', currentUserId);
+      if (room.participants.length === 0) room.emptyAt = Date.now();
     }
     socket.leave(roomSlug);
     currentRoom = null;
@@ -209,9 +215,51 @@ io.on('connection', (socket) => {
 
     const participant = room.participants.find(p => p.id === currentUserId);
     if (participant) {
+      room.lastActive = Date.now();
       participant.status = status;
       if (currentTask !== undefined) participant.currentTask = currentTask;
       io.to(roomId).emit('room:participant-updated', participant);
+    }
+  });
+
+  // Owner: transfer ownership to another participant
+  socket.on('room:transfer-owner', ({ roomId, targetUserId }) => {
+    const room = rooms.get(roomId);
+    if (!room) return;
+    // Only the current owner may transfer
+    if (room.ownerId !== currentUserId) return;
+    // Target must be a participant
+    const target = room.participants.find(p => p.id === targetUserId);
+    if (!target) return;
+
+    room.ownerId = targetUserId;
+    room.participants.forEach(p => { p.isOwner = p.id === room.ownerId; });
+
+    io.to(roomId).emit('room:state', { ...room, participants: room.participants });
+  });
+
+  // Owner: kick a participant from the room
+  socket.on('room:kick', ({ roomId, targetUserId }) => {
+    const room = rooms.get(roomId);
+    if (!room) return;
+    // Only the current owner may kick
+    if (room.ownerId !== currentUserId) return;
+    // Cannot kick the owner
+    if (targetUserId === room.ownerId) return;
+
+    const target = room.participants.find(p => p.id === targetUserId);
+    if (!target) return;
+    const targetSocketId = target.socketId;
+
+    room.participants = room.participants.filter(p => p.id !== targetUserId);
+
+    // Existing event other clients already handle
+    io.to(roomId).emit('room:participant-left', targetUserId);
+
+    // Notify only the kicked socket and make it leave the room (no full disconnect)
+    if (targetSocketId) {
+      io.to(targetSocketId).emit('room:kicked', { roomId });
+      io.sockets.sockets.get(targetSocketId)?.leave(roomId);
     }
   });
 
@@ -233,6 +281,7 @@ io.on('connection', (socket) => {
       createdAt: Date.now(),
     };
 
+    room.lastActive = Date.now();
     room.messages.push(message);
     if (room.messages.length > 200) room.messages = room.messages.slice(-200);
 
@@ -661,6 +710,10 @@ io.on('connection', (socket) => {
 
         // Cleanup empty rooms after delay
         if (room.participants.length === 0) {
+          // Mark the moment the room became empty. The /rooms list keeps it
+          // visible for a short grace window so a brief owner drop doesn't
+          // strip the room from the public list.
+          room.emptyAt = Date.now();
           setTimeout(() => {
             const r = rooms.get(currentRoom);
             if (r && r.participants.length === 0) {
@@ -681,8 +734,13 @@ app.get('/health', (_, res) => res.json({ status: 'ok', rooms: rooms.size }));
 
 // REST: list active rooms (for homepage) — only public ones
 app.get('/rooms', (_, res) => {
+  const GRACE_MS = 90000;
+  const now = Date.now();
   const active = Array.from(rooms.values())
-    .filter(r => r.participants.length > 0 && r.isPublic !== false && !r.isPrivate)
+    .filter(r =>
+      r.isPublic !== false && !r.isPrivate &&
+      (r.participants.length > 0 || (r.emptyAt && now - r.emptyAt < GRACE_MS))
+    )
     .map(r => ({
       slug: r.slug,
       name: r.name,

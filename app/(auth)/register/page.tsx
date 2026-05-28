@@ -7,7 +7,7 @@ import { UserPlus, ArrowRight, AlertTriangle } from 'lucide-react';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 import { signUp, isSupabaseConfigured } from '@/lib/supabase';
-import { localRegister } from '@/lib/localAuth';
+import { localRegister, syncVcUser } from '@/lib/localAuth';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -34,11 +34,13 @@ export default function RegisterPage() {
         setErr(error.message?.toLowerCase().includes('registered') ? 'Этот логин уже занят' : error.message);
         return;
       }
+      syncVcUser(u);
       if (data?.session) router.push('/'); else router.push('/login');
     } else {
       const res = await localRegister(u, password);
       setLoading(false);
       if (!res.ok) { setErr(res.error || 'Ошибка регистрации'); return; }
+      syncVcUser(u);
       window.dispatchEvent(new Event('vc-auth-changed'));
       router.push('/');
     }

@@ -566,17 +566,34 @@ export default function RoomPage() {
     const buildRoomConfig = (): any => {
       try {
         const cd = localStorage.getItem('vc_create_room');
-        if (!cd) return null;
-        const rd = JSON.parse(cd);
-        if (rd.slug !== slug) return null;
-        return {
-          name: rd.name,
-          isPrivate: !!rd.isPrivate,
-          isPublic: !!rd.isPublic,
-          password: rd.password || null,
-          maxParticipants: rd.maxParticipants || 50,
-          ownerId: participant.id,
-        };
+        if (cd) {
+          const rd = JSON.parse(cd);
+          if (rd.slug === slug) {
+            return {
+              name: rd.name,
+              isPrivate: !!rd.isPrivate,
+              isPublic: !!rd.isPublic,
+              password: rd.password || null,
+              maxParticipants: rd.maxParticipants || 50,
+              ownerId: participant.id,
+            };
+          }
+        }
+        // Fallback: durable owned-rooms copy (survives vc_create_room removal +
+        // server restarts). Lets the owner re-send full config on every reconnect.
+        const owned = JSON.parse(localStorage.getItem('vc_owned_rooms') || '{}');
+        const od = owned[slug];
+        if (od) {
+          return {
+            name: od.name,
+            isPrivate: !!od.isPrivate,
+            isPublic: !!od.isPublic,
+            password: od.password || null,
+            maxParticipants: od.maxParticipants || 50,
+            ownerId: participant.id,
+          };
+        }
+        return null;
       } catch { return null; }
     };
 
@@ -597,6 +614,20 @@ export default function RoomPage() {
       const joinParticipant = roomConfig ? { ...participant, isOwner: true } : { ...participant };
       if (roomConfig) {
         store.setCurrentUser(joinParticipant);
+        // Persist a durable copy of the config keyed by slug so we can re-send it
+        // on every reconnect (server free-tier sleeps/restarts wipe room state).
+        try {
+          const owned = JSON.parse(localStorage.getItem('vc_owned_rooms') || '{}');
+          owned[slug] = {
+            name: roomConfig.name,
+            isPrivate: roomConfig.isPrivate,
+            isPublic: roomConfig.isPublic,
+            password: roomConfig.password,
+            maxParticipants: roomConfig.maxParticipants,
+            ownerId: participant.id,
+          };
+          localStorage.setItem('vc_owned_rooms', JSON.stringify(owned));
+        } catch {}
       }
       (socket as any).emit('room:join', { slug, participant: joinParticipant, roomConfig, password: joinPassword }, (resp: any) => {
         if (resp && resp.ok === false) {
@@ -657,6 +688,7 @@ export default function RoomPage() {
     socket.off('room:state'); socket.off('room:participant-joined');
     socket.off('room:participant-left'); socket.off('room:participant-updated');
     socket.off('chat:message'); socket.off('chat:reaction'); socket.off('game:invite');
+    socket.off('room:kicked');
 
     socket.on('connect', onConnect);
     socket.on('disconnect', onDisconnect);
@@ -670,6 +702,10 @@ export default function RoomPage() {
     socket.on('chat:reaction', ({ messageId, reaction }) => store.updateMessageReaction(messageId, reaction));
     socket.on('game:invite', (invite: any) => {
       addInvite(invite);
+    });
+    socket.on('room:kicked', () => {
+      try { getSocket().emit('room:leave', slug); disconnectSocket(); } catch {}
+      router.push('/');
     });
 
     // Connect AFTER all handlers are registered, so the initial 'connect'

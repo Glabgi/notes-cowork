@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { supabase, getProfile, isSupabaseConfigured } from '@/lib/supabase';
-import { getLocalSession, type LocalProfile } from '@/lib/localAuth';
+import { getLocalSession, syncVcUser, type LocalProfile } from '@/lib/localAuth';
 
 type Profile = { id: string; username: string; avatar_id: string };
 
@@ -33,6 +33,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (s) {
       setUser({ id: s.username });
       setProfile({ id: s.username, username: s.username, avatar_id: s.avatar_id });
+      // Keep the room nickname bound to the logged-in account (account == identity).
+      syncVcUser(s.username, s.avatar_id);
     } else {
       setUser(null);
       setProfile(null);

@@ -56,7 +56,17 @@ export default function ChessGame({ vsBot: vsBotProp, gameId }: ChessProps = {})
         engine.load(g.fen);
       } catch (e) { console.error('Chess load fen:', e); }
       setBoard(engine.board());
-      setHistory(engine.history({ verbose: false }));
+      // engine.load(fen) wipes move history, so engine.history() returns [].
+      // Derive the move list from the server-provided PGN instead.
+      if (g.pgn) {
+        try {
+          const tmp = new ChessEngine();
+          tmp.loadPgn(g.pgn);
+          setHistory(tmp.history());
+        } catch { setHistory([]); }
+      } else {
+        setHistory([]);
+      }
       setChessGame(g);
       // Determine my color from server-assigned roles
       const myId = currentUser?.id;
@@ -353,7 +363,8 @@ export default function ChessGame({ vsBot: vsBotProp, gameId }: ChessProps = {})
         </div>
       </div>
 
-      {/* Move history */}
+      {/* Move history — hidden in multiplayer when no PGN history is available */}
+      {!(isMultiplayer && history.length === 0) && (
       <div className="w-36 bg-[var(--bg-subtle)] border border-[var(--border)] rounded-[16px] p-3">
         <p className="text-xs text-[var(--text-muted)] font-semibold uppercase tracking-wider mb-2">Ходы</p>
         <div className="space-y-0.5 max-h-80 overflow-y-auto text-xs">
@@ -368,6 +379,7 @@ export default function ChessGame({ vsBot: vsBotProp, gameId }: ChessProps = {})
           ))}
         </div>
       </div>
+      )}
     </div>
   );
 }
