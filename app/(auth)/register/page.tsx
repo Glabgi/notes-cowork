@@ -7,6 +7,7 @@ import { UserPlus, ArrowRight, AlertTriangle } from 'lucide-react';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 import { signUp, isSupabaseConfigured } from '@/lib/supabase';
+import { localRegister } from '@/lib/localAuth';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -19,10 +20,6 @@ export default function RegisterPage() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErr('');
-    if (!isSupabaseConfigured) {
-      setErr('БД не настроена. Заполните NEXT_PUBLIC_SUPABASE_* и примените supabase/schema.sql.');
-      return;
-    }
     const u = username.trim();
     if (u.length < 3 || !/^[a-zA-Z0-9_.-]+$/.test(u)) {
       setErr('Логин: минимум 3 символа, только латиница, цифры, . _ -'); return;
@@ -30,15 +27,21 @@ export default function RegisterPage() {
     if (password.length < 6) { setErr('Пароль минимум 6 символов'); return; }
     if (password !== password2) { setErr('Пароли не совпадают'); return; }
     setLoading(true);
-    const { data, error } = await signUp({ username: u, password });
-    setLoading(false);
-    if (error) {
-      if (error.message?.toLowerCase().includes('registered')) setErr('Этот логин уже занят');
-      else setErr(error.message);
-      return;
+    if (isSupabaseConfigured) {
+      const { data, error } = await signUp({ username: u, password });
+      setLoading(false);
+      if (error) {
+        setErr(error.message?.toLowerCase().includes('registered') ? 'Этот логин уже занят' : error.message);
+        return;
+      }
+      if (data?.session) router.push('/'); else router.push('/login');
+    } else {
+      const res = await localRegister(u, password);
+      setLoading(false);
+      if (!res.ok) { setErr(res.error || 'Ошибка регистрации'); return; }
+      window.dispatchEvent(new Event('vc-auth-changed'));
+      router.push('/');
     }
-    if (data?.session) router.push('/dashboard');
-    else router.push('/login');
   };
 
   return (
@@ -54,33 +57,9 @@ export default function RegisterPage() {
           </div>
 
           <form onSubmit={submit} className="space-y-4">
-            <Input
-              label="Логин"
-              value={username}
-              onChange={e => setUsername(e.target.value)}
-              placeholder="например: albert"
-              autoComplete="username"
-              required
-              autoFocus
-            />
-            <Input
-              label="Пароль"
-              type="password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              placeholder="минимум 6 символов"
-              autoComplete="new-password"
-              required
-            />
-            <Input
-              label="Повторите пароль"
-              type="password"
-              value={password2}
-              onChange={e => setPassword2(e.target.value)}
-              placeholder="ещё раз"
-              autoComplete="new-password"
-              required
-            />
+            <Input label="Логин" value={username} onChange={e => setUsername(e.target.value)} placeholder="например: albert" autoComplete="username" required autoFocus />
+            <Input label="Пароль" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="минимум 6 символов" autoComplete="new-password" required />
+            <Input label="Повторите пароль" type="password" value={password2} onChange={e => setPassword2(e.target.value)} placeholder="ещё раз" autoComplete="new-password" required />
 
             {err && (
               <p className="text-sm text-[#DC2626] bg-[#FEF2F2] border border-[#FECACA] rounded-[10px] px-3 py-2 flex items-start gap-2">
@@ -89,8 +68,7 @@ export default function RegisterPage() {
             )}
 
             <p className="text-[10px] text-[var(--text-muted)] leading-relaxed">
-              ⚠ Сброс пароля не предусмотрен. Сохраните его в надёжном месте.
-              Никаких персональных данных мы не собираем.
+              Сброс пароля не предусмотрен — сохраните его. Персональные данные не собираются.
             </p>
 
             <Button type="submit" className="w-full" size="lg" loading={loading}>

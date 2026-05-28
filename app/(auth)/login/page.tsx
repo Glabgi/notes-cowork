@@ -7,6 +7,7 @@ import { LogIn, ArrowRight, AlertTriangle } from 'lucide-react';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 import { signIn, isSupabaseConfigured } from '@/lib/supabase';
+import { localLogin } from '@/lib/localAuth';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -18,16 +19,19 @@ export default function LoginPage() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErr('');
-    if (!isSupabaseConfigured) {
-      setErr('БД не настроена. Заполните NEXT_PUBLIC_SUPABASE_* и примените supabase/schema.sql.');
-      return;
-    }
     if (!username.trim() || !password.trim()) { setErr('Введите логин и пароль'); return; }
     setLoading(true);
-    const { error } = await signIn(username.trim(), password);
-    setLoading(false);
-    if (error) { setErr('Неверный логин или пароль'); return; }
-    router.push('/dashboard');
+    if (isSupabaseConfigured) {
+      const { error } = await signIn(username.trim(), password);
+      setLoading(false);
+      if (error) { setErr('Неверный логин или пароль'); return; }
+    } else {
+      const res = await localLogin(username, password);
+      setLoading(false);
+      if (!res.ok) { setErr(res.error || 'Ошибка входа'); return; }
+      window.dispatchEvent(new Event('vc-auth-changed'));
+    }
+    router.push('/');
   };
 
   return (
@@ -62,10 +66,6 @@ export default function LoginPage() {
             <Link href="/register" className="text-[var(--accent)] hover:underline font-medium">
               Зарегистрироваться
             </Link>
-          </p>
-
-          <p className="text-center text-xs text-[var(--text-muted)] mt-3">
-            Или <Link href="/" className="hover:text-[var(--text-secondary)] underline">продолжить без входа</Link>
           </p>
         </div>
       </div>

@@ -26,8 +26,8 @@ interface ActiveRoom {
 
 /* ─── Footer (gated) ─────────────────────────────────────────────────── */
 function HomeFooterLinks({ router }: { router: any }) {
-  const { user, configured } = useAuth();
-  const isAnonymous = configured && !user;
+  const { user } = useAuth();
+  const isAnonymous = !user;
   if (isAnonymous) {
     return (
       <div className="flex items-center justify-center gap-2 text-xs text-[var(--text-muted)] pt-2">
@@ -46,34 +46,6 @@ function HomeFooterLinks({ router }: { router: any }) {
   );
 }
 
-/* ─── Auth Badge ────────────────────────────────────────────────────── */
-function AuthBadge() {
-  const router = useRouter();
-  const { user, profile, loading, configured } = useAuth();
-  if (!configured) return null;
-  if (loading) return <div className="w-8 h-8 rounded-full bg-[var(--bg-subtle)] animate-pulse" />;
-  if (!user) {
-    return (
-      <Button variant="outline" size="sm" onClick={() => router.push('/login')}>
-        <LogIn size={14} />
-        <span className="hidden sm:inline">Войти</span>
-      </Button>
-    );
-  }
-  return (
-    <button
-      onClick={async () => { if (confirm('Выйти из аккаунта?')) { await signOut(); router.refresh(); } }}
-      className="flex items-center gap-2 px-2 py-1 rounded-[10px] hover:bg-[var(--bg-hover)] transition-colors"
-      title={profile?.username || user.email || 'Профиль'}
-    >
-      <div className="w-7 h-7 rounded-full overflow-hidden border border-[var(--border)]"
-        dangerouslySetInnerHTML={{ __html: getAvatarSvgHeader(profile?.avatar_id || 'fox', 28) }} />
-      <span className="text-xs font-medium text-[var(--text-secondary)] hidden sm:inline max-w-[100px] truncate">
-        {profile?.username || user.email}
-      </span>
-    </button>
-  );
-}
 
 /* ─── Create Room Modal ─────────────────────────────────────────────── */
 function CreateRoomModal({ open, onClose }: { open: boolean; onClose: () => void }) {

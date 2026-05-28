@@ -131,40 +131,26 @@ export default function SettingsPage() {
     } catch {}
   }, [s.userName, s.avatarId]);
 
+  // The toggle is a pure preference that ALWAYS flips instantly. Turning it on
+  // additionally requests browser permission in the background (best-effort) —
+  // but the toggle state never depends on the permission result, so it can
+  // never get "stuck".
   const togglePush = () => {
-    if (typeof window === 'undefined' || !('Notification' in window)) {
-      alert('Уведомления не поддерживаются в этом браузере');
-      return;
-    }
-    // Currently ON → just flip OFF (no permission needed)
-    if (s.pushNotifications) {
-      s.setPushNotifications(false);
-      return;
-    }
-    const current = window.Notification.permission;
-    if (current === 'denied') {
-      setNotifBlocked(true);
-      alert('Уведомления заблокированы в настройках браузера. Откройте настройки сайта → Уведомления → Разрешить, затем перезагрузите страницу.');
-      return;
-    }
-    if (current === 'granted') {
-      s.setPushNotifications(true);
-      // Test notification so user sees it worked
-      try { new Notification('Уведомления включены ✓', { body: 'Вы получите сигнал при окончании таймера' }); } catch {}
-      return;
-    }
-    // 'default' — request permission. Must be called synchronously from click for some browsers.
-    window.Notification.requestPermission().then(perm => {
-      s.setPushNotifications(perm === 'granted');
-      setNotifBlocked(perm === 'denied');
-      if (perm === 'granted') {
-        try { new Notification('Уведомления включены ✓', { body: 'Вы получите сигнал при окончании таймера' }); } catch {}
+    const next = !s.pushNotifications;
+    s.setPushNotifications(next);   // flip immediately — always works
+    if (next && typeof window !== 'undefined' && 'Notification' in window) {
+      const perm = window.Notification.permission;
+      if (perm === 'default') {
+        window.Notification.requestPermission().then(p => {
+          setNotifBlocked(p === 'denied');
+          if (p === 'granted') { try { new Notification('Уведомления включены', { body: 'Сигнал при окончании таймера' }); } catch {} }
+        }).catch(() => {});
+      } else if (perm === 'granted') {
+        try { new Notification('Уведомления включены', { body: 'Сигнал при окончании таймера' }); } catch {}
       } else if (perm === 'denied') {
-        alert('Вы отклонили разрешение. Включить можно через настройки браузера для этого сайта.');
+        setNotifBlocked(true);
       }
-    }).catch(() => {
-      alert('Не удалось запросить разрешение на уведомления');
-    });
+    }
   };
 
   return (
@@ -290,18 +276,14 @@ export default function SettingsPage() {
               <p className="text-sm font-medium text-[var(--text-primary)]">Push-уведомления</p>
               <p className="text-xs text-[var(--text-muted)] mt-0.5">При окончании фазы таймера</p>
             </div>
-            <Toggle
-              on={s.pushNotifications}
-              onToggle={togglePush}
-              disabled={notifBlocked}
-            />
+            <Toggle on={s.pushNotifications} onToggle={togglePush} />
           </div>
-          {notifBlocked && (
+          {notifBlocked && s.pushNotifications && (
             <div className="text-xs text-[#B45309] bg-[#FFFBEB] border border-[#FDE68A] rounded-[10px] px-3 py-2.5 flex items-start gap-2">
               <AlertTriangle size={13} className="flex-shrink-0 mt-0.5" />
               <div>
-                <p className="font-semibold">Уведомления заблокированы браузером</p>
-                <p className="mt-0.5">Кликните иконку 🔒/🔔 слева от URL → разрешите уведомления → обновите страницу.</p>
+                <p className="font-semibold">Системные уведомления заблокированы браузером</p>
+                <p className="mt-0.5">Настройка включена, но чтобы видеть всплывающие уведомления — разрешите их в браузере (иконка слева от адреса) и обновите страницу.</p>
               </div>
             </div>
           )}
