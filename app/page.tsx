@@ -318,29 +318,22 @@ function ActiveRoomsList() {
     let cancelled = false;
     const load = async () => {
       try {
-        const res = await fetch('/api/rooms/active');
+        const res = await fetch('/api/rooms/active', { cache: 'no-store' });
         if (!res.ok) throw new Error();
         const data = await res.json();
-        if (!cancelled) setRooms(data);
+        // Only show real PUBLIC rooms from the server. No localStorage fallback —
+        // that previously surfaced the user's own private rooms by mistake.
+        if (!cancelled) setRooms(Array.isArray(data) ? data : []);
       } catch {
-        // Merge recent rooms from localStorage as fallback
-        try {
-          const recent: { slug: string; name: string }[] = JSON.parse(localStorage.getItem('vc_recent_rooms') || '[]');
-          if (!cancelled) {
-            setRooms(recent.slice(0, 5).map(r => ({
-              slug: r.slug,
-              name: r.name,
-              participantCount: 0,
-              participants: [],
-            })));
-          }
-        } catch {}
+        if (!cancelled) setRooms([]);
       } finally {
         if (!cancelled) setLoading(false);
       }
     };
     load();
-    return () => { cancelled = true; };
+    // Auto-refresh every 15s so newly created public sessions appear automatically
+    const interval = setInterval(load, 15000);
+    return () => { cancelled = true; clearInterval(interval); };
   }, []);
 
   if (loading) return (
