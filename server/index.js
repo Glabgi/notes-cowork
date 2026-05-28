@@ -686,7 +686,8 @@ app.get('/rooms/:slug', (req, res) => {
   });
 });
 
-const PORT = process.env.SOCKET_PORT || 3001;
-httpServer.listen(PORT, () => {
+// Render/Heroku/Railway inject PORT; fall back to SOCKET_PORT then 3001 for local dev
+const PORT = process.env.PORT || process.env.SOCKET_PORT || 3001;
+httpServer.listen(PORT, '0.0.0.0', () => {
   console.log(`Socket.io server running on port ${PORT}`);
 });
