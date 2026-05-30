@@ -65,7 +65,16 @@ export async function joinVoice(slug: string, me: { id: string; name: string; av
     console.warn('[voice] SFU_URL=' + SFU_URL + ' — на production это не сработает. Настройте NEXT_PUBLIC_SFU_URL.');
   }
 
-  socket = io(SFU_URL, { transports: ['websocket', 'polling'], reconnection: false });
+  // reconnection включён: при сворачивании вкладки / кратком обрыве сети
+  // браузер может усыпить сокет — даём ему восстановиться, чтобы не выкидывать
+  // пользователя из звонка.
+  socket = io(SFU_URL, {
+    transports: ['websocket', 'polling'],
+    reconnection: true,
+    reconnectionAttempts: 5,
+    reconnectionDelay: 1000,
+    reconnectionDelayMax: 5000,
+  });
 
   await new Promise<void>((res, rej) => {
     socket!.once('connect', () => res());

@@ -13,6 +13,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { AVATARS, getAvatarSvg } from '@/lib/avatars';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
+import Toggle from '@/components/ui/Toggle';
 import { cn } from '@/lib/utils';
 
 type AmbientSound = 'cafe' | 'forest' | 'white-noise' | 'none';
@@ -75,26 +76,6 @@ function Section({ icon: Icon, title, children, delay = 0 }: {
       </div>
       {children}
     </div>
-  );
-}
-
-function Toggle({ on, onToggle, disabled = false }: { on: boolean; onToggle: () => void; disabled?: boolean }) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      onClick={(e) => { e.preventDefault(); e.stopPropagation(); if (!disabled) onToggle(); }}
-      disabled={disabled}
-      aria-pressed={on}
-      // Inline-flex track with the knob as a flex child — no absolute positioning,
-      // so it can never drift/overflow across browsers.
-      className={cn(
-        'inline-flex items-center w-12 h-7 rounded-full p-1 transition-colors duration-200 flex-shrink-0 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed',
-        on ? 'bg-[var(--accent)] justify-end' : 'bg-[var(--border)] justify-start'
-      )}
-    >
-      <span className="block w-5 h-5 bg-white rounded-full shadow-[0_1px_3px_rgba(15,23,42,0.25)] transition-transform duration-200" />
-    </button>
   );
 }
 

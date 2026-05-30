@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   Mic, MicOff, Headphones, VolumeX, MonitorUp, MonitorOff,
   PhoneOff, Volume2, AlertTriangle, Signal,
@@ -22,7 +22,11 @@ export default function VoicePanel() {
   const peers = Object.values(v.peers);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => () => { if (useVoiceStore.getState().inVoice) leaveVoice(); }, []);
+  // NB: намеренно НЕ выходим из голоса при размонтировании этой панели.
+  // Раньше переключение вкладок в SidePanel размонтировало VoicePanel и
+  // вызывало leaveVoice() → пользователя выкидывало из звонка. Выход из
+  // голоса теперь происходит только при выходе из комнаты
+  // (см. app/room/[slug]/page.tsx) или по кнопке «Покинуть».
 
   const handleJoin = async () => {
     if (!room || !currentUser) return;

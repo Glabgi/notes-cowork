@@ -7,6 +7,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { connectSocket, getSocket, disconnectSocket } from '@/lib/socket';
 import { useRoomStore } from '@/store/roomStore';
 import { useGameStore } from '@/store/gameStore';
+import { useVoiceStore } from '@/store/voiceStore';
+import { leaveVoice } from '@/lib/voice';
 import { useScheduleStore } from '@/store/scheduleStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import type { Participant, Room } from '@/types';
@@ -529,6 +531,11 @@ export default function RoomPage() {
   useEffect(() => {
     return () => {
       try {
+        // Выходим из голоса только когда покидаем комнату целиком,
+        // а не при переключении вкладок в боковой панели.
+        if (useVoiceStore.getState().inVoice) leaveVoice();
+      } catch {}
+      try {
         const s = getSocket();
         s.emit('room:leave', slug);
         disconnectSocket();
@@ -732,6 +739,7 @@ export default function RoomPage() {
       addInvite(invite);
     });
     socket.on('room:kicked', () => {
+      try { if (useVoiceStore.getState().inVoice) leaveVoice(); } catch {}
       try { getSocket().emit('room:leave', slug); disconnectSocket(); } catch {}
       router.push('/');
     });
