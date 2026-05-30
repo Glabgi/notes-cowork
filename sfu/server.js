@@ -110,6 +110,16 @@ io.on('connection', (socket) => {
       roomSlug = slug;
       peerId = peer.id;
       const room = await getOrCreateRoom(slug);
+      // Защита от «двоения»: если этот же peerId уже есть (ghost после обрыва
+      // соединения или повторный join), закрываем старые транспорты/продюсеры
+      // и сообщаем остальным, что старый экземпляр ушёл — иначе участник
+      // отрисуется дважды и его звук задвоится.
+      const stale = room.peers.get(peerId);
+      if (stale) {
+        try { for (const t of stale.transports.values()) t.close(); } catch {}
+        room.peers.delete(peerId);
+        socket.to('voice:' + slug).emit('voice:peer-left', { peerId });
+      }
       room.peers.set(peerId, {
         socketId: socket.id, name: peer.name, avatarId: peer.avatarId,
         transports: new Map(), producers: new Map(), consumers: new Map(),

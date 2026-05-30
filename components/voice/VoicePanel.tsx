@@ -19,7 +19,9 @@ const canScreenShare = typeof navigator !== 'undefined' && !!(navigator.mediaDev
 export default function VoicePanel() {
   const v = useVoiceStore();
   const { room, currentUser } = useRoomStore();
-  const peers = Object.values(v.peers);
+  // Исключаем самого себя из списка пиров (защита от «двоения», если сервер
+  // вдруг прислал наш же peerId) — себя рисуем отдельной строкой isMe.
+  const peers = Object.values(v.peers).filter(p => p.peerId !== currentUser?.id);
   const [error, setError] = useState<string | null>(null);
 
   // NB: намеренно НЕ выходим из голоса при размонтировании панели —

@@ -22,6 +22,10 @@ let micProducer: Producer | null = null;
 let screenProducer: Producer | null = null;
 let screenAudioProducer: Producer | null = null;
 const consumers = new Map<string, Consumer>();
+// producerId → consumerId: защита от «двоения» — один и тот же продюсер
+// не должен потребляться дважды (иначе создаётся второй audio-элемент и звук
+// слышен в два голоса / с эхом).
+const producerToConsumer = new Map<string, string>();
 // remote audio elements + screen video tracks
 const audioEls = new Map<string, HTMLAudioElement>();
 let onScreenTrack: ((peerId: string, track: MediaStreamTrack | null) => void) | null = null;
@@ -65,16 +69,14 @@ export async function joinVoice(slug: string, me: { id: string; name: string; av
     console.warn('[voice] SFU_URL=' + SFU_URL + ' — на production это не сработает. Настройте NEXT_PUBLIC_SFU_URL.');
   }
 
-  // reconnection включён: при сворачивании вкладки / кратком обрыве сети
-  // браузер может усыпить сокет — даём ему восстановиться, чтобы не выкидывать
-  // пользователя из звонка.
-  socket = io(SFU_URL, {
-    transports: ['websocket', 'polling'],
-    reconnection: true,
-    reconnectionAttempts: 5,
-    reconnectionDelay: 1000,
-    reconnectionDelayMax: 5000,
-  });
+  // reconnection ВЫКЛ намеренно: авто-reconnect socket.io создаёт на сервере
+  // НОВЫЙ socket.id, старый peer/продюсеры закрываются и пересоздаются —
+  // это приводило к «двоению» (дубли peer-joined/new-producer) и ghost-пирам.
+  // Медиа (mediasoup transport) всё равно не восстанавливается без полного
+  // ре-join, поэтому надёжнее держать одно соединение на сессию голоса.
+  // Защита от вылета при переключении вкладок обеспечена тем, что VoicePanel
+  // больше не вызывает leaveVoice() при размонтировании.
+  socket = io(SFU_URL, { transports: ['websocket', 'polling'], reconnection: false });
 
   await new Promise<void>((res, rej) => {
     socket!.once('connect', () => res());
@@ -153,14 +155,23 @@ async function produceMic() {
 }
 
 async function consume(producerId: string, peerId: string, source?: string) {
+  // Идемпотентность: если этот продюсер уже потребляется и консьюмер жив —
+  // не создаём второй (иначе звук задваивается). Дубли могут прилетать из-за
+  // повторного voice:new-producer или гонки join↔new-producer.
+  const existingId = producerToConsumer.get(producerId);
+  if (existingId && consumers.has(existingId)) return;
+
   const resp = await emitAck('voice:consume', {
     transportId: recvTransport!.id, producerId, rtpCapabilities: device!.rtpCapabilities,
   });
   if (resp.error) return;
+  // Повторная проверка после await — параллельный вызов мог успеть создать консьюмер.
+  if (producerToConsumer.has(producerId) && consumers.has(producerToConsumer.get(producerId)!)) return;
   const consumer = await recvTransport!.consume({
     id: resp.id, producerId: resp.producerId, kind: resp.kind, rtpParameters: resp.rtpParameters,
   });
   consumers.set(consumer.id, consumer);
+  producerToConsumer.set(producerId, consumer.id);
   await emitAck('voice:resume-consumer', { consumerId: consumer.id });
 
   const stream = new MediaStream([consumer.track]);
@@ -201,6 +212,7 @@ function wireServerEvents(slug: string) {
   socket!.on('voice:consumer-closed', ({ consumerId }) => {
     const c = consumers.get(consumerId); if (c) { c.close(); consumers.delete(consumerId); }
     const el = audioEls.get(consumerId); if (el) { el.srcObject = null; audioEls.delete(consumerId); }
+    producerToConsumer.forEach((cid, pid) => { if (cid === consumerId) producerToConsumer.delete(pid); });
   });
 }
 
@@ -246,6 +258,7 @@ export function stopScreenShare() {
 export function leaveVoice() {
   try { micProducer?.close(); screenProducer?.close(); screenAudioProducer?.close(); } catch {}
   consumers.forEach(c => c.close()); consumers.clear();
+  producerToConsumer.clear();
   audioEls.forEach(el => { el.srcObject = null; }); audioEls.clear();
   try { sendTransport?.close(); recvTransport?.close(); } catch {}
   socket?.emit('voice:leave');
