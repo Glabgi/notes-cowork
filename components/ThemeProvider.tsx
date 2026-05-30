@@ -4,18 +4,19 @@ import { useEffect } from 'react';
 import { useSettingsStore } from '@/store/settingsStore';
 
 /**
- * Проект использует одну светлую палитру «матовое стекло».
- * Класс `light` ставится на <html>; тема жёстко зафиксирована на `light`.
+ * Проект использует одну Discord-like тёмную палитру.
+ * Класс `dark` ставится на <html> для совместимости с любыми
+ * dark:-утилитами Tailwind. Тема жёстко зафиксирована на `dark`.
  */
 export default function ThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const root = document.documentElement;
-    root.classList.remove('dark');
-    root.classList.add('light');
-    root.style.colorScheme = 'light';
-    // Keep the persisted preference truthful — the app is light-only.
-    if (useSettingsStore.getState().theme !== 'light') {
-      useSettingsStore.getState().setTheme('light');
+    root.classList.remove('light');
+    root.classList.add('dark');
+    root.style.colorScheme = 'dark';
+    // Keep the persisted preference truthful — the app is dark-only.
+    if (useSettingsStore.getState().theme !== 'dark') {
+      useSettingsStore.getState().setTheme('dark');
     }
   }, []);
 

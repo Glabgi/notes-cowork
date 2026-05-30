@@ -11,7 +11,6 @@ import { Timer, Clock, Gamepad2 } from 'lucide-react';
 interface ParticipantCardProps {
   participant: Participant;
   isMe?: boolean;
-  speaking?: boolean;
   onInviteGame?: (userId: string) => void;
 }
 
@@ -20,12 +19,11 @@ function getStatusDotColor(status: string) {
     case 'focus':  return 'bg-[var(--status-online)]';
     case 'break':  return 'bg-[var(--status-break)]';
     case 'gaming': return 'bg-[var(--status-gaming)]';
-    case 'dnd':    return 'bg-[var(--status-dnd)]';
     default:       return 'bg-[var(--status-away)]';
   }
 }
 
-export default function ParticipantCard({ participant, isMe, speaking, onInviteGame }: ParticipantCardProps) {
+export default function ParticipantCard({ participant, isMe, onInviteGame }: ParticipantCardProps) {
   const [showTooltip, setShowTooltip] = useState(false);
 
   return (
@@ -35,20 +33,18 @@ export default function ParticipantCard({ participant, isMe, speaking, onInviteG
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.95 }}
       className={cn(
-        'glass relative rounded-[20px] p-4 cursor-pointer group transition-all duration-200 hover-lift',
-        'hover:border-[var(--accent)]',
-        isMe && 'glow-accent',
+        'relative bg-[var(--bg-card)] border rounded-[16px] p-4 cursor-pointer group transition-all duration-150',
+        'hover:border-[var(--accent)] hover:shadow-md hover:-translate-y-0.5',
+        isMe ? 'border-[var(--accent)] bg-[var(--accent-light)]' : 'border-[var(--border)]',
       )}
       onMouseEnter={() => setShowTooltip(true)}
       onMouseLeave={() => setShowTooltip(false)}
     >
       {/* Status dot */}
-      <div className={cn('absolute top-3 right-3 w-3 h-3 rounded-full border-2 border-white/80', getStatusDotColor(participant.status))} />
+      <div className={cn('absolute top-3 right-3 w-3 h-3 rounded-full border-2 border-[var(--bg-card)]', getStatusDotColor(participant.status))} />
 
       <div className="flex flex-col items-center gap-3">
-        <div className={cn('rounded-full', speaking && 'animate-speaking')}>
-          <Avatar id={participant.avatarId} size={56} showRing status={participant.status} />
-        </div>
+        <Avatar id={participant.avatarId} size={56} showRing status={participant.status} />
 
         <div className="text-center min-w-0 w-full">
           <p className="font-semibold text-[var(--text-primary)] text-sm truncate">
@@ -59,9 +55,9 @@ export default function ParticipantCard({ participant, isMe, speaking, onInviteG
         </div>
 
         {participant.currentTask && (
-          <div className="bg-[var(--accent-light)] rounded-full px-3 py-1.5 w-full flex items-center justify-center gap-1.5">
-            <div className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] flex-shrink-0" />
-            <p className="text-xs text-[var(--accent)] font-medium line-clamp-1 leading-relaxed">{participant.currentTask}</p>
+          <div className="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-[8px] px-2.5 py-1.5 w-full flex items-start gap-1.5">
+            <div className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] flex-shrink-0 mt-1" />
+            <p className="text-xs text-[var(--text-secondary)] line-clamp-2 leading-relaxed">{participant.currentTask}</p>
           </div>
         )}
 
@@ -85,7 +81,7 @@ export default function ParticipantCard({ participant, isMe, speaking, onInviteG
         <motion.div
           initial={{ opacity: 0, y: 5 }}
           animate={{ opacity: 1, y: 0 }}
-          className="glass-elevated absolute -top-2 left-1/2 -translate-x-1/2 -translate-y-full z-10 w-52 rounded-[16px] p-4 text-xs"
+          className="absolute -top-2 left-1/2 -translate-x-1/2 -translate-y-full z-10 w-52 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-[12px] p-4 shadow-lg text-xs"
         >
           <p className="font-semibold text-[var(--text-primary)] mb-2">{participant.name}</p>
           <div className="space-y-1 text-[var(--text-secondary)]">

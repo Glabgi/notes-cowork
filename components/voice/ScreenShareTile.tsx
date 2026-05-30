@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { MonitorUp, X } from 'lucide-react';
 import { useVoiceStore } from '@/store/voiceStore';
 import { setScreenTrackHandler, stopScreenShare } from '@/lib/voice';
@@ -12,16 +12,23 @@ export default function ScreenShareTile() {
   const peers = useVoiceStore(s => s.peers);
   const { currentUser } = useRoomStore();
   const videoRef = useRef<HTMLVideoElement>(null);
+  // Держим последнюю дорожку отдельно от DOM: трек часто приходит РАНЬШЕ,
+  // чем смонтируется <video> (screenPeerId выставляется в том же тике), поэтому
+  // нельзя писать srcObject прямо в обработчике — элемента ещё нет.
+  const [track, setTrack] = useState<MediaStreamTrack | null>(null);
 
   useEffect(() => {
-    setScreenTrackHandler((_peerId, track) => {
-      const el = videoRef.current;
-      if (!el) return;
-      el.srcObject = track ? new MediaStream([track]) : null;
-      if (track) el.play().catch(() => {});
-    });
+    setScreenTrackHandler((_peerId, t) => setTrack(t));
     return () => setScreenTrackHandler(null);
   }, []);
+
+  // Применяем дорожку к <video>, как только и элемент, и трек доступны.
+  useEffect(() => {
+    const el = videoRef.current;
+    if (!el) return;
+    el.srcObject = track ? new MediaStream([track]) : null;
+    if (track) el.play().catch(() => {});
+  }, [track, screenPeerId]);
 
   if (!screenPeerId) return null;
 

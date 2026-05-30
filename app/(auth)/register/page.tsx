@@ -47,15 +47,15 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="w-full max-w-sm animate-fade-slide-in">
-        <div className="glass-elevated rounded-[28px] p-8 shadow-lg">
+    <div className="min-h-screen bg-[var(--bg-page)] flex items-center justify-center p-4">
+      <div className="w-full max-w-sm">
+        <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[28px] p-8 shadow-[0_8px_32px_rgba(15,23,42,0.10)]">
           <div className="text-center mb-6">
-            <div className="w-14 h-14 bg-accent-grad rounded-[16px] flex items-center justify-center mx-auto mb-4 shadow-glow">
-              <UserPlus size={24} className="text-white" />
+            <div className="w-14 h-14 bg-[var(--accent-light)] rounded-[16px] flex items-center justify-center mx-auto mb-4">
+              <UserPlus size={24} className="text-[var(--accent)]" />
             </div>
-            <h2 className="text-xl font-bold text-ink-primary">Регистрация</h2>
-            <p className="text-ink-muted text-sm mt-1">Логин станет вашим постоянным никнеймом</p>
+            <h2 className="text-xl font-bold text-[var(--text-primary)]">Регистрация</h2>
+            <p className="text-[var(--text-muted)] text-sm mt-1">Только логин и пароль</p>
           </div>
 
           <form onSubmit={submit} className="space-y-4">
@@ -69,8 +69,8 @@ export default function RegisterPage() {
               </p>
             )}
 
-            <p className="text-[10px] text-ink-muted leading-relaxed">
-              Выбранный логин станет вашим постоянным никнеймом и не может быть изменён. Сброс пароля не предусмотрен — сохраните его. Персональные данные не собираются.
+            <p className="text-[10px] text-[var(--text-muted)] leading-relaxed">
+              Сброс пароля не предусмотрен — сохраните его. Персональные данные не собираются.
             </p>
 
             <Button type="submit" className="w-full" size="lg" loading={loading}>

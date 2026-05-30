@@ -17,7 +17,7 @@ export default function RoomHeader() {
   const [showShare, setShowShare] = useState(false);
 
   if (!room) return (
-    <header className="h-14 glass border-b border-[var(--divider)] flex items-center px-4 gap-3 rounded-b-[20px]">
+    <header className="h-14 bg-[var(--bg-card)]/95 border-b border-[var(--border)] flex items-center px-4 gap-3">
       <div className="w-2.5 h-2.5 rounded-full bg-[var(--status-break)] animate-pulse-dot flex-shrink-0" />
       <span className="text-[var(--text-secondary)] text-sm">Подключение...</span>
     </header>
@@ -34,7 +34,10 @@ export default function RoomHeader() {
 
   return (
     <>
-      <header className="h-14 glass border-b border-[var(--divider)] flex items-center px-4 gap-3 flex-shrink-0 z-40 rounded-b-[20px]">
+      <header className="h-14 bg-[var(--bg-card)]/95 backdrop-blur-sm border-b border-[var(--border)] flex items-center px-4 gap-3 flex-shrink-0 z-40">
+        {/* Connection dot */}
+        <div className={cn('w-2 h-2 rounded-full flex-shrink-0', isConnected ? 'bg-[var(--status-online)]' : 'bg-[var(--danger)] animate-pulse-dot')} />
+
         {/* Room name */}
         <div className="flex items-baseline gap-2 min-w-0 flex-1">
           <h1
@@ -50,32 +53,24 @@ export default function RoomHeader() {
             #{room.slug}
           </span>
           {room.isPrivate && (
-            <span className="text-[10px] font-semibold text-[var(--status-break)] bg-[rgba(245,158,11,0.12)] border border-[rgba(245,158,11,0.35)] px-1.5 py-0.5 rounded-full uppercase tracking-wider flex-shrink-0">
+            <span className="text-[10px] font-semibold text-[var(--status-break)] bg-[rgba(240,178,50,0.12)] border border-[rgba(240,178,50,0.35)] px-1.5 py-0.5 rounded-full uppercase tracking-wider flex-shrink-0">
               приватная
             </span>
           )}
         </div>
 
-        {/* Live-status capsule */}
-        <div className="hidden sm:flex items-center gap-3 glass-subtle rounded-full px-3.5 py-1.5 flex-shrink-0 border border-[var(--border)]">
-          <div className="flex items-center gap-1.5" title={isConnected ? 'В сети' : 'Переподключение'}>
-            <div className={cn('w-2 h-2 rounded-full', isConnected ? 'bg-[var(--status-online)]' : 'bg-[var(--danger)] animate-pulse-dot')} />
-            <span className="text-xs text-[var(--text-secondary)] font-medium">{isConnected ? 'В сети' : 'Связь...'}</span>
+        {/* Focus indicator */}
+        {focusCount > 0 && (
+          <div className="hidden sm:flex items-center gap-1.5 bg-[rgba(35,165,90,0.12)] border border-[rgba(35,165,90,0.35)] rounded-full px-3 py-1 flex-shrink-0">
+            <div className="w-1.5 h-1.5 rounded-full bg-[var(--status-online)] animate-pulse-dot" />
+            <span className="text-xs text-[var(--status-online)] font-medium">{focusCount} в фокусе</span>
           </div>
-          {focusCount > 0 && (
-            <>
-              <span className="w-px h-3.5 bg-[var(--divider)]" />
-              <div className="flex items-center gap-1.5">
-                <div className="w-1.5 h-1.5 rounded-full bg-[var(--status-online)] animate-pulse-dot" />
-                <span className="text-xs text-[var(--status-online)] font-medium">{focusCount} в фокусе</span>
-              </div>
-            </>
-          )}
-          <span className="w-px h-3.5 bg-[var(--divider)]" />
-          <div className="flex items-center gap-1.5 text-[var(--text-secondary)]">
-            <Users size={14} />
-            <span className="text-xs tabular-nums font-medium">{room.participants.length}</span>
-          </div>
+        )}
+
+        {/* Participants count */}
+        <div className="flex items-center gap-1.5 text-[var(--text-secondary)] flex-shrink-0">
+          <Users size={15} />
+          <span className="text-sm tabular-nums">{room.participants.length}</span>
         </div>
 
         {/* Actions */}
