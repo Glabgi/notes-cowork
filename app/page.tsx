@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useImperativeHandle, forwardRef, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { v4 as uuidv4 } from 'uuid';
 import { generateSlug } from '@/lib/utils';
@@ -10,7 +10,7 @@ import Button from '@/components/ui/Button';
 import Modal from '@/components/ui/Modal';
 import Avatar from '@/components/ui/Avatar';
 import { cn } from '@/lib/utils';
-import { Settings, Calendar, Plus, ArrowRight, AlertTriangle, Home, LogIn, LogOut } from 'lucide-react';
+import { Settings, Calendar, Plus, ArrowRight, AlertTriangle, Home, LogIn, LogOut, RefreshCw } from 'lucide-react';
 import { useAuth } from '@/components/AuthProvider';
 import { signOut, isSupabaseConfigured } from '@/lib/supabase';
 import { getAvatarSvg as getAvatarSvgHeader } from '@/lib/avatars';
@@ -221,7 +221,7 @@ function RoomCard({ room }: { room: ActiveRoom }) {
   return (
     <button
       onClick={() => router.push(`/room/${room.slug}`)}
-      className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-[12px] p-4 hover:border-[var(--accent)] hover:bg-[var(--bg-hover)] hover:shadow-md cursor-pointer transition-all duration-150 text-left group"
+      className="glass hover-lift w-full rounded-[20px] p-5 cursor-pointer text-left group"
     >
       {/* Row 1: name + participant count */}
       <div className="flex items-center justify-between gap-2">
@@ -248,7 +248,7 @@ function RoomCard({ room }: { room: ActiveRoom }) {
           <div className="flex -space-x-2">
             {room.participants.slice(0, 4).map((p, i) => (
               <div key={p.id}
-                className="w-6 h-6 rounded-full border-2 border-[var(--bg-card)] overflow-hidden"
+                className="w-6 h-6 rounded-full border-2 border-white/70 overflow-hidden"
                 style={{ zIndex: 10 - i }}
                 dangerouslySetInnerHTML={{ __html: getAvatarSvg(p.avatarId, 24) }}
               />
@@ -268,7 +268,7 @@ function RoomCard({ room }: { room: ActiveRoom }) {
 /* ─── Skeleton Card ─────────────────────────────────────────────────── */
 function SkeletonCard() {
   return (
-    <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[16px] p-4 animate-pulse">
+    <div className="glass rounded-[20px] p-5 animate-pulse">
       <div className="flex items-center justify-between gap-2">
         <div className="h-4 bg-[var(--bg-subtle)] rounded-full w-32" />
         <div className="h-5 bg-[var(--bg-subtle)] rounded-full w-14" />
@@ -282,40 +282,44 @@ function SkeletonCard() {
 }
 
 /* ─── Active Rooms List ─────────────────────────────────────────────── */
-function ActiveRoomsList() {
+export interface ActiveRoomsListHandle { reload: () => void }
+
+const ActiveRoomsList = forwardRef<ActiveRoomsListHandle>((_props, ref) => {
   const [rooms, setRooms] = useState<ActiveRoom[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const load = useCallback(async () => {
+    try {
+      const res = await fetch('/api/rooms/active', { cache: 'no-store' });
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      // Only show real PUBLIC rooms from the server. No localStorage fallback —
+      // that previously surfaced the user's own private rooms by mistake.
+      setRooms(Array.isArray(data) ? data : []);
+    } catch {
+      setRooms([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useImperativeHandle(ref, () => ({ reload: load }), [load]);
+
   useEffect(() => {
-    let cancelled = false;
-    const load = async () => {
-      try {
-        const res = await fetch('/api/rooms/active', { cache: 'no-store' });
-        if (!res.ok) throw new Error();
-        const data = await res.json();
-        // Only show real PUBLIC rooms from the server. No localStorage fallback —
-        // that previously surfaced the user's own private rooms by mistake.
-        if (!cancelled) setRooms(Array.isArray(data) ? data : []);
-      } catch {
-        if (!cancelled) setRooms([]);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
     load();
     // Auto-refresh every 15s so newly created public sessions appear automatically
     const interval = setInterval(load, 15000);
-    return () => { cancelled = true; clearInterval(interval); };
-  }, []);
+    return () => { clearInterval(interval); };
+  }, [load]);
 
   if (loading) return (
-    <div className="space-y-2">
+    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
       {[1,2,3].map(i => <SkeletonCard key={i} />)}
     </div>
   );
 
   if (rooms.length === 0) return (
-    <div className="bg-[var(--bg-card)] border border-[var(--border)] border-dashed rounded-[16px] p-8 text-center">
+    <div className="glass-subtle rounded-[20px] p-8 text-center">
       <div className="w-12 h-12 rounded-full bg-[var(--bg-subtle)] flex items-center justify-center mx-auto mb-2">
         <Home size={20} className="text-[var(--text-muted)]" />
       </div>
@@ -325,17 +329,26 @@ function ActiveRoomsList() {
   );
 
   return (
-    <div className="space-y-2">
+    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
       {rooms.map(room => <RoomCard key={room.slug} room={room} />)}
     </div>
   );
-}
+});
+ActiveRoomsList.displayName = 'ActiveRoomsList';
 
 /* ─── Page ──────────────────────────────────────────────────────────── */
 export default function HomePage() {
   const router = useRouter();
   const [showCreate, setShowCreate] = useState(false);
   const [joinInput, setJoinInput] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
+  const listRef = useRef<ActiveRoomsListHandle>(null);
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    listRef.current?.reload();
+    setTimeout(() => setRefreshing(false), 600);
+  };
 
   const handleJoin = () => {
     if (!joinInput.trim()) return;
@@ -357,30 +370,37 @@ export default function HomePage() {
       <AppHeader showDashboard={true} />
 
       {/* Body */}
-      <main className="max-w-2xl mx-auto px-6 sm:px-8 py-8 space-y-6">
+      <main className="max-w-5xl mx-auto px-6 sm:px-8 py-10 space-y-10">
 
-        {/* Create card */}
-        <button
-          onClick={() => setShowCreate(true)}
-          className="w-full bg-gradient-to-br from-[var(--accent)] to-[var(--accent-hover)] hover:from-[var(--accent-hover)] hover:to-[var(--accent-active)] rounded-[16px] p-6 cursor-pointer text-white transition-all duration-150 shadow-glow hover:shadow-lg text-left group active:scale-[0.99]"
-        >
-          <div className="text-3xl opacity-80 mb-2 group-hover:opacity-100 transition-opacity">
-            <Plus size={32} strokeWidth={2.5} />
+        {/* Hero */}
+        <section className="text-center max-w-2xl mx-auto pt-6 pb-2 animate-fade-slide-in">
+          <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-[var(--text-primary)] leading-[1.1]">
+            Учитесь и работайте <span className="bg-accent-grad bg-clip-text text-transparent">вместе</span>
+          </h1>
+          <p className="mt-4 text-base sm:text-lg text-[var(--text-secondary)]">
+            Создайте уютную сессию, поделитесь ссылкой и занимайтесь продуктивно в компании друзей.
+          </p>
+          <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
+            <Button size="lg" onClick={() => setShowCreate(true)}>
+              <Plus size={16} /> Создать сессию
+            </Button>
+            <Button size="lg" variant="secondary" onClick={() => document.getElementById('quick-join')?.focus()}>
+              Войти по коду <ArrowRight size={14} />
+            </Button>
           </div>
-          <p className="font-bold text-xl">Создать сессию</p>
-          <p className="text-white/70 text-sm mt-1">Поделись ссылкой — друзья подключатся сразу</p>
-        </button>
+        </section>
 
         {/* Quick join */}
-        <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[16px] p-4">
+        <div className="glass rounded-[20px] p-5 max-w-2xl mx-auto">
           <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-3">Быстрый вход</p>
           <div className="flex gap-2">
             <input
+              id="quick-join"
               value={joinInput}
               onChange={e => setJoinInput(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleJoin()}
               placeholder="Ссылка или код комнаты..."
-              className="flex-1 bg-[var(--bg-input)] border border-[var(--border)] rounded-[8px] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/30 transition-all"
+              className="flex-1 bg-[var(--bg-input)] backdrop-blur-md border border-[var(--border)] rounded-[12px] px-3.5 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/30 transition-all"
             />
             <Button size="sm" onClick={handleJoin} disabled={!joinInput.trim()}>
               Войти <ArrowRight size={14} />
@@ -390,16 +410,17 @@ export default function HomePage() {
 
         {/* Active sessions */}
         <div>
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-[var(--text-primary)] font-semibold text-base">Активные сессии</p>
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-[var(--text-primary)] font-semibold text-lg">Активные сессии</p>
             <button
-              onClick={() => window.location.reload()}
-              className="text-xs text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors"
+              onClick={handleRefresh}
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors"
             >
+              <RefreshCw size={13} className={cn('transition-transform', refreshing && 'animate-spin')} />
               Обновить
             </button>
           </div>
-          <ActiveRoomsList />
+          <ActiveRoomsList ref={listRef} />
         </div>
 
         {/* Footer links — gated for anonymous */}

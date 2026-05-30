@@ -64,12 +64,12 @@ function Section({ icon: Icon, title, children, delay = 0 }: {
 }) {
   return (
     <div
-      className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[20px] p-5 space-y-4 shadow-[var(--shadow-sm)]"
+      className="glass rounded-xl p-5 space-y-4 shadow-sm"
       style={{ animation: `fadeSlideIn 0.35s ease-out ${delay}s both` }}
     >
-      <div className="flex items-center gap-2 pb-1 border-b border-[var(--border)]">
-        <div className="w-7 h-7 rounded-[8px] bg-[var(--accent-light)] flex items-center justify-center">
-          <Icon size={14} className="text-[var(--accent)]" />
+      <div className="flex items-center gap-2 pb-1 border-b border-[var(--divider)]">
+        <div className="w-7 h-7 rounded-[8px] bg-accent-grad flex items-center justify-center">
+          <Icon size={14} className="text-white" />
         </div>
         <h2 className="font-semibold text-[var(--text-primary)]">{title}</h2>
       </div>
@@ -167,7 +167,7 @@ export default function SettingsPage() {
 
   return (
     <AuthGate pageName="Настройки">
-    <div className="min-h-screen bg-[var(--bg-page)]">
+    <div className="min-h-screen">
       <AppHeader title="Настройки" showBack />
 
       <div className="max-w-xl mx-auto px-6 sm:px-8 py-4 space-y-4 pb-12">
@@ -202,7 +202,7 @@ export default function SettingsPage() {
                   className={cn(
                     'p-1.5 rounded-[12px] border-2 transition-all duration-150 relative',
                     s.avatarId === a.id
-                      ? 'border-[var(--accent)] bg-[var(--accent-light)] shadow-[0_0_0_3px_rgba(37,99,235,0.15)]'
+                      ? 'border-[var(--accent)] bg-[var(--accent-light)] shadow-[0_0_0_3px_rgba(109,75,255,0.18)]'
                       : 'border-transparent bg-[var(--bg-subtle)] hover:border-[var(--border-strong)]'
                   )}
                 >
@@ -231,36 +231,36 @@ export default function SettingsPage() {
             <label className="block text-sm font-medium text-[var(--text-secondary)] mb-3">Тема</label>
             <div className="grid grid-cols-2 gap-3">
               {THEMES.map(t => {
-                // The app ships a single Discord-like dark palette (see ThemeProvider).
-                // Dark is permanently active; the light option is shown but locked.
-                const isDark = t.id === 'dark';
+                // The app now ships a single light frosted-glass palette.
+                // Light is permanently active; the dark option is shown but locked.
+                const isLight = t.id === 'light';
                 return (
                   <button
                     key={t.id}
                     type="button"
-                    disabled={!isDark}
-                    aria-disabled={!isDark}
-                    onClick={() => { if (isDark) s.setTheme('dark'); }}
+                    disabled={!isLight}
+                    aria-disabled={!isLight}
+                    onClick={() => { if (isLight) s.setTheme('light'); }}
                     className={cn(
                       'p-3 rounded-[14px] border-2 transition-all duration-150 text-left',
-                      isDark
+                      isLight
                         ? 'border-[var(--accent)] bg-[var(--accent-light)]'
-                        : 'border-[var(--border)] bg-[var(--bg-card)] opacity-50 cursor-not-allowed'
+                        : 'border-[var(--border)] bg-[var(--bg-subtle)] opacity-50 cursor-not-allowed'
                     )}
                   >
                     {t.preview}
                     <p className={cn(
                       'text-xs font-semibold mt-2 flex items-center gap-1',
-                      isDark ? 'text-[var(--accent)]' : 'text-[var(--text-muted)]'
+                      isLight ? 'text-[var(--accent)]' : 'text-[var(--text-muted)]'
                     )}>
-                      {isDark && <Check size={11} strokeWidth={3} />}{t.label}
+                      {isLight && <Check size={11} strokeWidth={3} />}{t.label}
                     </p>
                   </button>
                 );
               })}
             </div>
             <p className="text-xs text-[var(--text-muted)] mt-2">
-              Приложение использует тёмную тему. Светлая тема пока недоступна.
+              Приложение использует светлую тему. Тёмная тема пока недоступна.
             </p>
           </div>
         </Section>
@@ -297,7 +297,7 @@ export default function SettingsPage() {
                 type="range" min={0} max={1} step={0.05}
                 value={s.ambientVolume}
                 onChange={e => s.setAmbientVolume(+e.target.value)}
-                className="w-full accent-[#2563EB]"
+                className="w-full accent-[#6D4BFF]"
               />
             </div>
           )}

@@ -73,8 +73,8 @@ export default function ChatPanel() {
     new Date(ts).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
 
   return (
-    <div className="flex flex-col h-full bg-[var(--bg-card)] min-h-0">
-      <div className="px-4 py-3 border-b border-[var(--border)] bg-[var(--bg-subtle)] flex-shrink-0">
+    <div className="flex flex-col h-full min-h-0">
+      <div className="px-4 py-3 border-b border-[var(--divider)] flex-shrink-0">
         <h3 className="font-semibold text-[var(--text-primary)] text-sm">Чат</h3>
         <p className="text-xs text-[var(--text-muted)]">{messages.length} сообщений</p>
       </div>
@@ -103,16 +103,16 @@ export default function ChatPanel() {
                 {!isMe && <Avatar id={msg.userAvatarId} size={28} />}
                 <div className={cn('max-w-[80%]', isMe && 'items-end flex flex-col')}>
                   <div className={cn(
-                    'relative px-3 py-2 text-sm',
+                    'relative px-3.5 py-2 text-sm shadow-sm',
                     isMe
-                      ? 'bg-[var(--accent)] rounded-[16px] rounded-tr-[4px] text-white'
-                      : 'bg-[var(--bg-subtle)] border border-[var(--border)] rounded-[16px] rounded-tl-[4px] text-[var(--text-primary)]'
+                      ? 'bg-accent-grad rounded-[18px] rounded-tr-[5px] text-white'
+                      : 'glass rounded-[18px] rounded-tl-[5px] text-[var(--text-primary)]'
                   )}>
                     {!isMe && (
                       <p className="text-xs font-semibold text-[var(--accent)] mb-0.5">{msg.userName}</p>
                     )}
                     <p className="break-words leading-relaxed">{msg.content}</p>
-                    <span className={cn('text-[10px] mt-1 block', isMe ? 'text-white/70' : 'text-[var(--text-muted)]')}>
+                    <span className={cn('text-[10px] mt-1 block', isMe ? 'text-white/75' : 'text-[var(--text-muted)]')}>
                       {formatTime(msg.createdAt)}
                     </span>
 
@@ -163,7 +163,7 @@ export default function ChatPanel() {
                     <motion.div
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      className="mt-1 flex gap-0.5 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-xl p-1.5 shadow-md z-10"
+                      className="glass-elevated mt-1 flex gap-0.5 rounded-xl p-1.5 z-10"
                     >
                       {REACTION_KEYS.map(({ id, Icon }) => (
                         <button key={id} onClick={() => handleReaction(msg.id, id)}
@@ -182,7 +182,7 @@ export default function ChatPanel() {
       </div>
 
       {/* Input */}
-      <div className="p-3 bg-[var(--bg-subtle)] border-t border-[var(--border)]">
+      <div className="p-3 border-t border-[var(--divider)]">
         <form
           onSubmit={(e) => { e.preventDefault(); e.stopPropagation(); sendMessage(); }}
           className="flex gap-2"
@@ -198,13 +198,13 @@ export default function ChatPanel() {
             }}
             placeholder="Написать сообщение..."
             maxLength={500}
-            className="flex-1 bg-[var(--bg-input)] border border-[var(--border)] rounded-[8px] px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/30 transition-all"
+            className="flex-1 bg-[var(--bg-input)] border border-[var(--border)] rounded-full px-4 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/30 transition-all"
           />
           <button
             type="button"
             onClick={sendMessage}
             disabled={!input.trim()}
-            className="w-9 h-9 bg-[var(--accent)] hover:bg-[var(--accent-hover)] disabled:opacity-40 rounded-[10px] flex items-center justify-center transition-colors duration-150 flex-shrink-0"
+            className="w-10 h-10 bg-accent-grad hover:shadow-glow disabled:opacity-40 disabled:shadow-none rounded-full flex items-center justify-center transition-all duration-150 flex-shrink-0 active:scale-95"
           >
             <Send size={15} className="text-white" />
           </button>

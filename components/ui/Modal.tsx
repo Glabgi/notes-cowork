@@ -40,10 +40,10 @@ export default function Modal({ open, onClose, title, children, size = 'md', sho
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ animation: 'fadeIn 0.15s ease-out' }}
     >
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-[rgba(30,34,60,0.25)] backdrop-blur-sm" onClick={onClose} />
       <div
         className={cn(
-          'relative w-full bg-[var(--bg-elevated)] rounded-[12px] border border-[var(--border)] overflow-hidden shadow-lg',
+          'relative w-full glass-elevated rounded-[20px] overflow-hidden shadow-lg',
           sizes[size]
         )}
         style={{ animation: 'fadeSlideIn 0.2s ease-out' }}

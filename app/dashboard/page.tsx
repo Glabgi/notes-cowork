@@ -42,17 +42,17 @@ const ACHIEVEMENTS: AchievementMeta[] = [
 function StatCard({ Icon, label, value, sub, delay = 0 }: { Icon: React.ElementType; label: string; value: string | number; sub?: string; delay?: number }) {
   return (
     <div
-      className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[20px] p-5 shadow-[0_2px_8px_rgba(15,23,42,0.04)] hover:border-[var(--border-accent)] hover:shadow-[0_4px_16px_rgba(15,23,42,0.08)] transition-all duration-150"
+      className="glass hover-lift rounded-xl p-5 shadow-sm"
       style={{ animation: `fadeSlideIn 0.4s ease-out ${delay}s both` }}
     >
       <div className="flex items-start justify-between gap-2">
         <div>
-          <p className="text-xs text-[var(--text-muted)] uppercase tracking-wider font-medium">{label}</p>
-          <p className="text-3xl font-black text-[var(--accent)] mt-1 tabular-nums">{value}</p>
-          {sub && <p className="text-xs text-[var(--text-muted)] mt-1">{sub}</p>}
+          <p className="text-xs text-ink-muted uppercase tracking-wider font-medium">{label}</p>
+          <p className="text-3xl font-black bg-accent-grad bg-clip-text text-transparent mt-1 tabular-nums">{value}</p>
+          {sub && <p className="text-xs text-ink-muted mt-1">{sub}</p>}
         </div>
-        <div className="w-9 h-9 rounded-[10px] bg-[var(--accent-light)] flex items-center justify-center flex-shrink-0">
-          <Icon size={18} className="text-[var(--accent)]" />
+        <div className="w-9 h-9 rounded-[10px] bg-accent-grad flex items-center justify-center flex-shrink-0 shadow-glow">
+          <Icon size={18} className="text-white" />
         </div>
       </div>
     </div>
@@ -153,7 +153,7 @@ export default function DashboardPage() {
 
   return (
     <AuthGate pageName="Мой прогресс">
-    <div className="min-h-screen bg-[var(--bg-page)]">
+    <div className="min-h-screen">
       <AppHeader title="Мой прогресс" showBack showDashboard={false} />
 
       <div className="max-w-3xl mx-auto px-6 sm:px-8 py-6 space-y-5">
@@ -167,19 +167,19 @@ export default function DashboardPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Weekly bar chart */}
-          <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[20px] p-5 shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
+          <div className="glass rounded-xl p-5 shadow-sm">
             <h3 className="font-semibold text-[var(--text-primary)] mb-4 text-sm flex items-center gap-2">
               <Timer size={13} className="text-[var(--accent)]" /> Помидорки · 7 дней
             </h3>
             <div className="flex items-end gap-1.5 h-28">
               {weekData.map((d, i) => (
-                <MiniBar key={i} value={d.pomodoros} max={maxPom} color="#2563EB" label={d.label} />
+                <MiniBar key={i} value={d.pomodoros} max={maxPom} color="#6D4BFF" label={d.label} />
               ))}
             </div>
           </div>
 
           {/* Tag distribution */}
-          <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[20px] p-5 shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
+          <div className="glass rounded-xl p-5 shadow-sm">
             <h3 className="font-semibold text-[var(--text-primary)] mb-4 text-sm flex items-center gap-2">
               <Tag size={13} className="text-[var(--accent)]" /> Категории задач
             </h3>
@@ -223,7 +223,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Completed tasks */}
-        <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[20px] p-5 shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
+        <div className="glass rounded-xl p-5 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold text-[var(--text-primary)] text-sm flex items-center gap-2">
               <CheckCircle2 size={13} className="text-[var(--accent)]" /> Последние выполненные
@@ -273,7 +273,7 @@ export default function DashboardPage() {
 
         {/* Active tasks */}
         {activeTasks.length > 0 && (
-          <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[20px] p-5 shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
+          <div className="glass rounded-xl p-5 shadow-sm">
             <h3 className="font-semibold text-[var(--text-primary)] mb-4 text-sm flex items-center gap-2">
               <ListChecks size={13} className="text-[var(--accent)]" /> В работе ({activeTasks.length})
             </h3>
@@ -292,7 +292,7 @@ export default function DashboardPage() {
         )}
 
         {/* Achievements */}
-        <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[20px] p-5 shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
+        <div className="glass rounded-xl p-5 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold text-[var(--text-primary)] text-sm flex items-center gap-2">
               <Trophy size={13} className="text-[var(--accent)]" /> Достижения
@@ -310,8 +310,8 @@ export default function DashboardPage() {
                   className={cn(
                     'p-3 rounded-[16px] border text-center transition-all',
                     unlocked
-                      ? 'bg-[var(--accent-light)] border-[var(--border-accent)] shadow-[0_2px_8px_rgba(37,99,235,0.08)]'
-                      : 'bg-[var(--bg-subtle)] border-[#F1F5F9] opacity-50 grayscale'
+                      ? 'bg-[var(--accent-light)] border-[var(--border-accent)] shadow-[0_4px_16px_rgba(109,75,255,0.18)]'
+                      : 'bg-[var(--bg-subtle)] border-[var(--border)] opacity-50 grayscale'
                   )}
                 >
                   <div className="w-10 h-10 mx-auto mb-1.5 rounded-[10px] bg-white border border-[var(--border)] flex items-center justify-center">

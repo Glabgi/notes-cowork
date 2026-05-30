@@ -58,8 +58,8 @@ export default function VoicePanel() {
           onClick={handleJoin}
           disabled={v.connecting}
           className={cn(
-            'px-6 py-3 rounded-[10px] bg-[var(--status-online)] hover:bg-[#1F8C4D] text-white font-semibold text-sm transition-all disabled:opacity-60 inline-flex items-center gap-2',
-            'shadow-md hover:shadow-glow active:scale-[0.98]'
+            'px-7 py-3.5 rounded-full bg-accent-grad text-white font-semibold text-sm transition-all disabled:opacity-60 inline-flex items-center gap-2',
+            'shadow-glow hover-lift active:scale-[0.98]'
           )}
         >
           {v.connecting ? (
@@ -72,7 +72,7 @@ export default function VoicePanel() {
           )}
         </button>
         {error && (
-          <div className="text-xs text-[var(--danger)] bg-[rgba(242,63,67,0.1)] border border-[rgba(242,63,67,0.35)] rounded-[10px] px-3 py-2 max-w-xs">
+          <div className="text-xs text-[var(--danger)] bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.35)] rounded-[16px] px-3 py-2 max-w-xs">
             <div className="flex items-start gap-1.5">
               <AlertTriangle size={12} className="flex-shrink-0 mt-0.5" />
               <span className="leading-relaxed">{error}</span>
@@ -85,9 +85,9 @@ export default function VoicePanel() {
 
   /* ── In voice → список + контролы ──────────────────────────────── */
   return (
-    <div className="flex flex-col h-full bg-[var(--bg-card)] min-h-0">
+    <div className="flex flex-col h-full min-h-0">
       {/* Header */}
-      <div className="px-4 py-3 border-b border-[var(--border)] bg-[var(--bg-subtle)] flex-shrink-0 flex items-center justify-between">
+      <div className="px-4 py-3 border-b border-[var(--divider)] flex-shrink-0 flex items-center justify-between">
         <div>
           <h3 className="font-semibold text-[var(--text-primary)] text-sm flex items-center gap-1.5">
             <span className="relative flex w-2 h-2">
@@ -125,8 +125,9 @@ export default function VoicePanel() {
         ))}
       </div>
 
-      {/* Control bar — Discord style */}
-      <div className="flex-shrink-0 border-t border-[var(--border)] bg-[var(--bg-subtle)] p-2 grid grid-cols-4 gap-1.5">
+      {/* Control bar — floating glass pill */}
+      <div className="flex-shrink-0 p-3">
+        <div className="glass-elevated rounded-full p-1.5 grid grid-cols-4 gap-1">
         <CtrlBtn
           active={!v.micMuted}
           onClick={() => setMicMuted(!v.micMuted)}
@@ -156,9 +157,10 @@ export default function VoicePanel() {
           label="Выйти"
           leave
         />
+        </div>
       </div>
       {!canScreenShare && (
-        <div className="px-3 py-1.5 text-[10px] text-[var(--text-muted)] flex items-center gap-1 bg-[var(--bg-subtle)] border-t border-[var(--border)]">
+        <div className="px-4 pb-3 text-[10px] text-[var(--text-muted)] flex items-center gap-1">
           <AlertTriangle size={10} /> Демонстрация экрана недоступна на iOS
         </div>
       )}
@@ -175,12 +177,12 @@ function VoiceMember({
 }) {
   return (
     <div className={cn(
-      'flex items-center gap-3 px-2.5 py-1.5 rounded-[6px] transition-all',
-      speaking ? 'bg-[rgba(35,165,90,0.12)]' : 'hover:bg-[var(--bg-hover)]'
+      'flex items-center gap-3 px-3 py-2 rounded-[14px] transition-all',
+      speaking ? 'glass' : 'hover:bg-[var(--bg-hover)]'
     )}>
       <div className={cn(
         'rounded-full transition-all relative',
-        speaking && 'ring-2 ring-[var(--status-online)] ring-offset-2 ring-offset-[var(--bg-card)]'
+        speaking && 'animate-speaking'
       )}>
         <Avatar id={avatarId} size={32} />
       </div>
@@ -215,11 +217,11 @@ function CtrlBtn({
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        'flex flex-col items-center justify-center gap-1 py-2 rounded-[8px] text-[10px] font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed active:scale-95',
+        'flex flex-col items-center justify-center gap-1 py-2.5 rounded-full text-[10px] font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed active:scale-95',
         leave
-          ? 'bg-[var(--danger)] text-white hover:bg-[#D63239]'
+          ? 'bg-[var(--danger)] text-white hover:brightness-110'
           : danger
-            ? 'bg-[rgba(242,63,67,0.15)] text-[var(--danger)] hover:bg-[rgba(242,63,67,0.25)]'
+            ? 'bg-[rgba(239,68,68,0.15)] text-[var(--danger)] hover:bg-[rgba(239,68,68,0.25)]'
             : highlight
               ? 'bg-[var(--accent-light)] text-[var(--accent)] ring-1 ring-[var(--accent)]/30'
               : active

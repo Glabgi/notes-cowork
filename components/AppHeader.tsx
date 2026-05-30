@@ -37,14 +37,14 @@ export default function AppHeader({
     router.push('/');
   };
 
-  const btn = 'h-9 px-3 inline-flex items-center gap-1.5 text-xs font-medium text-[var(--text-secondary)] bg-[var(--bg-card)] border border-[var(--border)] rounded-[10px] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)] transition-colors';
+  const btn = 'h-9 px-3 inline-flex items-center gap-1.5 text-xs font-medium text-[var(--text-secondary)] glass-subtle rounded-[12px] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors';
 
   return (
-    <header className="h-14 glass border-b border-[var(--border)] flex items-center px-3 sm:px-4 gap-2 sticky top-0 z-30">
+    <header className="sticky top-3 z-30 mx-3 sm:mx-4 mt-3 h-14 glass rounded-[20px] shadow-md flex items-center px-3 sm:px-4 gap-2">
       {showBack && (
         <button
           onClick={() => router.back()}
-          className="h-9 w-9 inline-flex items-center justify-center text-[var(--text-secondary)] bg-[var(--bg-card)] border border-[var(--border)] rounded-[10px] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)] transition-colors"
+          className="h-9 w-9 inline-flex items-center justify-center text-[var(--text-secondary)] glass-subtle rounded-[12px] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors"
           title="Назад"
         >
           <ArrowLeft size={14} />
@@ -52,7 +52,7 @@ export default function AppHeader({
       )}
 
       {/* Logo — always */}
-      <Link href="/" className="flex items-center group">
+      <Link href="/" className="flex items-center group rounded-[12px] px-1.5 py-0.5 bg-accent-grad/10 hover:bg-accent-grad/20 transition-colors">
         <IcefLogo />
       </Link>
 
@@ -85,7 +85,7 @@ export default function AppHeader({
               <Settings size={13} />
               <span className="hidden sm:inline">Настройки</span>
             </button>
-            <button onClick={handleLogout} className="h-9 px-2 inline-flex items-center gap-1.5 bg-[var(--bg-card)] border border-[var(--border)] rounded-[10px] hover:border-[var(--border-strong)] transition-colors" title={profile?.username || 'Профиль'}>
+            <button onClick={handleLogout} className="h-9 px-2 inline-flex items-center gap-1.5 glass-subtle rounded-[12px] hover:bg-[var(--bg-hover)] transition-colors" title={profile?.username || 'Профиль'}>
               <div className="w-6 h-6 rounded-full overflow-hidden"
                 dangerouslySetInnerHTML={{ __html: getAvatarSvg(profile?.avatar_id || 'fox', 24) }} />
               <span className="text-xs font-medium text-[var(--text-secondary)] hidden md:inline max-w-[80px] truncate">
@@ -100,7 +100,7 @@ export default function AppHeader({
         {isAnonymous && (
           <button
             onClick={() => router.push('/login')}
-            className="h-9 px-4 inline-flex items-center gap-1.5 text-xs font-semibold text-white bg-[var(--accent)] hover:bg-[var(--accent-hover)] rounded-[8px] transition-colors shadow-glow"
+            className="h-9 px-4 inline-flex items-center gap-1.5 text-xs font-semibold text-white bg-accent-grad rounded-[12px] transition-all hover:shadow-glow"
           >
             <LogIn size={13} /> Войти
           </button>
