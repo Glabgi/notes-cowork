@@ -4,21 +4,22 @@ import { cn } from '@/lib/utils';
 import { forwardRef } from 'react';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'outline';
+  variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'success' | 'outline';
   size?: 'sm' | 'md' | 'lg';
   loading?: boolean;
 }
 
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ children, className, variant = 'primary', size = 'md', loading, disabled, ...props }, ref) => {
-    const base = 'inline-flex items-center justify-center gap-2 font-medium rounded-xl transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-[#93C5FD] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed select-none';
+    const base = 'inline-flex items-center justify-center gap-2 font-medium rounded-[8px] transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-page)] disabled:opacity-50 disabled:cursor-not-allowed select-none active:scale-[0.98]';
 
     const variants = {
-      primary:   'bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white shadow-[0_2px_8px_rgba(37,99,235,0.25)] hover:shadow-[0_4px_14px_rgba(37,99,235,0.35)]',
-      secondary: 'bg-[var(--bg-card)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] border border-[var(--border)] hover:border-[var(--border-strong)] shadow-[0_1px_3px_rgba(15,23,42,0.06)]',
+      primary:   'bg-[var(--accent)] hover:bg-[var(--accent-hover)] active:bg-[var(--accent-active)] text-white shadow-sm hover:shadow-glow',
+      secondary: 'bg-[var(--bg-hover)] hover:bg-[var(--bg-elevated)] text-[var(--text-primary)] border border-[var(--border)] hover:border-[var(--border-strong)]',
       ghost:     'bg-transparent hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]',
       outline:   'border border-[var(--accent)] text-[var(--accent)] hover:bg-[var(--accent-light)] bg-transparent',
-      danger:    'bg-[#EF4444] hover:bg-[#DC2626] text-white shadow-[0_2px_8px_rgba(239,68,68,0.2)]',
+      danger:    'bg-[var(--danger)] hover:bg-[#D63239] text-white shadow-sm',
+      success:   'bg-[var(--status-online)] hover:bg-[#1F8C4D] text-white shadow-sm',
     };
 
     const sizes = {

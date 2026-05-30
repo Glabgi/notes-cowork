@@ -14,21 +14,20 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className="w-full">
         {label && (
-          <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1.5">{label}</label>
+          <label className="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-1.5">{label}</label>
         )}
         <input
           ref={ref}
           className={cn(
-            'w-full px-4 py-2.5 bg-[var(--bg-card)] border rounded-[12px] text-[var(--text-primary)] placeholder-[#94A3B8]',
-            'shadow-[0_1px_3px_rgba(15,23,42,0.06)]',
-            'focus:outline-none focus:border-[var(--accent)] focus:ring-4 focus:ring-[#DBEAFE]/50',
+            'w-full px-3 py-2.5 bg-[var(--bg-input)] border rounded-[6px] text-[var(--text-primary)] placeholder-[var(--text-muted)]',
+            'focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/30',
             'transition-all duration-150 text-sm',
-            error ? 'border-[#EF4444]' : 'border-[var(--border)] hover:border-[var(--border-strong)]',
+            error ? 'border-[var(--danger)]' : 'border-[var(--border)] hover:border-[var(--border-strong)]',
             className
           )}
           {...props}
         />
-        {error && <p className="mt-1 text-xs text-[#EF4444]">{error}</p>}
+        {error && <p className="mt-1 text-xs text-[var(--danger)]">{error}</p>}
         {hint && !error && <p className="mt-1 text-xs text-[var(--text-muted)]">{hint}</p>}
       </div>
     );

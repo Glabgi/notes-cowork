@@ -32,24 +32,25 @@ export default function SidePanel() {
 
   return (
     <>
-      <div className="w-72 flex-shrink-0 bg-[var(--bg-card)] border-l border-[var(--border)] flex flex-col h-full overflow-hidden">
-        {/* Tab bar */}
-        <div className="flex border-b border-[var(--border)] flex-shrink-0">
+      <div className="w-72 flex-shrink-0 bg-[var(--bg-card)] border-l border-[var(--border)] flex flex-col h-full overflow-hidden lg:rounded-[12px] lg:border lg:shadow-md">
+        {/* Tab bar — Discord-style pill row */}
+        <div className="flex items-center gap-0.5 p-1.5 border-b border-[var(--border)] bg-[var(--bg-subtle)] flex-shrink-0">
           {tabs.map(({ id, icon: Icon, label, badge }) => (
             <button
               key={id}
               onClick={() => setTab(id)}
+              title={label}
               className={cn(
-                'flex-1 flex flex-col items-center gap-1 py-2.5 text-xs font-medium transition-colors relative',
+                'flex-1 flex flex-col items-center gap-0.5 py-1.5 rounded-[6px] text-[10px] font-medium transition-all relative',
                 tab === id
-                  ? 'text-[var(--accent)] border-b-2 border-[var(--accent)]'
-                  : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)] border-b-2 border-transparent'
+                  ? 'bg-[var(--bg-hover)] text-[var(--text-primary)]'
+                  : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]/60'
               )}
             >
-              <Icon size={15} />
+              <Icon size={15} className={cn(tab === id && id === 'voice' && 'text-[var(--status-online)]')} />
               <span>{label}</span>
               {badge != null && badge > 0 && (
-                <span className="absolute top-1.5 right-1 bg-[var(--accent)] text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
+                <span className="absolute top-0.5 right-1 bg-[var(--danger)] text-white text-[9px] min-w-[14px] h-[14px] px-1 rounded-full flex items-center justify-center font-bold">
                   {badge > 9 ? '9+' : badge}
                 </span>
               )}
@@ -59,7 +60,8 @@ export default function SidePanel() {
           {/* Settings shortcut */}
           <button
             onClick={() => router.push('/settings')}
-            className="px-2.5 text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors border-b-2 border-transparent"
+            title="Настройки"
+            className="px-2 py-1.5 rounded-[6px] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
           >
             <Settings size={14} />
           </button>
@@ -81,7 +83,7 @@ export default function SidePanel() {
                     <p className="text-sm font-medium text-[var(--text-primary)] truncate flex items-center gap-1">
                       <span className="truncate">{p.name}</span>
                       {p.id === currentUser?.id && <span className="text-xs text-[var(--accent)]">(вы)</span>}
-                      {p.isOwner && <Crown size={11} className="text-[#D97706] flex-shrink-0" />}
+                      {p.isOwner && <Crown size={11} className="text-[var(--status-break)] flex-shrink-0" />}
                     </p>
                     <p className="text-xs text-[var(--text-muted)] mt-0.5">{getStatusLabel(p.status)}</p>
                     {p.currentTask && (
@@ -99,7 +101,7 @@ export default function SidePanel() {
                           getSocket().emit('room:transfer-owner', { roomId: room?.slug, targetUserId: p.id });
                         }}
                         title="Передать права главы"
-                        className="p-1.5 rounded-[8px] text-[#D97706] hover:bg-[#FFFBEB] transition-colors"
+                        className="p-1.5 rounded-[8px] text-[var(--status-break)] hover:bg-[rgba(240,178,50,0.15)] transition-colors"
                       >
                         <Crown size={14} />
                       </button>
@@ -109,7 +111,7 @@ export default function SidePanel() {
                           getSocket().emit('room:kick', { roomId: room?.slug, targetUserId: p.id });
                         }}
                         title="Удалить участника"
-                        className="p-1.5 rounded-[8px] text-[#DC2626] hover:bg-[#FEF2F2] transition-colors"
+                        className="p-1.5 rounded-[8px] text-[var(--danger)] hover:bg-[rgba(242,63,67,0.15)] transition-colors"
                       >
                         <UserX size={14} />
                       </button>

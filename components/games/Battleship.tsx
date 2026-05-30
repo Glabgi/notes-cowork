@@ -102,7 +102,7 @@ function Grid({
       {/* Column labels */}
       <div className="flex ml-[22px]">
         {COL_LABELS.map(l => (
-          <div key={l} className="w-7 sm:w-8 text-center text-[9px] text-[#94A3B8] font-medium leading-none mb-0.5">{l}</div>
+          <div key={l} className="w-7 text-center text-[9px] text-[#94A3B8] font-medium leading-none mb-0.5">{l}</div>
         ))}
       </div>
       {/* Rows */}
@@ -118,7 +118,7 @@ function Grid({
                 whileTap={canClick ? { scale: 0.9 } : {}}
                 onClick={() => canClick && onShoot?.(i)}
                 className={cn(
-                  'w-7 h-7 sm:w-8 sm:h-8 border flex items-center justify-center text-[11px] font-bold transition-all duration-100',
+                  'w-7 h-7 flex-shrink-0 border flex items-center justify-center text-[11px] font-bold transition-all duration-100',
                   ri === 0 && fi === 0 && 'rounded-tl-[4px]',
                   ri === 0 && fi === 9 && 'rounded-tr-[4px]',
                   ri === 9 && fi === 0 && 'rounded-bl-[4px]',
@@ -361,7 +361,7 @@ export default function Battleship({ vsBot: vsBotProp, gameId }: BattleshipProps
             )}
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-5 items-start justify-center">
+          <div className="flex flex-row flex-wrap gap-5 items-start justify-center w-full max-w-full overflow-x-auto">
             {/* My board */}
             <div className="bg-white border border-[#E2E8F0] rounded-[16px] p-3 shadow-[0_2px_8px_rgba(15,23,42,0.06)]">
               <p className="text-xs font-medium text-[#475569] mb-2 text-center">Ваш флот</p>

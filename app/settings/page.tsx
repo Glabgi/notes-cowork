@@ -6,6 +6,7 @@ import {
   ArrowLeft, Bell, Palette, Volume2, User, Check, Settings as SettingsIcon,
   Coffee, TreePine, Wind, VolumeX, AlertTriangle, BarChart3, Calendar, Home,
 } from 'lucide-react';
+import { getLocalSession } from '@/lib/localAuth';
 import AppHeader from '@/components/AppHeader';
 import AuthGate from '@/components/AuthGate';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -101,14 +102,23 @@ export default function SettingsPage() {
   const router = useRouter();
   const s = useSettingsStore();
   const [notifBlocked, setNotifBlocked] = useState(false);
+  // Registration login is the locked nickname. If a local account session exists,
+  // the username cannot be edited from settings.
+  const [lockedUsername, setLockedUsername] = useState<string | null>(null);
 
   // Pull initial name/avatar from vc_user on first load (so settings shows current session identity)
   useEffect(() => {
+    const session = getLocalSession();
+    if (session) {
+      setLockedUsername(session.username);
+      // The locked login always wins over any previously stored display name.
+      s.setUserName(session.username);
+    }
     try {
       const stored = localStorage.getItem('vc_user');
       if (stored) {
         const u = JSON.parse(stored);
-        if (u.name && !s.userName) s.setUserName(u.name);
+        if (u.name && !s.userName && !session) s.setUserName(u.name);
         if (u.avatarId && s.avatarId === 'fox') s.setAvatarId(u.avatarId);
       }
     } catch {}
@@ -164,12 +174,23 @@ export default function SettingsPage() {
 
         {/* Profile */}
         <Section icon={User} title="Профиль" delay={0}>
-          <Input
-            label="Имя пользователя"
-            value={s.userName}
-            onChange={e => s.setUserName(e.target.value)}
-            placeholder="Как вас зовут?"
-          />
+          {lockedUsername ? (
+            <Input
+              label="Имя пользователя"
+              value={lockedUsername}
+              readOnly
+              disabled
+              hint="Логин выбран при регистрации и не может быть изменён."
+              className="cursor-not-allowed opacity-70"
+            />
+          ) : (
+            <Input
+              label="Имя пользователя"
+              value={s.userName}
+              onChange={e => s.setUserName(e.target.value)}
+              placeholder="Как вас зовут?"
+            />
+          )}
           <div>
             <label className="block text-sm font-medium text-[var(--text-secondary)] mb-3">Аватар</label>
             <div className="grid grid-cols-5 gap-2">
@@ -209,27 +230,38 @@ export default function SettingsPage() {
           <div>
             <label className="block text-sm font-medium text-[var(--text-secondary)] mb-3">Тема</label>
             <div className="grid grid-cols-2 gap-3">
-              {THEMES.map(t => (
-                <button
-                  key={t.id}
-                  onClick={() => s.setTheme(t.id)}
-                  className={cn(
-                    'p-3 rounded-[14px] border-2 transition-all duration-150 text-left',
-                    s.theme === t.id
-                      ? 'border-[var(--accent)] bg-[var(--accent-light)]'
-                      : 'border-[var(--border)] bg-[var(--bg-card)] hover:border-[var(--border-strong)]'
-                  )}
-                >
-                  {t.preview}
-                  <p className={cn(
-                    'text-xs font-semibold mt-2 flex items-center gap-1',
-                    s.theme === t.id ? 'text-[var(--accent)]' : 'text-[var(--text-secondary)]'
-                  )}>
-                    {s.theme === t.id && <Check size={11} strokeWidth={3} />}{t.label}
-                  </p>
-                </button>
-              ))}
+              {THEMES.map(t => {
+                // The app ships a single Discord-like dark palette (see ThemeProvider).
+                // Dark is permanently active; the light option is shown but locked.
+                const isDark = t.id === 'dark';
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    disabled={!isDark}
+                    aria-disabled={!isDark}
+                    onClick={() => { if (isDark) s.setTheme('dark'); }}
+                    className={cn(
+                      'p-3 rounded-[14px] border-2 transition-all duration-150 text-left',
+                      isDark
+                        ? 'border-[var(--accent)] bg-[var(--accent-light)]'
+                        : 'border-[var(--border)] bg-[var(--bg-card)] opacity-50 cursor-not-allowed'
+                    )}
+                  >
+                    {t.preview}
+                    <p className={cn(
+                      'text-xs font-semibold mt-2 flex items-center gap-1',
+                      isDark ? 'text-[var(--accent)]' : 'text-[var(--text-muted)]'
+                    )}>
+                      {isDark && <Check size={11} strokeWidth={3} />}{t.label}
+                    </p>
+                  </button>
+                );
+              })}
             </div>
+            <p className="text-xs text-[var(--text-muted)] mt-2">
+              Приложение использует тёмную тему. Светлая тема пока недоступна.
+            </p>
           </div>
         </Section>
 

@@ -1,0 +1,29 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# SFU на VPS. ВАЖНО: `network_mode: host` обязателен — mediasoup анонсирует
+# публичный IP клиентам в ICE-кандидатах, и UDP-порты 40000-40100 должны
+# приниматься напрямую (без NAT-маппинга докера).
+#
+# Запуск:
+#   cd sfu
+#   ANNOUNCED_IP=YOUR.PUBLIC.IP docker compose up -d
+#
+# Логи:    docker compose logs -f
+# Рестарт: docker compose restart
+# ─────────────────────────────────────────────────────────────────────────────
+services:
+  sfu:
+    build: .
+    container_name: notes-cowork-sfu
+    network_mode: host
+    restart: unless-stopped
+    environment:
+      # ОБЯЗАТЕЛЬНО: публичный IPv4 этого VPS
+      ANNOUNCED_IP: ${ANNOUNCED_IP:?must set ANNOUNCED_IP=YOUR.PUBLIC.IP}
+      # Сигнальный порт (HTTP+WS), на нём работает Socket.io
+      SFU_PORT: ${SFU_PORT:-4000}
+      # Диапазон UDP/TCP портов для медиа
+      RTC_MIN_PORT: ${RTC_MIN_PORT:-40000}
+      RTC_MAX_PORT: ${RTC_MAX_PORT:-40100}
+      # Воркеров — обычно по одному на CPU-ядро
+      NUM_WORKERS: ${NUM_WORKERS:-2}
+      MS_LOG_LEVEL: ${MS_LOG_LEVEL:-warn}

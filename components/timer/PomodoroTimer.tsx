@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Play, Pause, RotateCcw, Settings, User, Users, Timer, Bell, Music2, Cpu, VolumeX } from 'lucide-react';
 import { useTimerStore } from '@/store/timerStore';
+import { useSettingsStore } from '@/store/settingsStore';
 import { useRoomStore } from '@/store/roomStore';
 import { getSocket } from '@/lib/socket';
 import { formatTime } from '@/lib/utils';
@@ -65,8 +66,18 @@ export default function PomodoroTimer() {
       if (tl <= 0) {
         clearInterval(tickRef.current!);
         playPhaseSound();
-        if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
-          new Notification('Таймер закончился!', { body: phase === 'focus' ? 'Время отдохнуть' : 'Назад к работе!' });
+        // Only fire a browser notification if the user enabled the setting AND granted permission.
+        if (
+          useSettingsStore.getState().pushNotifications &&
+          typeof window !== 'undefined' &&
+          'Notification' in window &&
+          Notification.permission === 'granted'
+        ) {
+          try {
+            new Notification('Таймер закончился!', {
+              body: phase === 'focus' ? 'Время отдохнуть' : 'Назад к работе!',
+            });
+          } catch {}
         }
         // Persist completed session to DB (fire-and-forget)
         if (user) {

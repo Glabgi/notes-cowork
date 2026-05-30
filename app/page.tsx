@@ -202,7 +202,7 @@ function CreateRoomModal({ open, onClose }: { open: boolean; onClose: () => void
         </div>
 
         {error && (
-          <p className="text-sm text-[#DC2626] bg-[#FEF2F2] border border-[#FECACA] rounded-[10px] px-3 py-2 flex items-center gap-2">
+          <p className="text-sm text-[var(--danger)] bg-[rgba(242,63,67,0.1)] border border-[rgba(242,63,67,0.35)] rounded-[10px] px-3 py-2 flex items-center gap-2">
             <AlertTriangle size={14} className="flex-shrink-0" /> {error}
           </p>
         )}
@@ -221,14 +221,14 @@ function RoomCard({ room }: { room: ActiveRoom }) {
   return (
     <button
       onClick={() => router.push(`/room/${room.slug}`)}
-      className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-[16px] p-4 hover:border-[var(--border-accent)] hover:shadow-[var(--shadow-md)] cursor-pointer transition-all duration-150 text-left group"
+      className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-[12px] p-4 hover:border-[var(--accent)] hover:bg-[var(--bg-hover)] hover:shadow-md cursor-pointer transition-all duration-150 text-left group"
     >
       {/* Row 1: name + participant count */}
       <div className="flex items-center justify-between gap-2">
         <p className="font-semibold text-[var(--text-primary)] truncate text-sm group-hover:text-[var(--accent)] transition-colors">
           {room.name}
         </p>
-        <span className="flex-shrink-0 text-xs bg-[var(--accent-light)] text-[var(--accent)] border border-[var(--border-accent)] px-2 py-0.5 rounded-full font-medium">
+        <span className="flex-shrink-0 text-xs bg-[var(--accent-light)] text-[var(--accent)] border border-[var(--accent)]/30 px-2 py-0.5 rounded-full font-medium">
           {room.participantCount} уч.
         </span>
       </div>
@@ -237,8 +237,8 @@ function RoomCard({ room }: { room: ActiveRoom }) {
       <div className="flex items-center justify-between mt-1">
         <p className="font-mono text-xs text-[var(--text-muted)]">#{room.slug}</p>
         <div className="flex items-center gap-1">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#16A34A]" />
-          <span className="text-[10px] text-[#16A34A] font-medium">онлайн</span>
+          <span className="w-1.5 h-1.5 rounded-full bg-[var(--status-online)] animate-pulse-dot" />
+          <span className="text-[10px] text-[var(--status-online)] font-medium">онлайн</span>
         </div>
       </div>
 
@@ -362,7 +362,7 @@ export default function HomePage() {
         {/* Create card */}
         <button
           onClick={() => setShowCreate(true)}
-          className="w-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] rounded-[20px] p-6 cursor-pointer text-white transition-colors duration-150 shadow-[0_4px_20px_rgba(37,99,235,0.3)] text-left group"
+          className="w-full bg-gradient-to-br from-[var(--accent)] to-[var(--accent-hover)] hover:from-[var(--accent-hover)] hover:to-[var(--accent-active)] rounded-[16px] p-6 cursor-pointer text-white transition-all duration-150 shadow-glow hover:shadow-lg text-left group active:scale-[0.99]"
         >
           <div className="text-3xl opacity-80 mb-2 group-hover:opacity-100 transition-opacity">
             <Plus size={32} strokeWidth={2.5} />
@@ -380,7 +380,7 @@ export default function HomePage() {
               onChange={e => setJoinInput(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleJoin()}
               placeholder="Ссылка или код комнаты..."
-              className="flex-1 bg-[var(--bg-subtle)] border border-[var(--border)] rounded-[10px] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] focus:ring-4 focus:ring-[#DBEAFE]/50 transition-all"
+              className="flex-1 bg-[var(--bg-input)] border border-[var(--border)] rounded-[8px] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/30 transition-all"
             />
             <Button size="sm" onClick={handleJoin} disabled={!joinInput.trim()}>
               Войти <ArrowRight size={14} />

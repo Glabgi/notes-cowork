@@ -40,7 +40,7 @@ export default function AppHeader({
   const btn = 'h-9 px-3 inline-flex items-center gap-1.5 text-xs font-medium text-[var(--text-secondary)] bg-[var(--bg-card)] border border-[var(--border)] rounded-[10px] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)] transition-colors';
 
   return (
-    <header className="h-14 bg-[var(--bg-card)]/95 backdrop-blur-sm border-b border-[var(--border)] flex items-center px-3 sm:px-4 gap-2 sticky top-0 z-30">
+    <header className="h-14 glass border-b border-[var(--border)] flex items-center px-3 sm:px-4 gap-2 sticky top-0 z-30">
       {showBack && (
         <button
           onClick={() => router.back()}
@@ -100,7 +100,7 @@ export default function AppHeader({
         {isAnonymous && (
           <button
             onClick={() => router.push('/login')}
-            className="h-9 px-4 inline-flex items-center gap-1.5 text-xs font-semibold text-white bg-[var(--accent)] hover:bg-[var(--accent-hover)] rounded-[10px] transition-colors shadow-[0_2px_6px_rgba(37,99,235,0.25)]"
+            className="h-9 px-4 inline-flex items-center gap-1.5 text-xs font-semibold text-white bg-[var(--accent)] hover:bg-[var(--accent-hover)] rounded-[8px] transition-colors shadow-glow"
           >
             <LogIn size={13} /> Войти
           </button>

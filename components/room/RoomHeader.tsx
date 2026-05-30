@@ -18,7 +18,7 @@ export default function RoomHeader() {
 
   if (!room) return (
     <header className="h-14 bg-[var(--bg-card)]/95 border-b border-[var(--border)] flex items-center px-4 gap-3">
-      <div className="w-2.5 h-2.5 rounded-full bg-[#F59E0B] flex-shrink-0" />
+      <div className="w-2.5 h-2.5 rounded-full bg-[var(--status-break)] animate-pulse-dot flex-shrink-0" />
       <span className="text-[var(--text-secondary)] text-sm">Подключение...</span>
     </header>
   );
@@ -36,7 +36,7 @@ export default function RoomHeader() {
     <>
       <header className="h-14 bg-[var(--bg-card)]/95 backdrop-blur-sm border-b border-[var(--border)] flex items-center px-4 gap-3 flex-shrink-0 z-40">
         {/* Connection dot */}
-        <div className={cn('w-2 h-2 rounded-full flex-shrink-0', isConnected ? 'bg-[#16A34A]' : 'bg-[#EF4444]')} />
+        <div className={cn('w-2 h-2 rounded-full flex-shrink-0', isConnected ? 'bg-[var(--status-online)]' : 'bg-[var(--danger)] animate-pulse-dot')} />
 
         {/* Room name */}
         <div className="flex items-baseline gap-2 min-w-0 flex-1">
@@ -47,13 +47,13 @@ export default function RoomHeader() {
             {room.name}
           </h1>
           <span
-            className="bg-[#F1F5F9] text-[#64748B] font-mono text-[11px] px-2 py-0.5 rounded-full hidden md:inline-block flex-shrink-0"
+            className="bg-[var(--bg-subtle)] text-[var(--text-muted)] font-mono text-[11px] px-2 py-0.5 rounded-full hidden md:inline-block flex-shrink-0 border border-[var(--border)]"
             title="Код сессии"
           >
             #{room.slug}
           </span>
           {room.isPrivate && (
-            <span className="text-[10px] font-semibold text-[#B45309] bg-[#FFFBEB] border border-[#FDE68A] px-1.5 py-0.5 rounded-full uppercase tracking-wider flex-shrink-0">
+            <span className="text-[10px] font-semibold text-[var(--status-break)] bg-[rgba(240,178,50,0.12)] border border-[rgba(240,178,50,0.35)] px-1.5 py-0.5 rounded-full uppercase tracking-wider flex-shrink-0">
               приватная
             </span>
           )}
@@ -61,9 +61,9 @@ export default function RoomHeader() {
 
         {/* Focus indicator */}
         {focusCount > 0 && (
-          <div className="hidden sm:flex items-center gap-1.5 bg-[#DCFCE7] border border-[#BBF7D0] rounded-full px-3 py-1 flex-shrink-0">
-            <div className="w-1.5 h-1.5 rounded-full bg-[#16A34A]" />
-            <span className="text-xs text-[#15803D] font-medium">{focusCount} в фокусе</span>
+          <div className="hidden sm:flex items-center gap-1.5 bg-[rgba(35,165,90,0.12)] border border-[rgba(35,165,90,0.35)] rounded-full px-3 py-1 flex-shrink-0">
+            <div className="w-1.5 h-1.5 rounded-full bg-[var(--status-online)] animate-pulse-dot" />
+            <span className="text-xs text-[var(--status-online)] font-medium">{focusCount} в фокусе</span>
           </div>
         )}
 
@@ -95,7 +95,7 @@ export default function RoomHeader() {
           <div className="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-[12px] flex items-center gap-2 px-3 py-2">
             <p className="flex-1 text-xs text-[var(--text-secondary)] font-mono truncate">{roomUrl}</p>
             <button onClick={handleCopy} className="p-1.5 hover:bg-[var(--bg-hover)] rounded-lg transition-colors flex-shrink-0">
-              {copied ? <Check size={14} className="text-[#16A34A]" /> : <Copy size={14} className="text-[var(--text-muted)]" />}
+              {copied ? <Check size={14} className="text-[var(--status-online)]" /> : <Copy size={14} className="text-[var(--text-muted)]" />}
             </button>
           </div>
 

@@ -26,6 +26,28 @@ const consumers = new Map<string, Consumer>();
 const audioEls = new Map<string, HTMLAudioElement>();
 let onScreenTrack: ((peerId: string, track: MediaStreamTrack | null) => void) | null = null;
 
+/* ── autoplay unlock ────────────────────────────────────────────────────
+ * Браузеры (особенно Safari/iOS) запрещают audio.play() без user-gesture.
+ * Один раз слушаем первый клик/тач и пытаемся доиграть всё, что было
+ * заблокировано. Это нужно потому, что пользователь может зайти в голос
+ * и не кликать дальше — а кто-то уже говорит. */
+let audioUnlocked = false;
+function ensureAutoplayUnlock() {
+  if (typeof window === 'undefined' || audioUnlocked) return;
+  const unlock = () => {
+    audioUnlocked = true;
+    audioEls.forEach(el => {
+      if (el.paused && !el.muted) el.play().catch(() => {});
+    });
+    window.removeEventListener('click', unlock);
+    window.removeEventListener('touchstart', unlock);
+    window.removeEventListener('keydown', unlock);
+  };
+  window.addEventListener('click', unlock, { once: true });
+  window.addEventListener('touchstart', unlock, { once: true });
+  window.addEventListener('keydown', unlock, { once: true });
+}
+
 function emitAck<T = any>(event: string, data?: any): Promise<T> {
   return new Promise((resolve) => socket!.emit(event, data, (resp: T) => resolve(resp)));
 }
@@ -36,14 +58,20 @@ export async function joinVoice(slug: string, me: { id: string; name: string; av
   const store = useVoiceStore.getState();
   if (store.inVoice || store.connecting) return;
   store.setConnecting(true);
+  ensureAutoplayUnlock();
 
-  socket = io(SFU_URL, { transports: ['websocket', 'polling'] });
+  if (!SFU_URL || (/your[._-]?sfu|localhost/i.test(SFU_URL) && typeof window !== 'undefined' && !/localhost|127\./.test(window.location.hostname))) {
+    // Дружелюбное предупреждение: на проде нацелен на localhost — голос не заработает
+    console.warn('[voice] SFU_URL=' + SFU_URL + ' — на production это не сработает. Настройте NEXT_PUBLIC_SFU_URL.');
+  }
+
+  socket = io(SFU_URL, { transports: ['websocket', 'polling'], reconnection: false });
 
   await new Promise<void>((res, rej) => {
-    socket!.on('connect', () => res());
-    socket!.on('connect_error', (e) => rej(e));
-    setTimeout(() => rej(new Error('SFU connect timeout')), 15000);
-  }).catch((e) => { store.setConnecting(false); throw e; });
+    socket!.once('connect', () => res());
+    socket!.once('connect_error', (e) => rej(new Error('Не удалось подключиться к голосовому серверу (' + (e?.message || 'connect_error') + ')')));
+    setTimeout(() => rej(new Error('Таймаут подключения к голосовому серверу (15с)')), 15000);
+  }).catch((e) => { store.setConnecting(false); try { socket?.disconnect(); } catch {} ; socket = null; throw e; });
 
   store.setConnected(true);
   wireServerEvents(slug);
@@ -97,7 +125,20 @@ async function createTransport(direction: 'send' | 'recv'): Promise<Transport> {
 }
 
 async function produceMic() {
-  const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
+  let stream: MediaStream;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+    });
+  } catch (e: any) {
+    if (e?.name === 'NotAllowedError') {
+      throw new Error('Доступ к микрофону отклонён. Разрешите его в настройках браузера.');
+    }
+    if (e?.name === 'NotFoundError') {
+      throw new Error('Микрофон не найден. Подключите его и попробуйте снова.');
+    }
+    throw new Error('Не удалось получить микрофон: ' + (e?.message || 'неизвестная ошибка'));
+  }
   const track = stream.getAudioTracks()[0];
   micProducer = await sendTransport!.produce({ track, appData: { source: 'mic' } });
 }
@@ -120,7 +161,7 @@ async function consume(producerId: string, peerId: string, source?: string) {
     (el as any).playsInline = true;
     audioEls.set(consumer.id, el);
     if (useVoiceStore.getState().deafened) el.muted = true;
-    el.play().catch(() => {});
+    el.play().catch(() => { /* unlocked at first user gesture via ensureAutoplayUnlock */ });
   } else if (consumer.kind === 'video' && source === 'screen') {
     useVoiceStore.getState().setScreenPeer(peerId);
     onScreenTrack?.(peerId, consumer.track);

@@ -19,6 +19,38 @@ const io = new Server(httpServer, {
 const rooms = new Map(); // slug -> room
 const games = new Map(); // gameId -> game
 const timers = new Map(); // roomId -> timer interval
+const closedRooms = new Set(); // tombstone: slugs of deleted rooms that must not be silently resurrected
+
+const EMPTY_TTL_MS = 60_000; // grace before an empty room is deleted
+
+// Schedule deletion of an empty room after EMPTY_TTL_MS, re-checking it is
+// still empty at fire time. Stores the timer handle on the room so it can be
+// cleared when someone rejoins within the grace window.
+function scheduleRoomCleanup(slug) {
+  const room = rooms.get(slug);
+  if (!room) return;
+  if (room.cleanupTimer) clearTimeout(room.cleanupTimer);
+  room.emptyAt = Date.now();
+  room.cleanupTimer = setTimeout(() => {
+    const r = rooms.get(slug);
+    if (r && r.participants.length === 0) {
+      rooms.delete(slug);
+      closedRooms.add(slug); // tombstone so it cannot be silently resurrected
+      if (timers.has(slug)) {
+        clearInterval(timers.get(slug));
+        timers.delete(slug);
+      }
+    }
+  }, EMPTY_TTL_MS);
+}
+
+// Cancel a pending cleanup (someone rejoined within the grace window).
+function cancelRoomCleanup(room) {
+  if (room && room.cleanupTimer) {
+    clearTimeout(room.cleanupTimer);
+    room.cleanupTimer = null;
+  }
+}
 
 function getOrCreateRoom(slug, config) {
   if (!rooms.has(slug)) {
@@ -32,6 +64,8 @@ function getOrCreateRoom(slug, config) {
       maxParticipants: (config && config.maxParticipants) || 50,
       ownerId: (config && config.ownerId) || null,
       participants: [],
+      kickedUsers: new Set(), // userIds kicked from this room (cannot rejoin)
+      cleanupTimer: null,
       messages: [],
       gamePairs: {}, // key: sorted "userA|userB" → { chess: 'a'|'b', ttt: 'a'|'b', battleship: 'a'|'b' } last-starter
       timerMode: 'group',
@@ -126,7 +160,36 @@ io.on('connection', (socket) => {
 
   socket.on('room:join', ({ slug, participant, roomConfig, password }, ack) => {
     const existed = rooms.has(slug);
+
+    // Is this the owner-config (create) path? The client sends roomConfig that
+    // names this joiner as the owner only on the create/owner-reconnect path.
+    const isOwnerConfigJoin = !!(roomConfig && (roomConfig.ownerId === participant.id || !roomConfig.ownerId));
+
+    // Guard against resurrecting closed rooms and against plain joiners
+    // creating rooms that don't exist. Only the original creator/owner sending
+    // owner-config may (re)create a brand-new room.
+    if (!existed && !isOwnerConfigJoin) {
+      if (typeof ack === 'function') ack({ ok: false, error: 'room_closed' });
+      socket.emit('room:join-error', { reason: 'room_closed' });
+      return;
+    }
+    if (closedRooms.has(slug) && !isOwnerConfigJoin) {
+      if (typeof ack === 'function') ack({ ok: false, error: 'room_closed' });
+      socket.emit('room:join-error', { reason: 'room_closed' });
+      return;
+    }
+
+    // Legitimate (re)creation by the owner clears any tombstone.
+    if (isOwnerConfigJoin) closedRooms.delete(slug);
+
     const room = getOrCreateRoom(slug, roomConfig);
+
+    // Reject users who were kicked from this room
+    if (room.kickedUsers && room.kickedUsers.has(participant.id)) {
+      if (typeof ack === 'function') ack({ ok: false, error: 'kicked' });
+      socket.emit('room:join-error', { reason: 'kicked' });
+      return;
+    }
 
     // First-joiner becomes owner; their config is applied
     if (!existed && roomConfig) {
@@ -177,6 +240,7 @@ io.on('connection', (socket) => {
     // a (re)join keeps the room visible in the public list.
     room.lastActive = Date.now();
     room.emptyAt = null;
+    cancelRoomCleanup(room);
 
     socket.join(slug);
 
@@ -203,7 +267,7 @@ io.on('connection', (socket) => {
     if (room) {
       room.participants = room.participants.filter(p => p.id !== currentUserId);
       socket.to(roomSlug).emit('room:participant-left', currentUserId);
-      if (room.participants.length === 0) room.emptyAt = Date.now();
+      if (room.participants.length === 0) scheduleRoomCleanup(roomSlug);
     }
     socket.leave(roomSlug);
     currentRoom = null;
@@ -250,6 +314,9 @@ io.on('connection', (socket) => {
     const target = room.participants.find(p => p.id === targetUserId);
     if (!target) return;
     const targetSocketId = target.socketId;
+
+    if (!room.kickedUsers) room.kickedUsers = new Set();
+    room.kickedUsers.add(targetUserId);
 
     room.participants = room.participants.filter(p => p.id !== targetUserId);
 
@@ -708,22 +775,12 @@ io.on('connection', (socket) => {
         room.participants = room.participants.filter(p => p.id !== currentUserId);
         socket.to(currentRoom).emit('room:participant-left', currentUserId);
 
-        // Cleanup empty rooms after delay
+        // Cleanup empty rooms after a short grace window. The /rooms list keeps
+        // the room visible during the grace so a brief owner drop doesn't strip
+        // it from the public list; if still empty at fire time it is deleted
+        // and tombstoned.
         if (room.participants.length === 0) {
-          // Mark the moment the room became empty. The /rooms list keeps it
-          // visible for a short grace window so a brief owner drop doesn't
-          // strip the room from the public list.
-          room.emptyAt = Date.now();
-          setTimeout(() => {
-            const r = rooms.get(currentRoom);
-            if (r && r.participants.length === 0) {
-              rooms.delete(currentRoom);
-              if (timers.has(currentRoom)) {
-                clearInterval(timers.get(currentRoom));
-                timers.delete(currentRoom);
-              }
-            }
-          }, 24 * 60 * 60 * 1000); // 24 hours
+          scheduleRoomCleanup(currentRoom);
         }
       }
     }
@@ -734,10 +791,11 @@ app.get('/health', (_, res) => res.json({ status: 'ok', rooms: rooms.size }));
 
 // REST: list active rooms (for homepage) — only public ones
 app.get('/rooms', (_, res) => {
-  const GRACE_MS = 90000;
+  const GRACE_MS = EMPTY_TTL_MS;
   const now = Date.now();
   const active = Array.from(rooms.values())
     .filter(r =>
+      !closedRooms.has(r.slug) &&
       r.isPublic !== false && !r.isPrivate &&
       (r.participants.length > 0 || (r.emptyAt && now - r.emptyAt < GRACE_MS))
     )

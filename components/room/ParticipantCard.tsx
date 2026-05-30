@@ -16,10 +16,10 @@ interface ParticipantCardProps {
 
 function getStatusDotColor(status: string) {
   switch (status) {
-    case 'focus':  return 'bg-[#16A34A]';
-    case 'break':  return 'bg-[#D97706]';
-    case 'gaming': return 'bg-[#7C3AED]';
-    default:       return 'bg-[#94A3B8]';
+    case 'focus':  return 'bg-[var(--status-online)]';
+    case 'break':  return 'bg-[var(--status-break)]';
+    case 'gaming': return 'bg-[var(--status-gaming)]';
+    default:       return 'bg-[var(--status-away)]';
   }
 }
 
@@ -33,15 +33,15 @@ export default function ParticipantCard({ participant, isMe, onInviteGame }: Par
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.95 }}
       className={cn(
-        'relative bg-[var(--bg-card)] border rounded-[20px] p-4 cursor-pointer group transition-all duration-150',
-        'hover:border-[var(--border-accent)] hover:shadow-[0_4px_16px_rgba(15,23,42,0.08),0_2px_6px_rgba(15,23,42,0.04)]',
-        isMe ? 'border-[var(--border-accent)] bg-[var(--accent-light)]/40' : 'border-[var(--border)]',
+        'relative bg-[var(--bg-card)] border rounded-[16px] p-4 cursor-pointer group transition-all duration-150',
+        'hover:border-[var(--accent)] hover:shadow-md hover:-translate-y-0.5',
+        isMe ? 'border-[var(--accent)] bg-[var(--accent-light)]' : 'border-[var(--border)]',
       )}
       onMouseEnter={() => setShowTooltip(true)}
       onMouseLeave={() => setShowTooltip(false)}
     >
       {/* Status dot */}
-      <div className={cn('absolute top-3 right-3 w-3 h-3 rounded-full border-2 border-white', getStatusDotColor(participant.status))} />
+      <div className={cn('absolute top-3 right-3 w-3 h-3 rounded-full border-2 border-[var(--bg-card)]', getStatusDotColor(participant.status))} />
 
       <div className="flex flex-col items-center gap-3">
         <Avatar id={participant.avatarId} size={56} showRing status={participant.status} />
@@ -81,7 +81,7 @@ export default function ParticipantCard({ participant, isMe, onInviteGame }: Par
         <motion.div
           initial={{ opacity: 0, y: 5 }}
           animate={{ opacity: 1, y: 0 }}
-          className="absolute -top-2 left-1/2 -translate-x-1/2 -translate-y-full z-10 w-52 bg-[var(--bg-card)] border border-[var(--border)] rounded-[16px] p-4 shadow-[0_8px_32px_rgba(15,23,42,0.10),0_4px_12px_rgba(15,23,42,0.06)] text-xs"
+          className="absolute -top-2 left-1/2 -translate-x-1/2 -translate-y-full z-10 w-52 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-[12px] p-4 shadow-lg text-xs"
         >
           <p className="font-semibold text-[var(--text-primary)] mb-2">{participant.name}</p>
           <div className="space-y-1 text-[var(--text-secondary)]">
@@ -91,12 +91,12 @@ export default function ParticipantCard({ participant, isMe, onInviteGame }: Par
           {onInviteGame && participant.status === 'break' && (
             <button
               onClick={() => onInviteGame(participant.id)}
-              className="mt-2.5 w-full py-1.5 flex items-center justify-center gap-1.5 bg-[var(--accent-light)] hover:bg-[#DBEAFE] border border-[var(--border-accent)] text-[var(--accent)] rounded-[8px] transition-colors duration-150 font-medium text-xs"
+              className="mt-2.5 w-full py-1.5 flex items-center justify-center gap-1.5 bg-[var(--accent-light)] hover:bg-[var(--accent)] hover:text-white border border-[var(--accent)] text-[var(--accent)] rounded-[8px] transition-colors duration-150 font-medium text-xs"
             >
               <Gamepad2 size={12} /> Сыграть
             </button>
           )}
-          <div className="absolute left-1/2 -translate-x-1/2 bottom-0 translate-y-full w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-[#E2E8F0]" />
+          <div className="absolute left-1/2 -translate-x-1/2 bottom-0 translate-y-full w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-[var(--border)]" />
         </motion.div>
       )}
     </motion.div>

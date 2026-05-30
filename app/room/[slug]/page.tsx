@@ -134,8 +134,8 @@ function MiniSchedule() {
               className="absolute top-0 bottom-0 z-10 pointer-events-none"
               style={{ left: (currentHour - 6) * HOUR_PX }}
             >
-              <div className="w-[2px] h-full bg-[#EF4444] shadow-[0_0_4px_rgba(239,68,68,0.5)]" />
-              <div className="absolute -top-0.5 -left-1 w-2.5 h-2.5 rounded-full bg-[#EF4444]" />
+              <div className="w-[2px] h-full bg-[var(--danger)] shadow-[0_0_8px_rgba(242,63,67,0.6)]" />
+              <div className="absolute -top-0.5 -left-1 w-2.5 h-2.5 rounded-full bg-[var(--danger)] animate-pulse-dot" />
             </div>
           )}
 
@@ -291,7 +291,7 @@ function PasswordPrompt({ slug, onSubmit }: { slug: string; onSubmit: (pw: strin
             placeholder="••••••••"
             autoFocus
           />
-          {err && <p className="text-xs text-[#DC2626]">{err}</p>}
+          {err && <p className="text-xs text-[var(--danger)]">{err}</p>}
           <Button type="submit" className="w-full" size="lg">
             Войти <ArrowRight size={14} />
           </Button>
@@ -365,7 +365,7 @@ function JoinModal({ slug, onJoin }: { slug: string; onJoin: (name: string, avat
             </div>
 
             {error && (
-              <p className="text-sm text-[#DC2626] bg-[#FEF2F2] border border-[#FECACA] rounded-[10px] px-3 py-2">
+              <p className="text-sm text-[var(--danger)] bg-[rgba(242,63,67,0.1)] border border-[rgba(242,63,67,0.35)] rounded-[10px] px-3 py-2">
                 {error}
               </p>
             )}
@@ -386,9 +386,9 @@ function StatusSelector({ slug }: { slug: string }) {
   const [customText, setCustomText] = useState(currentUser?.currentTask || '');
 
   const statuses: { status: 'focus' | 'break' | 'away'; label: string; Icon: React.ElementType; activeColor: string }[] = [
-    { status: 'focus', label: 'В фокусе', Icon: Zap,    activeColor: 'bg-[#F0FDF4] text-[#15803D] border-[#BBF7D0]' },
-    { status: 'break', label: 'Перерыв',  Icon: Coffee, activeColor: 'bg-[#FFFBEB] text-[#B45309] border-[#FDE68A]' },
-    { status: 'away',  label: 'Отошёл',   Icon: Ghost,  activeColor: 'bg-[#F1F5F9] text-[var(--text-secondary)] border-[var(--border)]' },
+    { status: 'focus', label: 'В фокусе', Icon: Zap,    activeColor: 'bg-[rgba(35,165,90,0.15)] text-[var(--status-online)] border-[rgba(35,165,90,0.35)]' },
+    { status: 'break', label: 'Перерыв',  Icon: Coffee, activeColor: 'bg-[rgba(240,178,50,0.12)] text-[var(--status-break)] border-[rgba(240,178,50,0.35)]' },
+    { status: 'away',  label: 'Отошёл',   Icon: Ghost,  activeColor: 'bg-[var(--bg-hover)] text-[var(--text-secondary)] border-[var(--border)]' },
   ];
 
   const emitStatus = (status: 'focus' | 'break' | 'away', task?: string) => {
@@ -407,7 +407,7 @@ function StatusSelector({ slug }: { slug: string }) {
   };
 
   const STATUS_DOTS: Record<string, string> = {
-    focus: '#16A34A', break: '#D97706', away: '#94A3B8',
+    focus: 'var(--status-online)', break: 'var(--status-break)', away: 'var(--status-away)',
   };
 
   return (
@@ -631,7 +631,23 @@ export default function RoomPage() {
       }
       (socket as any).emit('room:join', { slug, participant: joinParticipant, roomConfig, password: joinPassword }, (resp: any) => {
         if (resp && resp.ok === false) {
-          if (resp.error === 'invalid_password') setNeedsPassword(true);
+          if (resp.error === 'invalid_password') { setNeedsPassword(true); return; }
+          // Room was closed (everyone left & it was reaped) or we were kicked —
+          // stop auto-resurrecting it and bounce home.
+          if (resp.error === 'room_closed' || resp.error === 'kicked') {
+            try {
+              localStorage.removeItem('vc_create_room');
+              const owned = JSON.parse(localStorage.getItem('vc_owned_rooms') || '{}');
+              if (owned && owned[slug]) { delete owned[slug]; localStorage.setItem('vc_owned_rooms', JSON.stringify(owned)); }
+            } catch {}
+            setConnError(resp.error === 'kicked'
+              ? 'Вас удалили из этой сессии.'
+              : 'Эта сессия больше не существует.');
+            store.setLoading(false);
+            try { (socket as any).emit('room:leave', slug); } catch {}
+            setTimeout(() => router.push('/'), 1500);
+            return;
+          }
           return;
         }
         try { if (roomConfig) localStorage.removeItem('vc_create_room'); } catch {}
@@ -681,6 +697,18 @@ export default function RoomPage() {
       };
       store.setRoom(room);
       store.setLoading(false);
+
+      // Keep our own owner flag in sync — e.g. after the owner transfers the
+      // crown, the new owner's currentUser.isOwner must flip so the UI updates.
+      try {
+        const cu = useRoomStore.getState().currentUser;
+        if (cu) {
+          const shouldOwn = room.ownerId === cu.id;
+          if (!!cu.isOwner !== shouldOwn) {
+            useRoomStore.getState().setCurrentUser({ ...cu, isOwner: shouldOwn });
+          }
+        }
+      } catch {}
     };
 
     // Remove any prior listeners before adding (defensive against StrictMode double-mount)
@@ -736,8 +764,8 @@ export default function RoomPage() {
     <div className="min-h-screen bg-[var(--bg-page)] flex items-center justify-center">
       <div className="flex flex-col items-center gap-4">
         <div className="relative w-14 h-14">
-          <div className="absolute inset-0 border-[3px] border-[#DBEAFE] rounded-full" />
-          <div className="absolute inset-0 border-[3px] border-t-[#2563EB] rounded-full animate-spin" />
+          <div className="absolute inset-0 border-[3px] border-[var(--border)] rounded-full" />
+          <div className="absolute inset-0 border-[3px] border-t-[var(--accent)] rounded-full animate-spin" />
         </div>
         <div className="text-center">
           <p className="text-[var(--text-primary)] font-medium text-sm">Подключение к комнате...</p>
@@ -749,9 +777,9 @@ export default function RoomPage() {
 
   if (connError && !store.isConnected) return (
     <div className="min-h-screen bg-[var(--bg-page)] flex items-center justify-center p-4">
-      <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[24px] p-8 max-w-sm w-full shadow-[0_8px_32px_rgba(15,23,42,0.10)] text-center space-y-4">
-        <div className="w-14 h-14 bg-[#FEF2F2] rounded-full flex items-center justify-center mx-auto">
-            <WifiOff size={24} className="text-[#DC2626]" />
+      <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[24px] p-8 max-w-sm w-full shadow-lg text-center space-y-4">
+        <div className="w-14 h-14 bg-[rgba(242,63,67,0.15)] rounded-full flex items-center justify-center mx-auto">
+            <WifiOff size={24} className="text-[var(--danger)]" />
           </div>
         <div>
           <h2 className="text-lg font-bold text-[var(--text-primary)]">Нет соединения</h2>
@@ -818,11 +846,11 @@ export default function RoomPage() {
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 40 }}
-            className="fixed bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-[#FFFBEB] border border-[#FDE68A] rounded-[12px] px-4 py-2.5 text-sm text-[#92400E] shadow-[0_4px_16px_rgba(15,23,42,0.12)] z-50"
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-[var(--bg-elevated)] border border-[rgba(240,178,50,0.35)] rounded-[12px] px-4 py-2.5 text-sm text-[var(--status-break)] shadow-lg z-50"
           >
             <WifiOff size={14} />
             <span>Переподключение...</span>
-            <div className="w-3.5 h-3.5 border-2 border-[#D97706] border-t-transparent rounded-full animate-spin" />
+            <div className="w-3.5 h-3.5 border-2 border-[var(--status-break)] border-t-transparent rounded-full animate-spin" />
           </motion.div>
         )}
       </AnimatePresence>

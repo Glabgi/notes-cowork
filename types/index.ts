@@ -233,6 +233,7 @@ export interface ServerToClientEvents {
   'chess:update': (game: ChessGame) => void;
   'tictactoe:update': (game: TicTacToeGame) => void;
   'battleship:update': (game: BattleshipGame) => void;
+  'room:kicked': () => void;
 }
 
 export interface ClientToServerEvents {
@@ -251,4 +252,6 @@ export interface ClientToServerEvents {
   'tictactoe:move': (data: { gameId: string; cell: number }) => void;
   'battleship:ready': (data: { gameId: string; ships: Ship[] }) => void;
   'battleship:shoot': (data: { gameId: string; cell: number }) => void;
+  'room:transfer-owner': (data: { roomId?: string; targetUserId: string }) => void;
+  'room:kick': (data: { roomId?: string; targetUserId: string }) => void;
 }

@@ -1,7 +1,10 @@
 'use client';
 
-import { useEffect } from 'react';
-import { Mic, MicOff, Headphones, VolumeX, MonitorUp, MonitorOff, PhoneOff, Volume2, AlertTriangle } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import {
+  Mic, MicOff, Headphones, VolumeX, MonitorUp, MonitorOff,
+  PhoneOff, Volume2, AlertTriangle, Signal,
+} from 'lucide-react';
 import { useVoiceStore } from '@/store/voiceStore';
 import { useRoomStore } from '@/store/roomStore';
 import {
@@ -10,87 +13,152 @@ import {
 import Avatar from '@/components/ui/Avatar';
 import { cn } from '@/lib/utils';
 
-// iOS Safari cannot screen-share (getDisplayMedia unsupported)
+// iOS Safari не поддерживает getDisplayMedia
 const canScreenShare = typeof navigator !== 'undefined' && !!(navigator.mediaDevices as any)?.getDisplayMedia;
 
 export default function VoicePanel() {
   const v = useVoiceStore();
   const { room, currentUser } = useRoomStore();
   const peers = Object.values(v.peers);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => () => { if (useVoiceStore.getState().inVoice) leaveVoice(); }, []);
 
   const handleJoin = async () => {
     if (!room || !currentUser) return;
+    setError(null);
     try {
       await joinVoice(room.slug, { id: currentUser.id, name: currentUser.name, avatarId: currentUser.avatarId });
     } catch (e: any) {
-      alert('Не удалось подключиться к голосу: ' + (e?.message || 'ошибка') + '\nПроверьте, что голосовой сервер запущен.');
+      const msg = e?.message || 'неизвестная ошибка';
+      const hint = /timeout|xhr|websocket|failed/i.test(msg)
+        ? 'Голосовой сервер недоступен. Проверьте NEXT_PUBLIC_SFU_URL и что SFU запущен.'
+        : msg;
+      setError(hint);
     }
   };
 
-  /* Not joined → big join CTA */
+  /* ── Not joined → лендинг ──────────────────────────────────────── */
   if (!v.inVoice) {
     return (
-      <div className="flex flex-col items-center justify-center h-full p-6 gap-4 text-center">
-        <div className="w-16 h-16 rounded-full bg-[var(--accent-light)] flex items-center justify-center">
-          <Volume2 size={28} className="text-[var(--accent)]" />
+      <div className="flex flex-col items-center justify-center h-full p-6 gap-5 text-center">
+        <div className="relative">
+          <div className="w-20 h-20 rounded-full bg-[var(--accent-light)] flex items-center justify-center">
+            <Volume2 size={32} className="text-[var(--accent)]" />
+          </div>
+          <div className="absolute -inset-1 rounded-full border-2 border-[var(--accent)]/30 animate-pulse" />
         </div>
         <div>
-          <p className="font-semibold text-[var(--text-primary)]">Голосовой чат</p>
-          <p className="text-sm text-[var(--text-muted)] mt-1">Говорите и делитесь экраном с участниками комнаты</p>
+          <p className="font-semibold text-[var(--text-primary)] text-base">Голосовой чат</p>
+          <p className="text-sm text-[var(--text-muted)] mt-1.5 leading-relaxed">
+            Говорите и делитесь экраном <br/> с участниками комнаты
+          </p>
         </div>
         <button
           onClick={handleJoin}
           disabled={v.connecting}
-          className="px-5 py-2.5 rounded-[12px] bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold text-sm transition-colors disabled:opacity-60 inline-flex items-center gap-2"
+          className={cn(
+            'px-6 py-3 rounded-[10px] bg-[var(--status-online)] hover:bg-[#1F8C4D] text-white font-semibold text-sm transition-all disabled:opacity-60 inline-flex items-center gap-2',
+            'shadow-md hover:shadow-glow active:scale-[0.98]'
+          )}
         >
-          <Mic size={16} /> {v.connecting ? 'Подключение…' : 'Присоединиться'}
+          {v.connecting ? (
+            <>
+              <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+              Подключение…
+            </>
+          ) : (
+            <><Mic size={16} /> Присоединиться</>
+          )}
         </button>
+        {error && (
+          <div className="text-xs text-[var(--danger)] bg-[rgba(242,63,67,0.1)] border border-[rgba(242,63,67,0.35)] rounded-[10px] px-3 py-2 max-w-xs">
+            <div className="flex items-start gap-1.5">
+              <AlertTriangle size={12} className="flex-shrink-0 mt-0.5" />
+              <span className="leading-relaxed">{error}</span>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
 
-  /* In voice → participant list + controls */
+  /* ── In voice → список + контролы ──────────────────────────────── */
   return (
     <div className="flex flex-col h-full bg-[var(--bg-card)] min-h-0">
+      {/* Header */}
       <div className="px-4 py-3 border-b border-[var(--border)] bg-[var(--bg-subtle)] flex-shrink-0 flex items-center justify-between">
         <div>
           <h3 className="font-semibold text-[var(--text-primary)] text-sm flex items-center gap-1.5">
-            <Volume2 size={14} className="text-[#16A34A]" /> В голосе
+            <span className="relative flex w-2 h-2">
+              <span className="absolute inset-0 rounded-full bg-[var(--status-online)] animate-pulse-dot" />
+              <span className="relative rounded-full w-2 h-2 bg-[var(--status-online)]" />
+            </span>
+            В голосовом канале
           </h3>
-          <p className="text-xs text-[var(--text-muted)]">{peers.length + 1} участник(ов)</p>
+          <p className="text-[11px] text-[var(--text-muted)] mt-0.5 inline-flex items-center gap-1">
+            <Signal size={9} /> {peers.length + 1} в эфире
+          </p>
         </div>
       </div>
 
       {/* Members */}
-      <div className="flex-1 min-h-0 overflow-y-auto p-2 space-y-1">
-        {/* me */}
+      <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin p-2 space-y-0.5">
         <VoiceMember
-          name={(currentUser?.name || 'Вы') + ' (вы)'}
+          isMe
+          name={currentUser?.name || 'Вы'}
           avatarId={currentUser?.avatarId || 'fox'}
           muted={v.micMuted}
+          deafened={v.deafened}
           screen={v.sharingScreen}
           speaking={v.activeSpeakerId === currentUser?.id}
         />
         {peers.map(p => (
-          <VoiceMember key={p.peerId} name={p.name} avatarId={p.avatarId}
-            muted={p.muted} screen={p.screen} speaking={v.activeSpeakerId === p.peerId} />
+          <VoiceMember
+            key={p.peerId}
+            name={p.name}
+            avatarId={p.avatarId}
+            muted={p.muted}
+            screen={p.screen}
+            speaking={v.activeSpeakerId === p.peerId}
+          />
         ))}
       </div>
 
-      {/* Control bar */}
+      {/* Control bar — Discord style */}
       <div className="flex-shrink-0 border-t border-[var(--border)] bg-[var(--bg-subtle)] p-2 grid grid-cols-4 gap-1.5">
-        <CtrlBtn active={!v.micMuted} onClick={() => setMicMuted(!v.micMuted)}
-          icon={v.micMuted ? MicOff : Mic} label="Микро" danger={v.micMuted} />
-        <CtrlBtn active={!v.deafened} onClick={() => setDeafened(!v.deafened)}
-          icon={v.deafened ? VolumeX : Headphones} label="Звук" danger={v.deafened} />
-        <CtrlBtn active={v.sharingScreen} onClick={() => v.sharingScreen ? stopScreenShare() : startScreenShare()}
-          icon={v.sharingScreen ? MonitorOff : MonitorUp} label="Экран" disabled={!canScreenShare} />
-        <CtrlBtn active={false} onClick={() => leaveVoice()} icon={PhoneOff} label="Выйти" leave />
+        <CtrlBtn
+          active={!v.micMuted}
+          onClick={() => setMicMuted(!v.micMuted)}
+          icon={v.micMuted ? MicOff : Mic}
+          label="Микро"
+          danger={v.micMuted}
+        />
+        <CtrlBtn
+          active={!v.deafened}
+          onClick={() => setDeafened(!v.deafened)}
+          icon={v.deafened ? VolumeX : Headphones}
+          label="Звук"
+          danger={v.deafened}
+        />
+        <CtrlBtn
+          active={v.sharingScreen}
+          onClick={() => v.sharingScreen ? stopScreenShare() : startScreenShare()}
+          icon={v.sharingScreen ? MonitorOff : MonitorUp}
+          label="Экран"
+          disabled={!canScreenShare}
+          highlight={v.sharingScreen}
+        />
+        <CtrlBtn
+          active={false}
+          onClick={() => leaveVoice()}
+          icon={PhoneOff}
+          label="Выйти"
+          leave
+        />
       </div>
       {!canScreenShare && (
-        <div className="px-3 py-1.5 text-[10px] text-[var(--text-muted)] flex items-center gap-1 bg-[var(--bg-subtle)]">
+        <div className="px-3 py-1.5 text-[10px] text-[var(--text-muted)] flex items-center gap-1 bg-[var(--bg-subtle)] border-t border-[var(--border)]">
           <AlertTriangle size={10} /> Демонстрация экрана недоступна на iOS
         </div>
       )}
@@ -98,36 +166,65 @@ export default function VoicePanel() {
   );
 }
 
-function VoiceMember({ name, avatarId, muted, screen, speaking }: { name: string; avatarId: string; muted: boolean; screen: boolean; speaking: boolean }) {
+/* ────────────────────────────────────────────────────────────────── */
+function VoiceMember({
+  name, avatarId, muted, deafened, screen, speaking, isMe,
+}: {
+  name: string; avatarId: string; muted: boolean; deafened?: boolean;
+  screen: boolean; speaking: boolean; isMe?: boolean;
+}) {
   return (
     <div className={cn(
-      'flex items-center gap-3 px-2.5 py-2 rounded-[10px] transition-all border',
-      speaking ? 'border-[#16A34A] bg-[#F0FDF4]' : 'border-transparent hover:bg-[var(--bg-hover)]'
+      'flex items-center gap-3 px-2.5 py-1.5 rounded-[6px] transition-all',
+      speaking ? 'bg-[rgba(35,165,90,0.12)]' : 'hover:bg-[var(--bg-hover)]'
     )}>
-      <div className={cn('rounded-full transition-all', speaking && 'ring-2 ring-[#16A34A] ring-offset-1')}>
+      <div className={cn(
+        'rounded-full transition-all relative',
+        speaking && 'ring-2 ring-[var(--status-online)] ring-offset-2 ring-offset-[var(--bg-card)]'
+      )}>
         <Avatar id={avatarId} size={32} />
       </div>
-      <span className="flex-1 text-sm font-medium text-[var(--text-primary)] truncate">{name}</span>
-      {screen && <MonitorUp size={13} className="text-[var(--accent)]" />}
-      {muted ? <MicOff size={14} className="text-[#EF4444]" /> : <Mic size={14} className="text-[var(--text-muted)]" />}
+      <span className={cn(
+        'flex-1 text-sm font-medium truncate',
+        speaking ? 'text-[var(--status-online)]' : 'text-[var(--text-primary)]'
+      )}>
+        {name}
+        {isMe && <span className="text-[10px] text-[var(--text-muted)] ml-1">(вы)</span>}
+      </span>
+      <div className="flex items-center gap-1.5 flex-shrink-0">
+        {screen && <MonitorUp size={13} className="text-[var(--accent)]" />}
+        {deafened && <VolumeX size={13} className="text-[var(--danger)]" />}
+        {muted
+          ? <MicOff size={13} className="text-[var(--danger)]" />
+          : !speaking && <Mic size={13} className="text-[var(--text-muted)] opacity-60" />
+        }
+      </div>
     </div>
   );
 }
 
-function CtrlBtn({ icon: Icon, label, onClick, active, danger, leave, disabled }: {
+/* ────────────────────────────────────────────────────────────────── */
+function CtrlBtn({
+  icon: Icon, label, onClick, active, danger, leave, disabled, highlight,
+}: {
   icon: React.ElementType; label: string; onClick: () => void; active: boolean;
-  danger?: boolean; leave?: boolean; disabled?: boolean;
+  danger?: boolean; leave?: boolean; disabled?: boolean; highlight?: boolean;
 }) {
   return (
     <button
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        'flex flex-col items-center justify-center gap-1 py-2 rounded-[10px] text-[10px] font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed',
-        leave ? 'bg-[#FEE2E2] text-[#DC2626] hover:bg-[#FECACA]'
-          : danger ? 'bg-[#FEF2F2] text-[#DC2626] hover:bg-[#FEE2E2]'
-          : active ? 'bg-[var(--accent-light)] text-[var(--accent)]'
-          : 'bg-[var(--bg-card)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] border border-[var(--border)]'
+        'flex flex-col items-center justify-center gap-1 py-2 rounded-[8px] text-[10px] font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed active:scale-95',
+        leave
+          ? 'bg-[var(--danger)] text-white hover:bg-[#D63239]'
+          : danger
+            ? 'bg-[rgba(242,63,67,0.15)] text-[var(--danger)] hover:bg-[rgba(242,63,67,0.25)]'
+            : highlight
+              ? 'bg-[var(--accent-light)] text-[var(--accent)] ring-1 ring-[var(--accent)]/30'
+              : active
+                ? 'bg-[var(--bg-hover)] text-[var(--text-primary)]'
+                : 'bg-transparent text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]'
       )}
     >
       <Icon size={16} />

@@ -1,74 +1,165 @@
-# Notes Cowork — Voice SFU (mediasoup)
+# Notes Cowork — SFU (голос + screen share)
 
-Self-hosted Selective Forwarding Unit for voice + screen share, ~20 peers/room.
-Discord-style topology: each peer uploads once, the SFU forwards to everyone.
+Self-hosted mediasoup SFU для голосового чата и демонстрации экрана.
+Запускается **отдельно** от основного Socket.io (который крутится на Render/Railway).
+Render не подходит для SFU — нет UDP. Этот SFU нужно ставить на VPS.
 
-## Why a separate service
-mediasoup needs **UDP ports + dedicated CPU + a public IP**. The main Socket.io
-(rooms/chat/games) runs on Render free, which is HTTP/TCP-only and sleeps — it
-**cannot** host media. So voice runs as its own service on a UDP-capable host
-(your VPS). Frontend connects to both independently.
+---
 
-## Architecture
-```
-Browser ──ws (rooms/chat/games)──► Render Socket.io
-   │
-   └──ws (signaling) + WebRTC/UDP (media) ──► VPS : mediasoup SFU (this service)
-        • 1 Router per room
-        • send transport  → produce mic + screen
-        • recv transport  → consume every other peer
-        • ActiveSpeakerObserver → "who is talking" ring
-```
+## Что нужно от VPS
 
-## Ports to open on the VPS
-- `4000/tcp` — signaling (Socket.io)  [SFU_PORT]
-- `40000-40100/udp` and `/tcp` — RTP media  [RTC_MIN_PORT..RTC_MAX_PORT]
+- Любой Linux VPS с публичным IPv4 (Hetzner CPX11, DigitalOcean basic droplet, Vultr — от $4/мес хватит для 10-20 одновременных пользователей).
+- Открытые порты:
+  - **TCP 4000** — сигналинг (Socket.io)
+  - **UDP 40000-40100** — медиапотоки (RTP/RTCP)
+  - **TCP 40000-40100** — fallback для клиентов, которые блокируют UDP
+- Docker + docker-compose.
 
-## Deploy
+---
+
+## Быстрый деплой (5 минут)
+
+### 1. Подключитесь к VPS
+
 ```bash
-# from your Mac, in the project root:
-scp -r sfu root@YOUR_VPS_IP:/opt/notes-sfu
-ssh root@YOUR_VPS_IP
-cd /opt/notes-sfu
-ANNOUNCED_IP=YOUR_VPS_IP bash deploy-vps.sh
-```
-Then set on Vercel:
-```
-NEXT_PUBLIC_SFU_URL = http://YOUR_VPS_IP:4000
+ssh root@YOUR.PUBLIC.IP
 ```
 
-## ⚠ HTTPS requirement
-The site is served over HTTPS (Vercel). Browsers block `ws://` and insecure
-`getUserMedia` from HTTPS pages. For production you must terminate TLS in front
-of the SFU:
-```
-voice.yourdomain.com  →  Caddy/Nginx (TLS)  →  127.0.0.1:4000
-NEXT_PUBLIC_SFU_URL = https://voice.yourdomain.com
-```
-Caddy one-liner (auto-HTTPS): `caddy reverse-proxy --from voice.yourdomain.com --to :4000`
+### 2. Поставьте Docker (если ещё нет)
 
-WebRTC media (UDP 40000-40100) stays direct to the VPS public IP via ICE — only
-the signaling needs TLS.
-
-## TURN (strict NAT ~10-15% of users)
-mediasoup does ICE host/srflx; for users behind symmetric NAT add coturn:
 ```bash
-apt-get install -y coturn
-# /etc/turnserver.conf: listening-port=3478, external-ip=YOUR_VPS_IP, realm, user
+curl -fsSL https://get.docker.com | sh
 ```
-Then pass `iceServers` (turn url + creds) into the client transports.
 
-## Env reference
-| Var | Default | Meaning |
-|-----|---------|---------|
-| ANNOUNCED_IP | 127.0.0.1 | public IPv4 announced in ICE (REQUIRED in prod) |
-| SFU_PORT | 4000 | signaling port |
-| RTC_MIN_PORT / RTC_MAX_PORT | 40000 / 40100 | media port range |
-| NUM_WORKERS | #CPU cores | mediasoup workers |
+### 3. Откройте порты в файрволле
 
-## Local test
+Для `ufw`:
+
 ```bash
-cd sfu && npm install
-ANNOUNCED_IP=127.0.0.1 npm start
-# frontend .env.local: NEXT_PUBLIC_SFU_URL=http://localhost:4000
+ufw allow 4000/tcp
+ufw allow 40000:40100/udp
+ufw allow 40000:40100/tcp
+ufw reload
+```
+
+Для облачных провайдеров (DigitalOcean / Hetzner / Vultr) — те же правила
+в их веб-консоли security group.
+
+### 4. Скопируйте папку `sfu/` на VPS
+
+С локальной машины:
+
+```bash
+# из корня проекта VirtualCowork
+rsync -avz --exclude node_modules sfu/ root@YOUR.PUBLIC.IP:/opt/notes-cowork-sfu/
+```
+
+Или просто `git clone` репозиторий на VPS и `cd sfu`.
+
+### 5. Соберите и запустите
+
+```bash
+ssh root@YOUR.PUBLIC.IP
+cd /opt/notes-cowork-sfu
+cp .env.example .env
+nano .env       # подставьте ANNOUNCED_IP=ВАШ.ПУБЛИЧНЫЙ.IP
+docker compose up -d --build
+docker compose logs -f
+```
+
+Должно появиться:
+
+```
+mediasoup: 2 worker(s) ready
+SFU listening on :4000 (announcedIp=203.0.113.10, rtc 40000-40100)
+```
+
+### 6. Проверьте healthcheck
+
+```bash
+curl http://YOUR.PUBLIC.IP:4000/health
+# {"status":"ok","rooms":0,"workers":2}
+```
+
+### 7. Подключите фронтенд (Vercel)
+
+В Vercel → Project Settings → Environment Variables добавьте:
+
+```
+NEXT_PUBLIC_SFU_URL = http://YOUR.PUBLIC.IP:4000
+```
+
+Передеплойте — голос заработает.
+
+---
+
+## (Опционально) HTTPS через TLS-терминатор
+
+Браузеры разрешают WebRTC с HTTPS-страницы только если сигналинг тоже идёт
+по WSS. Если ваш сайт на https://, поставьте Caddy перед SFU:
+
+```bash
+# /etc/caddy/Caddyfile
+sfu.example.com {
+    reverse_proxy 127.0.0.1:4000
+}
+```
+
+```bash
+apt install caddy
+systemctl reload caddy
+```
+
+И в Vercel:
+
+```
+NEXT_PUBLIC_SFU_URL = https://sfu.example.com
+```
+
+---
+
+## Эксплуатация
+
+| Действие             | Команда                          |
+|----------------------|----------------------------------|
+| Логи                 | `docker compose logs -f`         |
+| Рестарт              | `docker compose restart`         |
+| Обновить код         | `git pull && docker compose up -d --build` |
+| Кол-во активных комнат | `curl localhost:4000/health`   |
+| Остановить           | `docker compose down`            |
+
+---
+
+## Лимиты и масштабирование
+
+| VPS                 | Одновременно в голосе |
+|---------------------|------------------------|
+| 1 vCPU / 2 GB       | ~15-20 пиров          |
+| 2 vCPU / 4 GB       | ~40-50 пиров          |
+| 4 vCPU / 8 GB       | ~100 пиров            |
+
+При росте — добавить `NUM_WORKERS=N` (≈ кол-во CPU) и поднять верхнюю
+границу `RTC_MAX_PORT` (по 100-200 портов на воркера).
+
+---
+
+## Диагностика
+
+**Клиент не подключается:**
+
+1. `curl http://VPS:4000/health` → должно вернуть JSON. Если нет —
+   `docker compose logs -f` и смотреть стартап.
+2. В DevTools → Network → WS должно быть соединение к `ws://VPS:4000/socket.io/`.
+3. В DevTools → Console при попытке войти в голос — ошибки `ICE failed`
+   означают, что UDP-порты 40000-40100 заблокированы файрволлом провайдера.
+4. Проверить `ANNOUNCED_IP`: он должен быть тем IP, что пишет
+   `curl ifconfig.me` с самого VPS. Любой NAT — сломается.
+
+**Mediasoup worker died:**
+
+Перезапустите контейнер. Если повторяется — добавьте свопа на VPS:
+
+```bash
+fallocate -l 1G /swapfile && chmod 600 /swapfile
+mkswap /swapfile && swapon /swapfile
 ```
