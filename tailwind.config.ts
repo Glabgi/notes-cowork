@@ -10,43 +10,54 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Discord-like dark palette
-        page:     '#1E1F22',
-        card:     '#2B2D31',
-        subtle:   '#232428',
-        hover:    '#35373C',
-        elevated: '#313338',
+        // Linear/Vercel-style dark surfaces
+        page:     '#08090A',
+        subtle:   '#0B0C0E',
+        card:     '#101113',
+        elevated: '#151619',
+        hover:    '#1A1C1F',
         accent: {
-          DEFAULT: '#5865F2',
-          hover:   '#4752C4',
-          active:  '#3C45A5',
-          light:   'rgba(88,101,242,0.15)',
+          DEFAULT: '#5B63D3',
+          hover:   '#6B73E6',
+          active:  '#4A52C0',
+          violet:  '#8B5CF6',
+          light:   'rgba(91,99,211,0.14)',
         },
         border: {
-          DEFAULT: '#3F4147',
-          strong:  '#4E5058',
-          accent:  '#5865F2',
+          DEFAULT: 'rgba(255,255,255,0.08)',
+          strong:  'rgba(255,255,255,0.145)',
+          accent:  '#5B63D3',
         },
         ink: {
-          primary:   '#F2F3F5',
-          secondary: '#B5BAC1',
-          muted:     '#80848E',
+          primary:   '#EDEEF0',
+          secondary: '#9B9FA7',
+          muted:     '#62666D',
         },
         status: {
-          online: '#23A55A',
-          idle:   '#F0B232',
-          dnd:    '#F23F43',
-          offline:'#80848E',
+          online: '#3FB950',
+          idle:   '#D29922',
+          dnd:    '#F85149',
+          offline:'#6E7681',
         },
       },
       fontFamily: {
-        sans: ['gg sans', 'Inter', 'system-ui', 'sans-serif'],
+        sans: ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
+      },
+      letterSpacing: {
+        tightest: '-0.03em',
+      },
+      backdropBlur: {
+        glass: '16px',
+        'glass-strong': '24px',
       },
       boxShadow: {
-        sm:   '0 1px 2px rgba(0,0,0,0.30)',
-        md:   '0 4px 12px rgba(0,0,0,0.40), 0 2px 4px rgba(0,0,0,0.25)',
-        lg:   '0 8px 32px rgba(0,0,0,0.55), 0 4px 12px rgba(0,0,0,0.35)',
-        glow: '0 0 24px rgba(88,101,242,0.35)',
+        sm:   '0 1px 2px rgba(0,0,0,0.40)',
+        md:   '0 6px 20px rgba(0,0,0,0.45), 0 2px 6px rgba(0,0,0,0.30)',
+        lg:   '0 20px 56px rgba(0,0,0,0.60), 0 8px 20px rgba(0,0,0,0.40)',
+        glow: '0 0 0 1px rgba(91,99,211,0.30), 0 8px 30px rgba(91,99,211,0.35)',
+      },
+      backgroundImage: {
+        'accent-grad': 'linear-gradient(135deg, #6E79E8 0%, #8B5CF6 100%)',
       },
       borderRadius: {
         DEFAULT: '8px',
