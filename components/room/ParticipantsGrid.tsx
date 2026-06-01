@@ -19,7 +19,7 @@ export default function ParticipantsGrid() {
       </div>
 
       <motion.div
-        className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"
+        className="flex flex-wrap gap-3 content-start"
         layout
       >
         <AnimatePresence>
@@ -36,7 +36,7 @@ export default function ParticipantsGrid() {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="col-span-full flex flex-col items-center justify-center py-20"
+            className="w-full flex flex-col items-center justify-center py-20"
           >
             <div className="w-16 h-16 rounded-full bg-[var(--bg-subtle)] border border-[var(--border)] flex items-center justify-center mb-4">
               <Users size={28} className="text-[var(--text-muted)]" />

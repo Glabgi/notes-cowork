@@ -1,12 +1,30 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import type { Participant } from '@/types';
 import Avatar from '@/components/ui/Avatar';
 import { getStatusLabel, formatDuration } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { Timer, Clock } from 'lucide-react';
+import { useVoiceStore } from '@/store/voiceStore';
+
+/* Live webcam tile — binds a MediaStream to a <video>. Own preview is mirrored + muted. */
+function VideoTile({ stream, mirror, className }: { stream: MediaStream; mirror?: boolean; className?: string }) {
+  const ref = useRef<HTMLVideoElement>(null);
+  useEffect(() => {
+    if (ref.current && ref.current.srcObject !== stream) ref.current.srcObject = stream;
+  }, [stream]);
+  return (
+    <video
+      ref={ref}
+      autoPlay
+      playsInline
+      muted
+      className={cn('w-full h-full object-cover', mirror && 'scale-x-[-1]', className)}
+    />
+  );
+}
 
 interface ParticipantCardProps {
   participant: Participant;
@@ -15,15 +33,15 @@ interface ParticipantCardProps {
 
 function getStatusDotColor(status: string) {
   switch (status) {
-    case 'focus':  return 'bg-[var(--status-online)]';
-    case 'break':  return 'bg-[var(--status-break)]';
-    case 'gaming': return 'bg-[var(--status-gaming)]';
+    case 'focus':  return 'bg-[var(--accent)]';
+    case 'break':  return 'bg-[#4a8a78]';
     default:       return 'bg-[var(--status-away)]';
   }
 }
 
 export default function ParticipantCard({ participant, isMe }: ParticipantCardProps) {
   const [showTooltip, setShowTooltip] = useState(false);
+  const camStream = useVoiceStore((s) => s.cameraStreams[participant.id]);
 
   return (
     <motion.div
@@ -32,7 +50,7 @@ export default function ParticipantCard({ participant, isMe }: ParticipantCardPr
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.95 }}
       className={cn(
-        'relative bg-[var(--bg-card)] border rounded-[16px] p-4 cursor-pointer group transition-all duration-150',
+        'relative w-[150px] bg-[var(--bg-card)] border rounded-[16px] p-4 cursor-pointer group transition-all duration-150',
         'hover:border-[var(--accent)] hover:shadow-md hover:-translate-y-0.5',
         isMe ? 'border-[var(--accent)] bg-[var(--accent-light)]' : 'border-[var(--border)]',
       )}
@@ -43,7 +61,13 @@ export default function ParticipantCard({ participant, isMe }: ParticipantCardPr
       <div className={cn('absolute top-3 right-3 w-3 h-3 rounded-full border-2 border-[var(--bg-card)]', getStatusDotColor(participant.status))} />
 
       <div className="flex flex-col items-center gap-3">
-        <Avatar id={participant.avatarId} size={56} showRing status={participant.status} />
+        {camStream ? (
+          <div className="relative w-full aspect-[4/3] rounded-[10px] overflow-hidden bg-black ring-1 ring-[var(--border)]">
+            <VideoTile stream={camStream} mirror={isMe} />
+          </div>
+        ) : (
+          <Avatar id={participant.avatarId} size={56} showRing status={participant.status} />
+        )}
 
         <div className="text-center min-w-0 w-full">
           <p className="font-semibold text-[var(--text-primary)] text-sm truncate">

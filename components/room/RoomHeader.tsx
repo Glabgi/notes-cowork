@@ -4,12 +4,14 @@ import { useState } from 'react';
 import {
   Copy, Share2, Check, Users, Home, Send, MessageCircle,
   Mic, MicOff, Headphones, VolumeX, MonitorUp, MonitorOff, PhoneOff, AlertTriangle,
+  Video, VideoOff,
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useRoomStore } from '@/store/roomStore';
 import { useVoiceStore } from '@/store/voiceStore';
 import {
   joinVoice, leaveVoice, setMicMuted, setDeafened, startScreenShare, stopScreenShare,
+  startCamera, stopCamera,
 } from '@/lib/voice';
 import { useRouter } from 'next/navigation';
 import { copyToClipboard, shareUrl } from '@/lib/utils';
@@ -20,83 +22,82 @@ import { cn } from '@/lib/utils';
 // iOS Safari не поддерживает getDisplayMedia
 const canScreenShare = typeof navigator !== 'undefined' && !!(navigator.mediaDevices as any)?.getDisplayMedia;
 
-/* ── Voice controls — always visible in the header (перенесено наверх) ── */
+/* ── Voice controls — voice is auto-joined on entry, so the manual «Голос»
+   join button is gone. We just render the mic / camera / screen / leave
+   cluster (warm palette, no green). A compact «подключиться» appears only if
+   the auto-join failed or the user left voice manually. ── */
 function HeaderVoice() {
   const v = useVoiceStore();
   const { room, currentUser } = useRoomStore();
   const [error, setError] = useState<string | null>(null);
   const voiceCount = v.inVoice ? Object.keys(v.peers).length + 1 : 0;
 
-  const handleJoin = async () => {
+  const showError = (msg: string) => { setError(msg); setTimeout(() => setError(null), 4000); };
+
+  const rejoin = async () => {
     if (!room || !currentUser) return;
     setError(null);
     try {
-      await joinVoice(room.slug, { id: currentUser.id, name: currentUser.name, avatarId: currentUser.avatarId });
+      await joinVoice(room.slug, { id: currentUser.id, name: currentUser.name, avatarId: currentUser.avatarId }, { startMuted: true });
     } catch (e: any) {
       const msg = e?.message || 'неизвестная ошибка';
-      setError(/timeout|xhr|websocket|failed/i.test(msg) ? 'Голосовой сервер недоступен' : msg);
-      setTimeout(() => setError(null), 4000);
+      showError(/timeout|xhr|websocket|failed|подключ|сервер/i.test(msg) ? 'Голосовой сервер недоступен' : msg);
     }
   };
+
+  const toggleMic = () => {
+    setMicMuted(!v.micMuted).catch((e: any) => showError(e?.message || 'Нет доступа к микрофону'));
+  };
+  const toggleCamera = () => {
+    if (v.cameraOn) { stopCamera(); return; }
+    startCamera().catch((e: any) => showError(e?.message || 'Нет доступа к камере'));
+  };
+
+  const ErrTip = error ? (
+    <div className="absolute top-full mt-1 right-0 z-50 flex items-center gap-1.5 text-[11px] text-[var(--danger)] bg-[var(--bg-elevated)] border border-[rgba(196,85,90,0.35)] rounded-[8px] px-2 py-1 shadow-md whitespace-nowrap">
+      <AlertTriangle size={11} /> {error}
+    </div>
+  ) : null;
+
+  if (v.connecting) {
+    return (
+      <div className="flex items-center gap-1.5 text-xs text-[var(--text-muted)] flex-shrink-0">
+        <span className="w-3.5 h-3.5 border-2 border-[var(--border-strong)] border-t-[var(--accent)] rounded-full animate-spin" />
+        <span className="hidden sm:inline">голос…</span>
+      </div>
+    );
+  }
 
   if (!v.inVoice) {
     return (
       <div className="relative flex-shrink-0">
         <button
-          onClick={handleJoin}
-          disabled={v.connecting}
-          className={cn(
-            'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all active:scale-95 disabled:opacity-60',
-            'bg-[var(--status-online)] text-white hover:bg-[var(--accent-active)] shadow-sm hover:shadow-glow'
-          )}
-          title="Присоединиться к голосовому чату"
+          onClick={rejoin}
+          title="Подключиться к голосовому чату"
+          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-medium border border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)] transition-all active:scale-95"
         >
-          {v.connecting
-            ? <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-            : <Mic size={14} />}
-          <span className="hidden sm:inline">Голос</span>
+          <MicOff size={13} /> <span className="hidden sm:inline">подключиться</span>
         </button>
-        {error && (
-          <div className="absolute top-full mt-1 right-0 z-50 flex items-center gap-1.5 text-[11px] text-[var(--danger)] bg-[var(--bg-elevated)] border border-[rgba(196,85,90,0.35)] rounded-[8px] px-2 py-1 shadow-md whitespace-nowrap">
-            <AlertTriangle size={11} /> {error}
-          </div>
-        )}
+        {ErrTip}
       </div>
     );
   }
 
   return (
-    <div className="flex items-center gap-1 flex-shrink-0 pl-1.5 pr-1 py-1 rounded-full border border-[rgba(74,138,120,0.25)] bg-[rgba(74,138,120,0.08)]">
-      <span className="hidden sm:inline-flex items-center gap-1 pl-1 pr-1.5 text-[11px] font-medium text-[var(--status-online)]">
+    <div className="relative flex items-center gap-1 flex-shrink-0 pl-1.5 pr-1 py-1 rounded-full border border-[var(--border)] bg-[var(--bg-subtle)]">
+      <span className="hidden sm:inline-flex items-center gap-1 pl-1 pr-1.5 text-[11px] font-medium text-[var(--accent)]">
         <span className="relative flex w-1.5 h-1.5">
-          <span className="absolute inset-0 rounded-full bg-[var(--status-online)] animate-pulse-dot" />
-          <span className="relative rounded-full w-1.5 h-1.5 bg-[var(--status-online)]" />
+          <span className="absolute inset-0 rounded-full bg-[var(--accent)] animate-pulse-dot" />
+          <span className="relative rounded-full w-1.5 h-1.5 bg-[var(--accent)]" />
         </span>
         {voiceCount}
       </span>
 
-      <VBtn
-        on={!v.micMuted}
-        danger={v.micMuted}
-        onClick={() => setMicMuted(!v.micMuted)}
-        icon={v.micMuted ? MicOff : Mic}
-        title={v.micMuted ? 'Включить микрофон' : 'Выключить микрофон'}
-      />
-      <VBtn
-        on={!v.deafened}
-        danger={v.deafened}
-        onClick={() => setDeafened(!v.deafened)}
-        icon={v.deafened ? VolumeX : Headphones}
-        title={v.deafened ? 'Включить звук' : 'Выключить звук'}
-      />
+      <VBtn danger={v.micMuted} onClick={toggleMic} icon={v.micMuted ? MicOff : Mic} title={v.micMuted ? 'Включить микрофон' : 'Выключить микрофон'} />
+      <VBtn accent={v.cameraOn} onClick={toggleCamera} icon={v.cameraOn ? Video : VideoOff} title={v.cameraOn ? 'Выключить камеру' : 'Включить камеру'} />
+      <VBtn danger={v.deafened} onClick={() => setDeafened(!v.deafened)} icon={v.deafened ? VolumeX : Headphones} title={v.deafened ? 'Включить звук' : 'Выключить звук'} />
       {canScreenShare && (
-        <VBtn
-          on={v.sharingScreen}
-          accent={v.sharingScreen}
-          onClick={() => v.sharingScreen ? stopScreenShare() : startScreenShare()}
-          icon={v.sharingScreen ? MonitorOff : MonitorUp}
-          title={v.sharingScreen ? 'Остановить показ экрана' : 'Показать экран'}
-        />
+        <VBtn accent={v.sharingScreen} onClick={() => v.sharingScreen ? stopScreenShare() : startScreenShare()} icon={v.sharingScreen ? MonitorOff : MonitorUp} title={v.sharingScreen ? 'Остановить показ экрана' : 'Показать экран'} />
       )}
       <button
         onClick={() => leaveVoice()}
@@ -105,14 +106,15 @@ function HeaderVoice() {
       >
         <PhoneOff size={13} />
       </button>
+      {ErrTip}
     </div>
   );
 }
 
 function VBtn({
-  icon: Icon, onClick, on, danger, accent, title,
+  icon: Icon, onClick, danger, accent, title,
 }: {
-  icon: React.ElementType; onClick: () => void; on: boolean; danger?: boolean; accent?: boolean; title: string;
+  icon: React.ElementType; onClick: () => void; danger?: boolean; accent?: boolean; title: string;
 }) {
   return (
     <button
@@ -124,7 +126,7 @@ function VBtn({
           ? 'bg-[rgba(196,85,90,0.15)] text-[var(--danger)] hover:bg-[rgba(196,85,90,0.25)]'
           : accent
             ? 'bg-[var(--accent-light)] text-[var(--accent)] ring-1 ring-[var(--accent)]/30'
-            : 'text-[var(--status-online)] hover:bg-[rgba(74,138,120,0.15)]'
+            : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'
       )}
     >
       <Icon size={14} />
@@ -181,11 +183,11 @@ export default function RoomHeader() {
           )}
         </div>
 
-        {/* Focus indicator */}
+        {/* Focus indicator — warm clay (matches prototype), no green */}
         {focusCount > 0 && (
-          <div className="hidden sm:flex items-center gap-1.5 bg-[rgba(74,138,120,0.12)] border border-[rgba(74,138,120,0.35)] rounded-full px-3 py-1 flex-shrink-0">
-            <div className="w-1.5 h-1.5 rounded-full bg-[var(--status-online)] animate-pulse-dot" />
-            <span className="text-xs text-[var(--status-online)] font-medium">{focusCount} в фокусе</span>
+          <div className="hidden sm:flex items-center gap-1.5 bg-[var(--accent-light)] border border-[var(--border-accent)] rounded-full px-3 py-1 flex-shrink-0">
+            <div className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] animate-pulse-dot" />
+            <span className="text-xs text-[var(--accent)] font-medium">{focusCount} в фокусе</span>
           </div>
         )}
 

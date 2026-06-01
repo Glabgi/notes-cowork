@@ -5,12 +5,14 @@ import { useRouter } from 'next/navigation';
 import { v4 as uuidv4 } from 'uuid';
 import { generateSlug } from '@/lib/utils';
 import { AVATARS, getAvatarSvg } from '@/lib/avatars';
+import { isFaceId, decodeFace } from '@/lib/faceAvatar';
+import AvatarBuilder from '@/components/avatar/AvatarBuilder';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 import Modal from '@/components/ui/Modal';
 import Avatar from '@/components/ui/Avatar';
 import { cn } from '@/lib/utils';
-import { Settings, Calendar, Plus, ArrowRight, AlertTriangle, Home, LogIn, LogOut } from 'lucide-react';
+import { Settings, Calendar, Plus, ArrowRight, AlertTriangle, Home, LogIn, LogOut, Sparkles } from 'lucide-react';
 import { useAuth } from '@/components/AuthProvider';
 import { signOut, isSupabaseConfigured } from '@/lib/supabase';
 import { getAvatarSvg as getAvatarSvgHeader } from '@/lib/avatars';
@@ -51,13 +53,15 @@ function HomeFooterLinks({ router }: { router: any }) {
 function CreateRoomModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const router = useRouter();
   const [name, setName] = useState('');
-  const [avatarId, setAvatarId] = useState('fox');
+  const [avatarId, setAvatarId] = useState('');
   const [roomName, setRoomName] = useState('');
   const [visibility, setVisibility] = useState<'public' | 'private'>('public');
   const [password, setPassword] = useState('');
   const [maxParticipants, setMaxParticipants] = useState(10);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showBuilder, setShowBuilder] = useState(false);
+  const hasFace = isFaceId(avatarId);
 
   // Pre-fill from localStorage
   useEffect(() => {
@@ -73,6 +77,7 @@ function CreateRoomModal({ open, onClose }: { open: boolean; onClose: () => void
   const handleCreate = () => {
     if (!name.trim()) { setError('Введите ваше имя'); return; }
     if (!roomName.trim()) { setError('Введите название комнаты'); return; }
+    if (!hasFace) { setError(''); setShowBuilder(true); return; }
     if (isPrivate && !password.trim()) { setError('Для приватной сессии задайте пароль'); return; }
     setLoading(true);
     const slug = generateSlug();
@@ -98,6 +103,7 @@ function CreateRoomModal({ open, onClose }: { open: boolean; onClose: () => void
   };
 
   return (
+    <>
     <Modal open={open} onClose={onClose} title="Создать сессию" size="sm">
       <div className="p-6 space-y-4">
         <Input
@@ -117,26 +123,29 @@ function CreateRoomModal({ open, onClose }: { open: boolean; onClose: () => void
           onKeyDown={e => e.key === 'Enter' && handleCreate()}
         />
 
-        {/* Avatar picker */}
+        {/* Avatar — built via the face builder */}
         <div>
           <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">Аватар</label>
-          <div className="grid grid-cols-5 gap-1.5">
-            {AVATARS.map(a => (
+          {hasFace ? (
+            <div className="flex items-center gap-3">
+              <Avatar id={avatarId} size={52} className="ring-2 ring-[var(--border)]" />
               <button
-                key={a.id}
-                onClick={() => setAvatarId(a.id)}
-                className={cn(
-                  'p-1.5 rounded-[10px] border-2 transition-all duration-150',
-                  avatarId === a.id
-                    ? 'border-[var(--accent)] bg-[var(--accent-light)]'
-                    : 'border-transparent bg-[var(--bg-subtle)] hover:border-[var(--border-strong)]'
-                )}
+                type="button"
+                onClick={() => setShowBuilder(true)}
+                className="flex-1 inline-flex items-center justify-center gap-2 py-2.5 rounded-[12px] border border-[var(--border)] text-sm text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
               >
-                <div className="w-8 h-8 rounded-[6px] overflow-hidden"
-                  dangerouslySetInnerHTML={{ __html: getAvatarSvg(a.id, 32) }} />
+                <Sparkles size={14} /> Изменить аватар
               </button>
-            ))}
-          </div>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setShowBuilder(true)}
+              className="w-full inline-flex items-center justify-center gap-2 py-3 rounded-[14px] border-2 border-dashed border-[var(--border-strong)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
+            >
+              <Sparkles size={16} /> Собрать свой аватар
+            </button>
+          )}
         </div>
 
         {/* Visibility radio */}
@@ -212,6 +221,15 @@ function CreateRoomModal({ open, onClose }: { open: boolean; onClose: () => void
         </Button>
       </div>
     </Modal>
+
+    {showBuilder && (
+      <AvatarBuilder
+        initial={hasFace ? decodeFace(avatarId) : undefined}
+        onDone={(id) => { setAvatarId(id); setShowBuilder(false); }}
+        onClose={() => setShowBuilder(false)}
+      />
+    )}
+    </>
   );
 }
 

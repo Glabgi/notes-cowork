@@ -21,11 +21,15 @@ let recvTransport: Transport | null = null;
 let micProducer: Producer | null = null;
 let screenProducer: Producer | null = null;
 let screenAudioProducer: Producer | null = null;
+let cameraProducer: Producer | null = null;
+let myId: string | null = null;
 const consumers = new Map<string, Consumer>();
 // producerId → consumerId: защита от «двоения» — один и тот же продюсер
 // не должен потребляться дважды (иначе создаётся второй audio-элемент и звук
 // слышен в два голоса / с эхом).
 const producerToConsumer = new Map<string, string>();
+// consumerId → which peer/source it belongs to (for camera-stream cleanup)
+const consumerMeta = new Map<string, { peerId: string; source?: string }>();
 // remote audio elements + screen video tracks
 const audioEls = new Map<string, HTMLAudioElement>();
 let onScreenTrack: ((peerId: string, track: MediaStreamTrack | null) => void) | null = null;
@@ -58,9 +62,10 @@ function emitAck<T = any>(event: string, data?: any): Promise<T> {
 
 export function setScreenTrackHandler(fn: typeof onScreenTrack) { onScreenTrack = fn; }
 
-export async function joinVoice(slug: string, me: { id: string; name: string; avatarId: string }) {
+export async function joinVoice(slug: string, me: { id: string; name: string; avatarId: string }, opts?: { startMuted?: boolean }) {
   const store = useVoiceStore.getState();
   if (store.inVoice || store.connecting) return;
+  myId = me.id;
   store.setConnecting(true);
   ensureAutoplayUnlock();
 
@@ -98,8 +103,15 @@ export async function joinVoice(slug: string, me: { id: string; name: string; av
   sendTransport = await createTransport('send');
   recvTransport = await createTransport('recv');
 
-  // 3) publish mic
-  await produceMic();
+  // 3) publish mic — unless we auto-joined muted. When muted we do NOT request
+  // the microphone yet (so room entry never triggers a permission prompt); it's
+  // produced lazily on the first unmute via setMicMuted(false).
+  if (opts?.startMuted) {
+    store.setMicMuted(true);
+    socket?.emit('voice:set-muted', { muted: true });
+  } else {
+    await produceMic();
+  }
 
   // 4) consume everyone already in the room
   for (const p of peers) {
@@ -172,6 +184,7 @@ async function consume(producerId: string, peerId: string, source?: string) {
   });
   consumers.set(consumer.id, consumer);
   producerToConsumer.set(producerId, consumer.id);
+  consumerMeta.set(consumer.id, { peerId, source });
   await emitAck('voice:resume-consumer', { consumerId: consumer.id });
 
   const stream = new MediaStream([consumer.track]);
@@ -185,6 +198,10 @@ async function consume(producerId: string, peerId: string, source?: string) {
   } else if (consumer.kind === 'video' && source === 'screen') {
     useVoiceStore.getState().setScreenPeer(peerId);
     onScreenTrack?.(peerId, consumer.track);
+  } else if (consumer.kind === 'video' && source === 'camera') {
+    const st = useVoiceStore.getState();
+    st.setCameraStream(peerId, stream);
+    st.upsertPeer({ peerId, camera: true });
   } else if (consumer.kind === 'audio' && source === 'screen-audio') {
     const el = new Audio(); el.srcObject = stream; el.autoplay = true;
     audioEls.set(consumer.id, el);
@@ -212,12 +229,30 @@ function wireServerEvents(slug: string) {
   socket!.on('voice:consumer-closed', ({ consumerId }) => {
     const c = consumers.get(consumerId); if (c) { c.close(); consumers.delete(consumerId); }
     const el = audioEls.get(consumerId); if (el) { el.srcObject = null; audioEls.delete(consumerId); }
+    const meta = consumerMeta.get(consumerId);
+    if (meta?.source === 'camera') {
+      const st = useVoiceStore.getState();
+      st.setCameraStream(meta.peerId, null);
+      st.upsertPeer({ peerId: meta.peerId, camera: false });
+    }
+    consumerMeta.delete(consumerId);
     producerToConsumer.forEach((cid, pid) => { if (cid === consumerId) producerToConsumer.delete(pid); });
   });
 }
 
 /* ── controls ───────────────────────────────────────────────────────── */
-export function setMicMuted(muted: boolean) {
+export async function setMicMuted(muted: boolean) {
+  // Lazy mic: after an auto-join we never requested the microphone. On the first
+  // unmute, acquire + produce it now — this is where the permission prompt
+  // happens, triggered by an explicit user click (never on room entry).
+  if (!muted && !micProducer) {
+    try {
+      await produceMic();
+    } catch (e) {
+      useVoiceStore.getState().setMicMuted(true);
+      throw e;
+    }
+  }
   if (micProducer) muted ? micProducer.pause() : micProducer.resume();
   useVoiceStore.getState().setMicMuted(muted);
   socket?.emit('voice:set-muted', { muted });
@@ -255,16 +290,50 @@ export function stopScreenShare() {
   if (st.screenPeerId === 'me') { st.setScreenPeer(null); onScreenTrack?.('me', null); }
 }
 
+/* ── camera ─────────────────────────────────────────────────────────── */
+export async function startCamera() {
+  if (!sendTransport) throw new Error('Сначала подключитесь к голосу');
+  if (cameraProducer) return;
+  let stream: MediaStream;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { width: { ideal: 640 }, height: { ideal: 480 }, frameRate: { ideal: 24 } },
+      audio: false,
+    });
+  } catch (e: any) {
+    if (e?.name === 'NotAllowedError') throw new Error('Доступ к камере отклонён. Разрешите его в настройках браузера.');
+    if (e?.name === 'NotFoundError') throw new Error('Камера не найдена.');
+    throw new Error('Не удалось включить камеру: ' + (e?.message || 'неизвестная ошибка'));
+  }
+  const track = stream.getVideoTracks()[0];
+  cameraProducer = await sendTransport.produce({ track, appData: { source: 'camera' }, encodings: [{ maxBitrate: 600_000 }] });
+  track.onended = () => stopCamera();
+  const st = useVoiceStore.getState();
+  st.setCameraOn(true);
+  if (myId) st.setCameraStream(myId, stream);  // local self-preview
+}
+
+export function stopCamera() {
+  try { cameraProducer?.close(); } catch {}
+  cameraProducer = null;
+  socket?.emit('voice:stop-camera');
+  const st = useVoiceStore.getState();
+  st.setCameraOn(false);
+  if (myId) st.setCameraStream(myId, null);
+}
+
 export function leaveVoice() {
-  try { micProducer?.close(); screenProducer?.close(); screenAudioProducer?.close(); } catch {}
+  try { micProducer?.close(); screenProducer?.close(); screenAudioProducer?.close(); cameraProducer?.close(); } catch {}
   consumers.forEach(c => c.close()); consumers.clear();
   producerToConsumer.clear();
+  consumerMeta.clear();
   audioEls.forEach(el => { el.srcObject = null; }); audioEls.clear();
   try { sendTransport?.close(); recvTransport?.close(); } catch {}
   socket?.emit('voice:leave');
   socket?.disconnect();
   socket = null; device = null; sendTransport = null; recvTransport = null;
-  micProducer = screenProducer = screenAudioProducer = null;
+  micProducer = screenProducer = screenAudioProducer = cameraProducer = null;
+  myId = null;
   useVoiceStore.getState().reset();
   useVoiceStore.getState().setConnected(false);
 }

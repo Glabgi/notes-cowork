@@ -1,3 +1,5 @@
+import { isFaceId, renderFace, decodeFace } from './faceAvatar';
+
 export interface AvatarDef {
   id: string;
   label: string;
@@ -25,6 +27,8 @@ export const AVATARS: AvatarDef[] = [
 
 // Generate simple but distinctive SVG avatars
 export function getAvatarSvg(id: string, size = 40): string {
+  // Custom built faces ride inside the id as `face:<base64>`
+  if (isFaceId(id)) return renderFace(decodeFace(id), size);
   const avatar = AVATARS.find(a => a.id === id) || AVATARS[0];
   const shapes: Record<string, string> = {
     fox: `<circle cx="20" cy="18" r="10" fill="${avatar.color}"/><polygon points="12,10 16,2 20,10" fill="${avatar.color}"/><polygon points="28,10 24,2 20,10" fill="${avatar.color}"/><circle cx="16" cy="17" r="2" fill="white"/><circle cx="24" cy="17" r="2" fill="white"/><ellipse cx="20" cy="21" rx="4" ry="2" fill="#FEA57A"/>`,
@@ -49,5 +53,6 @@ export function getAvatarSvg(id: string, size = 40): string {
 }
 
 export function getAvatarColor(id: string): string {
+  if (isFaceId(id)) return decodeFace(id).bg;
   return AVATARS.find(a => a.id === id)?.color || '#6B7280';
 }

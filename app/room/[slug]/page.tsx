@@ -7,15 +7,18 @@ import { v4 as uuidv4 } from 'uuid';
 import { connectSocket, getSocket, disconnectSocket } from '@/lib/socket';
 import { useRoomStore } from '@/store/roomStore';
 import { useVoiceStore } from '@/store/voiceStore';
-import { leaveVoice } from '@/lib/voice';
+import { joinVoice, leaveVoice } from '@/lib/voice';
 import { useScheduleStore } from '@/store/scheduleStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import type { Participant, Room } from '@/types';
 import { AVATARS, getAvatarSvg } from '@/lib/avatars';
+import { isFaceId, decodeFace } from '@/lib/faceAvatar';
+import Avatar from '@/components/ui/Avatar';
+import AvatarBuilder from '@/components/avatar/AvatarBuilder';
 import RoomHeader from '@/components/room/RoomHeader';
 import ParticipantsGrid from '@/components/room/ParticipantsGrid';
 import SidePanel from '@/components/room/SidePanel';
-import PomodoroTimer from '@/components/timer/PomodoroTimer';
+import WallClock from '@/components/timer/WallClock';
 import ScreenShareTile from '@/components/voice/ScreenShareTile';
 import { cn } from '@/lib/utils';
 import Input from '@/components/ui/Input';
@@ -23,8 +26,18 @@ import Button from '@/components/ui/Button';
 import {
   WifiOff, Zap, Coffee, Ghost, BarChart2, Calendar,
   ChevronRight, Volume2, VolumeX, Wind, TreePine, Waves,
-  ArrowRight, ArrowLeft, Settings,
+  ArrowRight, ArrowLeft, Settings, Pencil, Sparkles,
 } from 'lucide-react';
+
+// Per-status icon animation — the icon itself comes alive when the status is active.
+const STATUS_ICON_ANIM: Record<string, { animate: any; transition: any }> = {
+  // lightning flicker
+  focus: { animate: { opacity: [1, 0.35, 1, 0.7, 1], scale: [1, 1.14, 1] }, transition: { duration: 1.6, repeat: Infinity, ease: 'easeInOut' } },
+  // coffee gently steaming / rocking
+  break: { animate: { y: [0, -2, 0], rotate: [0, -5, 0] }, transition: { duration: 2.2, repeat: Infinity, ease: 'easeInOut' } },
+  // ghost floating
+  away:  { animate: { y: [0, -2.5, 0], opacity: [1, 0.5, 1] }, transition: { duration: 2.6, repeat: Infinity, ease: 'easeInOut' } },
+};
 import { ActivityIcon } from '@/lib/icons';
 import { getSocket as gs } from '@/lib/socket';
 import { getAmbientEngine } from '@/lib/ambientAudio';
@@ -306,8 +319,9 @@ function PasswordPrompt({ slug, onSubmit }: { slug: string; onSubmit: (pw: strin
 /* ─── Join Modal ──────────────────────────────────────────────────────────── */
 function JoinModal({ slug, onJoin }: { slug: string; onJoin: (name: string, avatarId: string) => void }) {
   const [name, setName] = useState('');
-  const [avatarId, setAvatarId] = useState('fox');
+  const [avatarId, setAvatarId] = useState('');
   const [error, setError] = useState('');
+  const [showBuilder, setShowBuilder] = useState(false);
 
   useEffect(() => {
     try {
@@ -316,8 +330,12 @@ function JoinModal({ slug, onJoin }: { slug: string; onJoin: (name: string, avat
     } catch {}
   }, []);
 
+  const hasFace = isFaceId(avatarId);
+
   const submit = () => {
     if (!name.trim()) { setError('Введите ваше имя'); return; }
+    // Gate: must build an avatar before entering the room.
+    if (!hasFace) { setError(''); setShowBuilder(true); return; }
     onJoin(name.trim(), avatarId);
   };
 
@@ -345,22 +363,26 @@ function JoinModal({ slug, onJoin }: { slug: string; onJoin: (name: string, avat
 
             <div>
               <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">Аватар</label>
-              <div className="grid grid-cols-5 gap-1.5">
-                {AVATARS.map(a => (
+              {hasFace ? (
+                <div className="flex items-center gap-3">
+                  <Avatar id={avatarId} size={56} className="ring-2 ring-[var(--border)]" />
                   <button
-                    key={a.id}
-                    onClick={() => setAvatarId(a.id)}
-                    className={cn(
-                      'p-1.5 rounded-[12px] border-2 transition-all duration-150',
-                      avatarId === a.id
-                        ? 'border-[var(--accent)] bg-[var(--accent-light)] shadow-[0_0_0_3px_rgba(37,99,235,0.15)]'
-                        : 'border-transparent bg-[var(--bg-subtle)] hover:border-[var(--border-strong)]'
-                    )}
+                    type="button"
+                    onClick={() => setShowBuilder(true)}
+                    className="flex-1 inline-flex items-center justify-center gap-2 py-2.5 rounded-[12px] border border-[var(--border)] text-sm text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
                   >
-                    <div className="w-8 h-8 rounded-[8px] overflow-hidden" dangerouslySetInnerHTML={{ __html: getAvatarSvg(a.id, 32) }} />
+                    <Sparkles size={14} /> Изменить аватар
                   </button>
-                ))}
-              </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setShowBuilder(true)}
+                  className="w-full inline-flex items-center justify-center gap-2 py-3 rounded-[14px] border-2 border-dashed border-[var(--border-strong)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
+                >
+                  <Sparkles size={16} /> Собрать свой аватар
+                </button>
+              )}
             </div>
 
             {error && (
@@ -375,6 +397,14 @@ function JoinModal({ slug, onJoin }: { slug: string; onJoin: (name: string, avat
           </div>
         </div>
       </div>
+
+      {showBuilder && (
+        <AvatarBuilder
+          initial={hasFace ? decodeFace(avatarId) : undefined}
+          onDone={(id) => { setAvatarId(id); setShowBuilder(false); }}
+          onClose={() => setShowBuilder(false)}
+        />
+      )}
     </div>
   );
 }
@@ -385,8 +415,8 @@ function StatusSelector({ slug }: { slug: string }) {
   const [customText, setCustomText] = useState(currentUser?.currentTask || '');
 
   const statuses: { status: 'focus' | 'break' | 'away'; label: string; Icon: React.ElementType; activeColor: string }[] = [
-    { status: 'focus', label: 'В фокусе', Icon: Zap,    activeColor: 'bg-[rgba(35,165,90,0.15)] text-[var(--status-online)] border-[rgba(35,165,90,0.35)]' },
-    { status: 'break', label: 'Перерыв',  Icon: Coffee, activeColor: 'bg-[rgba(240,178,50,0.12)] text-[var(--status-break)] border-[rgba(240,178,50,0.35)]' },
+    { status: 'focus', label: 'В фокусе', Icon: Zap,    activeColor: 'bg-[var(--accent-light)] text-[var(--accent)] border-[var(--border-accent)]' },
+    { status: 'break', label: 'Перерыв',  Icon: Coffee, activeColor: 'bg-[rgba(74,138,120,0.12)] text-[#4a8a78] border-[rgba(74,138,120,0.35)]' },
     { status: 'away',  label: 'Отошёл',   Icon: Ghost,  activeColor: 'bg-[var(--bg-hover)] text-[var(--text-secondary)] border-[var(--border)]' },
   ];
 
@@ -406,7 +436,7 @@ function StatusSelector({ slug }: { slug: string }) {
   };
 
   const STATUS_DOTS: Record<string, string> = {
-    focus: 'var(--status-online)', break: 'var(--status-break)', away: 'var(--status-away)',
+    focus: 'var(--accent)', break: '#4a8a78', away: 'var(--status-away)',
   };
 
   return (
@@ -436,7 +466,17 @@ function StatusSelector({ slug }: { slug: string }) {
               className="w-2 h-2 rounded-full flex-shrink-0"
               style={{ backgroundColor: STATUS_DOTS[status] }}
             />
-            <Icon size={14} className="flex-shrink-0 opacity-80" />
+            {currentUser?.status === status ? (
+              <motion.span
+                className="flex-shrink-0 inline-flex"
+                animate={STATUS_ICON_ANIM[status].animate}
+                transition={STATUS_ICON_ANIM[status].transition}
+              >
+                <Icon size={14} />
+              </motion.span>
+            ) : (
+              <Icon size={14} className="flex-shrink-0 opacity-80" />
+            )}
             <span className="font-medium">{label}</span>
             {currentUser?.status === status && (
               <span className="ml-auto w-1.5 h-1.5 rounded-full bg-current opacity-60" />
@@ -446,7 +486,9 @@ function StatusSelector({ slug }: { slug: string }) {
       </div>
 
       {/* Custom status text — ephemeral, broadcasts to others without saving on panel */}
-      <div className="px-2 pb-2 pt-2 border-t border-[var(--border)] lined-paper space-y-1">
+      <div className="px-2.5 pb-2.5 pt-2.5 border-t border-[var(--border)] space-y-2">
+        <div className="text-[9px] uppercase tracking-[0.14em] text-[var(--text-muted)] px-0.5">Чем занимаюсь</div>
+
         {/* Current active custom task (read-only badge) */}
         {currentUser?.currentTask && (
           <div className="flex items-center gap-1.5 px-2 py-1 text-[10px] text-[var(--accent)] bg-[var(--accent-light)] border border-[var(--border-accent)] rounded-[8px]">
@@ -459,27 +501,44 @@ function StatusSelector({ slug }: { slug: string }) {
             >×</button>
           </div>
         )}
-        <div className="relative">
-          <input
-            value={customText}
-            onChange={e => setCustomText(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); submitCustom(); } }}
-            placeholder={justSent ? 'Отправлено ✓' : 'Чем занимаюсь...'}
-            maxLength={60}
-            className={cn(
-              'w-full text-xs bg-[var(--bg-card)] border rounded-[10px] px-3 py-2 text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/15 transition-all pr-8',
-              justSent ? 'border-[var(--accent)] placeholder:text-[var(--accent)]' : 'border-[var(--border)]'
-            )}
-          />
-          <button
-            type="button"
-            onClick={submitCustom}
-            disabled={!customText.trim()}
-            className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1 text-[var(--text-muted)] hover:text-[var(--accent)] hover:bg-[var(--accent-light)] rounded-[6px] transition-colors disabled:opacity-30"
-            aria-label="Отправить"
-          >
-            <ChevronRight size={12} />
-          </button>
+
+        {/* Lined-paper input box (pencil + input + send), tag chips below */}
+        <div className="lined-paper rounded-[12px] border border-[var(--border)] overflow-hidden transition-all focus-within:border-[var(--accent)] focus-within:ring-2 focus-within:ring-[var(--accent)]/12">
+          <div className="flex items-center gap-2 px-2.5 py-2">
+            <Pencil size={13} className="text-[var(--accent)] flex-shrink-0" />
+            <input
+              value={customText}
+              onChange={e => setCustomText(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); submitCustom(); } }}
+              placeholder={justSent ? 'Отправлено ✓' : 'пишу курсовую...'}
+              maxLength={60}
+              className={cn(
+                'flex-1 min-w-0 bg-transparent border-0 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none',
+                justSent && 'placeholder:text-[var(--accent)]'
+              )}
+            />
+            <button
+              type="button"
+              onClick={submitCustom}
+              disabled={!customText.trim()}
+              className="p-1 text-[var(--text-muted)] hover:text-[var(--accent)] hover:bg-[var(--accent-light)] rounded-[6px] transition-colors disabled:opacity-30 flex-shrink-0"
+              aria-label="Отправить"
+            >
+              <ChevronRight size={13} />
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-1 px-2.5 pb-2">
+            {['курсовая', 'чтение', 'задачи', 'проект'].map(tag => (
+              <button
+                key={tag}
+                type="button"
+                onClick={() => setCustomText(tag)}
+                className="text-[9px] px-2 py-0.5 rounded-full border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--accent)] hover:border-[var(--border-accent)] hover:bg-[var(--accent-light)] transition-colors tracking-[0.03em]"
+              >
+                {tag}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     </div>
@@ -540,6 +599,20 @@ export default function RoomPage() {
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Auto-join voice on entry — connect muted (mic off) + camera off. The manual
+  // «Голос» button is gone; voice is automatic. Fully non-blocking (voice is
+  // optional and must never prevent the room from working).
+  const voiceTried = useRef(false);
+  useEffect(() => {
+    if (voiceTried.current) return;
+    const cu = store.currentUser;
+    if (store.isConnected && cu && store.room) {
+      voiceTried.current = true;
+      joinVoice(slug, { id: cu.id, name: cu.name, avatarId: cu.avatarId }, { startMuted: true })
+        .catch(() => { /* voice optional — never block the room */ });
+    }
+  }, [store.isConnected, store.currentUser, store.room, slug]);
 
   const initSocket = useCallback((name: string, avatarId: string, userId?: string) => {
     if (initialized.current) return;
@@ -807,7 +880,7 @@ export default function RoomPage() {
       <div className="flex flex-1 overflow-hidden">
         {/* Left: Timer + Status only */}
         <aside className="w-[300px] flex-shrink-0 bg-[var(--bg-card)] border-r border-[var(--border)] p-3 overflow-y-auto hidden lg:flex flex-col gap-2.5">
-          <PomodoroTimer />
+          <WallClock slug={slug} />
           <StatusSelector slug={slug} />
           <button
             onClick={() => router.push('/dashboard')}

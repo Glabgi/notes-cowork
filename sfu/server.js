@@ -243,6 +243,17 @@ io.on('connection', (socket) => {
     io.to('voice:' + roomSlug).emit('voice:peer-updated', peerPublicInfo(peerId, peer));
   });
 
+  // Stop camera — close the camera producer so peers' consumers get producerclose
+  socket.on('voice:stop-camera', () => {
+    const peer = getPeer(); if (!peer) return;
+    for (const [id, pr] of peer.producers) {
+      if (pr.appData.source === 'camera') {
+        pr.close(); peer.producers.delete(id);
+        io.to('voice:' + roomSlug).emit('voice:producer-closed', { peerId, producerId: id });
+      }
+    }
+  });
+
   const leaveVoice = () => {
     const room = getRoom(); const peer = getPeer();
     if (!room || !peer) return;
