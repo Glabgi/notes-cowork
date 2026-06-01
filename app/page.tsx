@@ -17,6 +17,7 @@ import { useAuth } from '@/components/AuthProvider';
 import { signOut, isSupabaseConfigured } from '@/lib/supabase';
 import { getAvatarSvg as getAvatarSvgHeader } from '@/lib/avatars';
 import AppHeader from '@/components/AppHeader';
+import RetroPC from '@/components/RetroPC';
 
 /* ─── Types ─────────────────────────────────────────────────────────── */
 interface ActiveRoom {
@@ -376,6 +377,11 @@ export default function HomePage() {
 
       {/* Body */}
       <main className="max-w-2xl mx-auto px-6 sm:px-8 py-8 space-y-6">
+
+        {/* Retro-PC hero */}
+        <div className="rounded-[16px] overflow-hidden border border-[var(--border)] bg-[#f5f0e8] shadow-[0_1px_3px_rgba(15,23,42,0.04)]">
+          <RetroPC className="w-full block" />
+        </div>
 
         {/* Create card */}
         <button

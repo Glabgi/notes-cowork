@@ -467,13 +467,28 @@ function StatusSelector({ slug }: { slug: string }) {
               style={{ backgroundColor: STATUS_DOTS[status] }}
             />
             {currentUser?.status === status ? (
-              <motion.span
-                className="flex-shrink-0 inline-flex"
-                animate={STATUS_ICON_ANIM[status].animate}
-                transition={STATUS_ICON_ANIM[status].transition}
-              >
-                <Icon size={14} />
-              </motion.span>
+              <span className="relative flex-shrink-0 inline-flex">
+                {/* break → coffee steam rising; focus/away animate the icon itself */}
+                {status === 'break' && (
+                  <span className="absolute -top-1.5 left-1/2 -translate-x-1/2 flex gap-[2.5px] pointer-events-none">
+                    {[0, 1, 2].map(i => (
+                      <motion.span
+                        key={i}
+                        className="w-[1.5px] h-1.5 rounded-full bg-current"
+                        animate={{ y: [0, -4, 0], opacity: [0, 0.6, 0], scaleY: [0.5, 1, 0.5] }}
+                        transition={{ duration: 1.6, repeat: Infinity, delay: i * 0.22, ease: 'easeOut' }}
+                      />
+                    ))}
+                  </span>
+                )}
+                <motion.span
+                  className="inline-flex"
+                  animate={STATUS_ICON_ANIM[status].animate}
+                  transition={STATUS_ICON_ANIM[status].transition}
+                >
+                  <Icon size={14} />
+                </motion.span>
+              </span>
             ) : (
               <Icon size={14} className="flex-shrink-0 opacity-80" />
             )}

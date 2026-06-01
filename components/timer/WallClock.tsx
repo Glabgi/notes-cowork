@@ -1,13 +1,13 @@
 'use client';
 
 /**
- * WallClock — live analog clock for the room sidebar, ported from the lo-fi
- * prototype (lofi_focus_animated_status.html). Replaces the Pomodoro countdown.
- * Below the dial sit the фокус / перерыв / длинный phase tabs, which set the
- * user's presence status (kept in sync with the StatusSelector via the store).
+ * WallClock — live analog clock for the room sidebar (ported from the lo-fi
+ * prototype). Above the dial sits a small current-time readout; BELOW the dial
+ * is a study-session timer that counts up for the current room visit. The
+ * фокус / перерыв / длинный tabs set the user's presence status.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { useRoomStore } from '@/store/roomStore';
 import { getSocket } from '@/lib/socket';
@@ -26,12 +26,23 @@ function pt(deg: number, r: number) {
   return { x: 50 + Math.cos(rad) * r, y: 50 + Math.sin(rad) * r };
 }
 
+function fmtDuration(ms: number): string {
+  const total = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
+}
+
 export default function WallClock({ slug }: { slug: string }) {
   const { currentUser, updateMyStatus } = useRoomStore();
   const [now, setNow] = useState<Date | null>(null);
+  const startRef = useRef<number | null>(null);
 
   // Tick every second (initialised on the client to avoid SSR mismatch).
   useEffect(() => {
+    startRef.current = Date.now();
     setNow(new Date());
     const i = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(i);
@@ -44,9 +55,10 @@ export default function WallClock({ slug }: { slug: string }) {
   const st = pt(s * 6 + 180, 7);
   const mp = pt(m * 6, 32);
   const hp = pt(h * 30, 22);
-  const label = now
+  const timeLabel = now
     ? `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
     : '--:--';
+  const sessionLabel = now && startRef.current ? fmtDuration(now.getTime() - startRef.current) : '00:00';
 
   // Phase tabs ↔ presence status
   const status = currentUser?.status ?? 'focus';
@@ -73,7 +85,6 @@ export default function WallClock({ slug }: { slug: string }) {
     { key: 'long', label: 'длинный' },
   ];
 
-  // Tick marks: 12 hour ticks (long) + a thin ring of minor accents.
   const hourTicks = Array.from({ length: 12 }, (_, i) => {
     const a = pt(i * 30, 46);
     const b = pt(i * 30, i % 3 === 0 ? 40 : 42);
@@ -81,40 +92,37 @@ export default function WallClock({ slug }: { slug: string }) {
   });
 
   return (
-    <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[20px] shadow-[0_1px_3px_rgba(15,23,42,0.04)] p-4 flex flex-col items-center gap-3">
-      <div className="flex items-center justify-center pt-1">
-        <svg width="116" height="116" viewBox="0 0 100 100" role="img" aria-label={`Часы ${label}`}>
-          <circle cx="50" cy="50" r="46" fill={FACE} stroke={RIM} strokeWidth="1" />
-          <circle cx="50" cy="50" r="42" fill="none" stroke={RING} strokeWidth="0.5" />
-          <g stroke={TICK} strokeLinecap="round">
-            {hourTicks.map((t, i) => (
-              <line
-                key={i}
-                x1={t.a.x}
-                y1={t.a.y}
-                x2={t.b.x}
-                y2={t.b.y}
-                strokeWidth={t.major ? 2 : 1}
-              />
-            ))}
-          </g>
-          {/* hour */}
-          <line x1="50" y1="50" x2={hp.x} y2={hp.y} stroke={HAND_H} strokeWidth="3" strokeLinecap="round" />
-          {/* minute */}
-          <line x1="50" y1="50" x2={mp.x} y2={mp.y} stroke={HAND_M} strokeWidth="2" strokeLinecap="round" />
-          {/* second */}
-          <line x1={st.x} y1={st.y} x2={sp.x} y2={sp.y} stroke={HAND_S} strokeWidth="1" strokeLinecap="round" />
-          <circle cx="50" cy="50" r="3" fill={HAND_H} />
-          <circle cx="50" cy="50" r="1.5" fill={HAND_S} />
-        </svg>
+    <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[20px] shadow-[0_1px_3px_rgba(15,23,42,0.04)] p-4 flex flex-col items-center gap-2">
+      {/* current time — moved up, simple */}
+      <div className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.16em] text-[var(--text-muted)]">
+        <span className="w-1 h-1 rounded-full bg-[var(--accent)]" />
+        сейчас {timeLabel}
       </div>
 
-      <div className="text-[11px] font-bold tabular-nums tracking-[0.18em] text-[var(--text-secondary)] -mt-1">
-        {label}
+      {/* analog dial */}
+      <svg width="112" height="112" viewBox="0 0 100 100" role="img" aria-label={`Часы ${timeLabel}`}>
+        <circle cx="50" cy="50" r="46" fill={FACE} stroke={RIM} strokeWidth="1" />
+        <circle cx="50" cy="50" r="42" fill="none" stroke={RING} strokeWidth="0.5" />
+        <g stroke={TICK} strokeLinecap="round">
+          {hourTicks.map((t, i) => (
+            <line key={i} x1={t.a.x} y1={t.a.y} x2={t.b.x} y2={t.b.y} strokeWidth={t.major ? 2 : 1} />
+          ))}
+        </g>
+        <line x1="50" y1="50" x2={hp.x} y2={hp.y} stroke={HAND_H} strokeWidth="3" strokeLinecap="round" />
+        <line x1="50" y1="50" x2={mp.x} y2={mp.y} stroke={HAND_M} strokeWidth="2" strokeLinecap="round" />
+        <line x1={st.x} y1={st.y} x2={sp.x} y2={sp.y} stroke={HAND_S} strokeWidth="1" strokeLinecap="round" />
+        <circle cx="50" cy="50" r="3" fill={HAND_H} />
+        <circle cx="50" cy="50" r="1.5" fill={HAND_S} />
+      </svg>
+
+      {/* study-session timer — below the dial */}
+      <div className="flex flex-col items-center leading-none -mt-0.5">
+        <span className="text-[9px] uppercase tracking-[0.18em] text-[var(--text-muted)]">Занятие</span>
+        <span className="text-[16px] font-bold tabular-nums tracking-[0.08em] text-[var(--accent)] mt-1">{sessionLabel}</span>
       </div>
 
       {/* Phase tabs */}
-      <div className="flex gap-1 w-full">
+      <div className="flex gap-1 w-full mt-1">
         {tabs.map(({ key, label }) => (
           <button
             key={key}
