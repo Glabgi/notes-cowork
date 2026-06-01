@@ -4,12 +4,12 @@ import ThemeProvider from '@/components/ThemeProvider';
 import { AuthProvider } from '@/components/AuthProvider';
 
 export const metadata: Metadata = {
-  title: 'Notes Cowork — Вместе продуктивнее',
-  description: 'Совместная удалённая работа и учёба с помодоро-таймером, расписанием, чатом и мини-играми. Часть I.C-E.F Notes.',
-  keywords: 'coworking, pomodoro, productivity, remote work, notes cowork, i.c-e.f',
+  title: 'Тихий зал — учимся вместе',
+  description: 'Тихая комната для совместной учёбы и работы: помодоро-таймер, расписание, голос и атмосферные звуки для фокуса.',
+  keywords: 'тихий зал, coworking, pomodoro, focus, учёба вместе, study together',
   openGraph: {
-    title: 'Notes Cowork',
-    description: 'Совместная работа и учёба онлайн',
+    title: 'Тихий зал',
+    description: 'Учимся и работаем вместе, в тишине и фокусе',
     type: 'website',
   },
 };

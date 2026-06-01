@@ -6,7 +6,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { v4 as uuidv4 } from 'uuid';
 import { connectSocket, getSocket, disconnectSocket } from '@/lib/socket';
 import { useRoomStore } from '@/store/roomStore';
-import { useGameStore } from '@/store/gameStore';
 import { useVoiceStore } from '@/store/voiceStore';
 import { leaveVoice } from '@/lib/voice';
 import { useScheduleStore } from '@/store/scheduleStore';
@@ -17,7 +16,6 @@ import RoomHeader from '@/components/room/RoomHeader';
 import ParticipantsGrid from '@/components/room/ParticipantsGrid';
 import SidePanel from '@/components/room/SidePanel';
 import PomodoroTimer from '@/components/timer/PomodoroTimer';
-import IncomingInviteToast from '@/components/games/IncomingInviteToast';
 import ScreenShareTile from '@/components/voice/ScreenShareTile';
 import { cn } from '@/lib/utils';
 import Input from '@/components/ui/Input';
@@ -163,7 +161,8 @@ type AmbientType = 'none' | 'cafe' | 'forest' | 'white-noise' | 'rain';
 
 function AmbientControl() {
   const { ambientSound, ambientVolume, setAmbientSound, setAmbientVolume } = useSettingsStore();
-  const [active, setActive] = useState<AmbientType>('none');
+  // Single source of truth — synced with the Music panel in the side bar.
+  const active = ambientSound as AmbientType;
 
   const sounds: { id: AmbientType; label: string; desc: string; Icon: React.ElementType }[] = [
     { id: 'cafe',        label: 'Кафе',      desc: 'Шум кофейни',      Icon: Coffee },
@@ -176,11 +175,9 @@ function AmbientControl() {
     const engine = getAmbientEngine();
     if (active === id) {
       engine.stop();
-      setActive('none');
       setAmbientSound('none');
     } else {
       engine.play(id as any, ambientVolume);
-      setActive(id);
       setAmbientSound(id as any);
     }
   };
@@ -449,7 +446,7 @@ function StatusSelector({ slug }: { slug: string }) {
       </div>
 
       {/* Custom status text — ephemeral, broadcasts to others without saving on panel */}
-      <div className="px-2 pb-2 pt-1 border-t border-[var(--border)] bg-[var(--bg-subtle)]/40 space-y-1">
+      <div className="px-2 pb-2 pt-2 border-t border-[var(--border)] lined-paper space-y-1">
         {/* Current active custom task (read-only badge) */}
         {currentUser?.currentTask && (
           <div className="flex items-center gap-1.5 px-2 py-1 text-[10px] text-[var(--accent)] bg-[var(--accent-light)] border border-[var(--border-accent)] rounded-[8px]">
@@ -457,7 +454,7 @@ function StatusSelector({ slug }: { slug: string }) {
             <span className="truncate">{currentUser.currentTask}</span>
             <button
               onClick={() => emitStatus(currentUser?.status as any ?? 'focus', '')}
-              className="ml-auto text-[var(--text-muted)] hover:text-[#EF4444]"
+              className="ml-auto text-[var(--text-muted)] hover:text-[#d06a5e]"
               title="Очистить"
             >×</button>
           </div>
@@ -508,7 +505,6 @@ export default function RoomPage() {
   const slug = params.slug as string;
 
   const store = useRoomStore();
-  const { addInvite } = useGameStore();
   const initialized = useRef(false);
 
   const [showJoin, setShowJoin] = useState(false);
@@ -722,7 +718,7 @@ export default function RoomPage() {
     socket.off('connect'); socket.off('disconnect'); socket.off('connect_error');
     socket.off('room:state'); socket.off('room:participant-joined');
     socket.off('room:participant-left'); socket.off('room:participant-updated');
-    socket.off('chat:message'); socket.off('chat:reaction'); socket.off('game:invite');
+    socket.off('chat:message'); socket.off('chat:reaction');
     socket.off('room:kicked');
 
     socket.on('connect', onConnect);
@@ -735,9 +731,6 @@ export default function RoomPage() {
     socket.on('chat:message', store.addMessage);
     socket.on('chat:deleted' as any, ({ messageId }: any) => store.removeMessage(messageId));
     socket.on('chat:reaction', ({ messageId, reaction }) => store.updateMessageReaction(messageId, reaction));
-    socket.on('game:invite', (invite: any) => {
-      addInvite(invite);
-    });
     socket.on('room:kicked', () => {
       try { if (useVoiceStore.getState().inVoice) leaveVoice(); } catch {}
       try { getSocket().emit('room:leave', slug); disconnectSocket(); } catch {}
@@ -751,7 +744,7 @@ export default function RoomPage() {
     } else {
       connectSocket();
     }
-  }, [slug, store, addInvite]);
+  }, [slug, store]);
 
   const handleJoin = (name: string, avatarId: string) => {
     let id: string;
@@ -835,17 +828,11 @@ export default function RoomPage() {
           <BottomDock />
         </div>
 
-        {/* Right panel — rendered ONCE. Responsive edge padding via classes
-            (rendering it twice previously created two GameZone instances whose
-            socket listeners clobbered each other, breaking game:start). */}
+        {/* Right panel — музыка / люди / задачи */}
         <div className="h-full overflow-hidden lg:pr-3 lg:py-3">
           <SidePanel />
         </div>
       </div>
-
-
-      {/* Floating game invite toast */}
-      <IncomingInviteToast />
 
       {/* Reconnect banner */}
       <AnimatePresence>

@@ -16,9 +16,9 @@ import { recordPomodoro } from '@/lib/supabase';
 import type { TimerSettings } from '@/types';
 
 const PHASE_COLORS = {
-  focus:      { stroke: '#16A34A', bg: '#F0FDF4', text: '#15803D', label: 'Фокус',            dot: '#16A34A' },
-  shortBreak: { stroke: '#D97706', bg: '#FFFBEB', text: '#B45309', label: 'Перерыв',          dot: '#D97706' },
-  longBreak:  { stroke: '#2563EB', bg: '#EFF6FF', text: '#1D4ED8', label: 'Долгий перерыв',   dot: '#2563EB' },
+  focus:      { stroke: '#4a8a78', bg: '#eef3ee', text: '#3f7566', label: 'Фокус',            dot: '#4a8a78' },
+  shortBreak: { stroke: '#b06838', bg: '#fbf6ec', text: '#9a5a2e', label: 'Перерыв',          dot: '#b06838' },
+  longBreak:  { stroke: '#c4784a', bg: '#f7efe6', text: '#b06838', label: 'Долгий перерыв',   dot: '#c4784a' },
 };
 
 const RADIUS = 60;
@@ -237,7 +237,7 @@ export default function PomodoroTimer() {
             <div className="flex gap-1">
               {Array.from({ length: Math.min(settings.longBreakInterval, 8) }).map((_, i) => (
                 <div key={i} className={cn('w-2.5 h-2.5 rounded-full transition-colors',
-                  i < (pomodoroCount % settings.longBreakInterval) ? 'bg-[var(--accent)]' : 'bg-[#E2E8F0]'
+                  i < (pomodoroCount % settings.longBreakInterval) ? 'bg-[var(--accent)]' : 'bg-[#e8e3d8]'
                 )} />
               ))}
             </div>
@@ -327,7 +327,7 @@ function TimerSettingsForm({ settings, onUpdate, onClose }: {
       <div className="flex items-center justify-between">
         <span className="text-sm text-[var(--text-secondary)]">Авто-запуск следующей фазы</span>
         <button onClick={() => setLocal(p => ({ ...p, autoStart: !p.autoStart }))}
-          className={cn('relative w-11 h-6 rounded-full transition-colors duration-150', local.autoStart ? 'bg-[var(--accent)]' : 'bg-[#E2E8F0]')}>
+          className={cn('relative w-11 h-6 rounded-full transition-colors duration-150', local.autoStart ? 'bg-[var(--accent)]' : 'bg-[#e8e3d8]')}>
           <span className={cn('absolute top-1 w-4 h-4 bg-white rounded-full transition-transform shadow-sm', local.autoStart ? 'translate-x-6' : 'translate-x-1')} />
         </button>
       </div>

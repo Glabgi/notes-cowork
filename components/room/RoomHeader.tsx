@@ -1,14 +1,136 @@
 'use client';
 
 import { useState } from 'react';
-import { Copy, Share2, Check, Users, Home, Send, MessageCircle } from 'lucide-react';
+import {
+  Copy, Share2, Check, Users, Home, Send, MessageCircle,
+  Mic, MicOff, Headphones, VolumeX, MonitorUp, MonitorOff, PhoneOff, AlertTriangle,
+} from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useRoomStore } from '@/store/roomStore';
+import { useVoiceStore } from '@/store/voiceStore';
+import {
+  joinVoice, leaveVoice, setMicMuted, setDeafened, startScreenShare, stopScreenShare,
+} from '@/lib/voice';
 import { useRouter } from 'next/navigation';
 import { copyToClipboard, shareUrl } from '@/lib/utils';
 import Modal from '@/components/ui/Modal';
 import Button from '@/components/ui/Button';
 import { cn } from '@/lib/utils';
+
+// iOS Safari не поддерживает getDisplayMedia
+const canScreenShare = typeof navigator !== 'undefined' && !!(navigator.mediaDevices as any)?.getDisplayMedia;
+
+/* ── Voice controls — always visible in the header (перенесено наверх) ── */
+function HeaderVoice() {
+  const v = useVoiceStore();
+  const { room, currentUser } = useRoomStore();
+  const [error, setError] = useState<string | null>(null);
+  const voiceCount = v.inVoice ? Object.keys(v.peers).length + 1 : 0;
+
+  const handleJoin = async () => {
+    if (!room || !currentUser) return;
+    setError(null);
+    try {
+      await joinVoice(room.slug, { id: currentUser.id, name: currentUser.name, avatarId: currentUser.avatarId });
+    } catch (e: any) {
+      const msg = e?.message || 'неизвестная ошибка';
+      setError(/timeout|xhr|websocket|failed/i.test(msg) ? 'Голосовой сервер недоступен' : msg);
+      setTimeout(() => setError(null), 4000);
+    }
+  };
+
+  if (!v.inVoice) {
+    return (
+      <div className="relative flex-shrink-0">
+        <button
+          onClick={handleJoin}
+          disabled={v.connecting}
+          className={cn(
+            'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all active:scale-95 disabled:opacity-60',
+            'bg-[var(--status-online)] text-white hover:bg-[var(--accent-active)] shadow-sm hover:shadow-glow'
+          )}
+          title="Присоединиться к голосовому чату"
+        >
+          {v.connecting
+            ? <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+            : <Mic size={14} />}
+          <span className="hidden sm:inline">Голос</span>
+        </button>
+        {error && (
+          <div className="absolute top-full mt-1 right-0 z-50 flex items-center gap-1.5 text-[11px] text-[var(--danger)] bg-[var(--bg-elevated)] border border-[rgba(196,85,90,0.35)] rounded-[8px] px-2 py-1 shadow-md whitespace-nowrap">
+            <AlertTriangle size={11} /> {error}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-1 flex-shrink-0 pl-1.5 pr-1 py-1 rounded-full border border-[rgba(74,138,120,0.25)] bg-[rgba(74,138,120,0.08)]">
+      <span className="hidden sm:inline-flex items-center gap-1 pl-1 pr-1.5 text-[11px] font-medium text-[var(--status-online)]">
+        <span className="relative flex w-1.5 h-1.5">
+          <span className="absolute inset-0 rounded-full bg-[var(--status-online)] animate-pulse-dot" />
+          <span className="relative rounded-full w-1.5 h-1.5 bg-[var(--status-online)]" />
+        </span>
+        {voiceCount}
+      </span>
+
+      <VBtn
+        on={!v.micMuted}
+        danger={v.micMuted}
+        onClick={() => setMicMuted(!v.micMuted)}
+        icon={v.micMuted ? MicOff : Mic}
+        title={v.micMuted ? 'Включить микрофон' : 'Выключить микрофон'}
+      />
+      <VBtn
+        on={!v.deafened}
+        danger={v.deafened}
+        onClick={() => setDeafened(!v.deafened)}
+        icon={v.deafened ? VolumeX : Headphones}
+        title={v.deafened ? 'Включить звук' : 'Выключить звук'}
+      />
+      {canScreenShare && (
+        <VBtn
+          on={v.sharingScreen}
+          accent={v.sharingScreen}
+          onClick={() => v.sharingScreen ? stopScreenShare() : startScreenShare()}
+          icon={v.sharingScreen ? MonitorOff : MonitorUp}
+          title={v.sharingScreen ? 'Остановить показ экрана' : 'Показать экран'}
+        />
+      )}
+      <button
+        onClick={() => leaveVoice()}
+        title="Выйти из голосового чата"
+        className="w-7 h-7 rounded-full flex items-center justify-center bg-[var(--danger)] text-white hover:opacity-90 transition-all active:scale-90"
+      >
+        <PhoneOff size={13} />
+      </button>
+    </div>
+  );
+}
+
+function VBtn({
+  icon: Icon, onClick, on, danger, accent, title,
+}: {
+  icon: React.ElementType; onClick: () => void; on: boolean; danger?: boolean; accent?: boolean; title: string;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      title={title}
+      className={cn(
+        'w-7 h-7 rounded-full flex items-center justify-center transition-all active:scale-90',
+        danger
+          ? 'bg-[rgba(196,85,90,0.15)] text-[var(--danger)] hover:bg-[rgba(196,85,90,0.25)]'
+          : accent
+            ? 'bg-[var(--accent-light)] text-[var(--accent)] ring-1 ring-[var(--accent)]/30'
+            : 'text-[var(--status-online)] hover:bg-[rgba(74,138,120,0.15)]'
+      )}
+    >
+      <Icon size={14} />
+    </button>
+  );
+}
 
 export default function RoomHeader() {
   const { room, isConnected } = useRoomStore();
@@ -53,7 +175,7 @@ export default function RoomHeader() {
             #{room.slug}
           </span>
           {room.isPrivate && (
-            <span className="text-[10px] font-semibold text-[var(--status-break)] bg-[rgba(240,178,50,0.12)] border border-[rgba(240,178,50,0.35)] px-1.5 py-0.5 rounded-full uppercase tracking-wider flex-shrink-0">
+            <span className="text-[10px] font-semibold text-[var(--status-break)] bg-[rgba(196,120,74,0.12)] border border-[rgba(196,120,74,0.35)] px-1.5 py-0.5 rounded-full uppercase tracking-wider flex-shrink-0">
               приватная
             </span>
           )}
@@ -61,7 +183,7 @@ export default function RoomHeader() {
 
         {/* Focus indicator */}
         {focusCount > 0 && (
-          <div className="hidden sm:flex items-center gap-1.5 bg-[rgba(35,165,90,0.12)] border border-[rgba(35,165,90,0.35)] rounded-full px-3 py-1 flex-shrink-0">
+          <div className="hidden sm:flex items-center gap-1.5 bg-[rgba(74,138,120,0.12)] border border-[rgba(74,138,120,0.35)] rounded-full px-3 py-1 flex-shrink-0">
             <div className="w-1.5 h-1.5 rounded-full bg-[var(--status-online)] animate-pulse-dot" />
             <span className="text-xs text-[var(--status-online)] font-medium">{focusCount} в фокусе</span>
           </div>
@@ -72,6 +194,9 @@ export default function RoomHeader() {
           <Users size={15} />
           <span className="text-sm tabular-nums">{room.participants.length}</span>
         </div>
+
+        {/* Voice controls — moved up here from the side panel */}
+        <HeaderVoice />
 
         {/* Actions */}
         <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -107,11 +232,11 @@ export default function RoomHeader() {
 
           <div className="grid grid-cols-2 gap-2">
             <Button variant="secondary" size="sm"
-              onClick={() => shareUrl(roomUrl, 'telegram', `Присоединяйся к «${room.name}» в Notes Cowork!`)}>
+              onClick={() => shareUrl(roomUrl, 'telegram', `Присоединяйся к «${room.name}» в Тихом зале!`)}>
               <Send size={14} /> Telegram
             </Button>
             <Button variant="secondary" size="sm"
-              onClick={() => shareUrl(roomUrl, 'whatsapp', `Присоединяйся к «${room.name}» в Notes Cowork!`)}>
+              onClick={() => shareUrl(roomUrl, 'whatsapp', `Присоединяйся к «${room.name}» в Тихом зале!`)}>
               <MessageCircle size={14} /> WhatsApp
             </Button>
           </div>

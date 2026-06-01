@@ -64,7 +64,7 @@ export default function RegisterPage() {
             <Input label="Повторите пароль" type="password" value={password2} onChange={e => setPassword2(e.target.value)} placeholder="ещё раз" autoComplete="new-password" required />
 
             {err && (
-              <p className="text-sm text-[#DC2626] bg-[#FEF2F2] border border-[#FECACA] rounded-[10px] px-3 py-2 flex items-start gap-2">
+              <p className="text-sm text-[#c4555a] bg-[#f7eeec] border border-[#eccfcb] rounded-[10px] px-3 py-2 flex items-start gap-2">
                 <AlertTriangle size={14} className="flex-shrink-0 mt-0.5" /> <span>{err}</span>
               </p>
             )}

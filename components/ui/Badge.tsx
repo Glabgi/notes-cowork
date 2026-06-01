@@ -10,16 +10,16 @@ interface BadgeProps {
 
 export default function Badge({ children, variant = 'default', className }: BadgeProps) {
   const variants = {
-    default: 'bg-[#F1F5F9] text-[#64748B] border border-[var(--border)]',
-    focus:   'bg-[#DCFCE7] text-[#15803D] border border-[#BBF7D0]',
-    break:   'bg-[#FEF3C7] text-[#B45309] border border-[#FDE68A]',
-    gaming:  'bg-[#EDE9FE] text-[#6D28D9] border border-[#DDD6FE]',
-    away:    'bg-[#F1F5F9] text-[#64748B] border border-[var(--border)]',
-    blue:    'bg-[#DBEAFE] text-[#1D4ED8] border border-[var(--border-accent)]',
-    success: 'bg-[#DCFCE7] text-[#15803D] border border-[#BBF7D0]',
-    warning: 'bg-[#FEF3C7] text-[#B45309] border border-[#FDE68A]',
-    error:   'bg-[#FEE2E2] text-[#DC2626] border border-[#FECACA]',
-    purple:  'bg-[#EDE9FE] text-[#6D28D9] border border-[#DDD6FE]',
+    default: 'bg-[#f0ece4] text-[#7a6a55] border border-[var(--border)]',
+    focus:   'bg-[#e3efe6] text-[#3f7566] border border-[#cfe3d6]',
+    break:   'bg-[#f4e7d3] text-[#9a5a2e] border border-[#e8c4a0]',
+    gaming:  'bg-[#f1e3d4] text-[#8a4f28] border border-[#ecd6c0]',
+    away:    'bg-[#f0ece4] text-[#7a6a55] border border-[var(--border)]',
+    blue:    'bg-[#f1e3d4] text-[#b06838] border border-[var(--border-accent)]',
+    success: 'bg-[#e3efe6] text-[#3f7566] border border-[#cfe3d6]',
+    warning: 'bg-[#f4e7d3] text-[#9a5a2e] border border-[#e8c4a0]',
+    error:   'bg-[#f3e0dc] text-[#c4555a] border border-[#eccfcb]',
+    purple:  'bg-[#f1e3d4] text-[#8a4f28] border border-[#ecd6c0]',
   };
 
   return (

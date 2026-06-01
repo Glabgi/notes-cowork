@@ -43,7 +43,7 @@ export default function ScreenShareTile() {
       {isMe && (
         <button
           onClick={stopScreenShare}
-          className="absolute top-2 right-2 z-10 bg-black/60 hover:bg-[#DC2626] text-white p-1.5 rounded-full transition-colors"
+          className="absolute top-2 right-2 z-10 bg-black/60 hover:bg-[#c4555a] text-white p-1.5 rounded-full transition-colors"
           title="Остановить демонстрацию"
         >
           <X size={14} />

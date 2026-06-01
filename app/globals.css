@@ -1,71 +1,83 @@
 /* =====================================================================
-   ICEF Notes — Dark UI inspired by Linear / Vercel
-   Near-black layered surfaces, hairline low-contrast borders, refined
-   typography with tight tracking, restrained indigo accent with a soft
-   glow, consistent radii and 150ms micro-transitions.
+   Тихий зал — тёплая lo-fi / «бумажная» тема
+   Палитра: кремовая бумага (#f7f4ef), тёрракотовый акцент (#c4784a),
+   приглушённый teal (#4a8a78), чернильный текст (#2a2018).
+   Моноширинный Space Mono + Roboto Mono (кириллица).
    ===================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Roboto+Mono:wght@400;500;700&display=swap');
 
 :root,
 .dark,
 .light {
-  /* ── Surfaces (near-black, slightly cool, layered) ─────────────── */
-  --bg-page:       #08090A;   /* app backdrop — near black */
-  --bg-subtle:     #0B0C0E;   /* sidebars / channel rails */
-  --bg-card:       #101113;   /* primary surface — cards, content */
-  --bg-elevated:   #151619;   /* raised — modals, popovers, menus */
-  --bg-hover:      #1A1C1F;   /* hover state on surfaces */
-  --bg-input:      #0C0D0F;   /* form fields */
-  --bg-solid:      #000000;
+  /* Фоны */
+  --bg-page:       #efe8dd;   /* задник за карточками */
+  --bg-card:       #ffffff;   /* панели, карточки, контент */
+  --bg-subtle:     #f7f4ef;   /* основная рабочая зона */
+  --bg-hover:      #f0ece4;   /* hover / bg2 */
+  --bg-elevated:   #ffffff;   /* модалки, попап */
+  --bg-input:      #f0ece4;   /* инпуты */
 
-  /* ── Text ──────────────────────────────────────────────────────── */
-  --text-primary:   #EDEEF0;  /* high-contrast, not pure white */
-  --text-secondary: #9B9FA7;  /* Linear-style cool grey */
-  --text-muted:     #62666D;
-  --text-link:      #8B93FF;
+  /* Текст */
+  --text-primary:   #2a2018;
+  --text-secondary: #7a6a55;
+  --text-muted:     #b0a090;
+  --text-link:      #c4784a;
 
-  /* ── Borders / dividers (hairline, low-opacity light) ──────────── */
-  --border:        rgba(255,255,255,0.08);
-  --border-strong: rgba(255,255,255,0.145);
-  --border-accent: #5B63D3;
-  --divider:       rgba(255,255,255,0.06);
+  /* Границы */
+  --border:        rgba(90,70,40,0.10);
+  --border-strong: rgba(90,70,40,0.20);
+  --border-accent: #c4784a;
 
-  /* ── Accent — refined indigo → violet ──────────────────────────── */
-  --accent:        #5B63D3;
-  --accent-hover:  #6B73E6;
-  --accent-active: #4A52C0;
-  --accent-2:      #8B5CF6;   /* violet partner for gradients */
-  --accent-light:  rgba(91,99,211,0.14);
-  --accent-glow:   rgba(91,99,211,0.45);
-  --accent-grad:   linear-gradient(135deg, #6E79E8 0%, #8B5CF6 100%);
-  --accent-grad-hover: linear-gradient(135deg, #7E89F2 0%, #9B6CFF 100%);
+  /* Акцент — тёрракот / amber */
+  --accent:        #c4784a;
+  --accent-hover:  #b06838;
+  --accent-active: #9a5a2e;
+  --accent-light:  rgba(196,120,74,0.12);
+  --accent-glow:   rgba(196,120,74,0.30);
 
-  /* ── Statuses ──────────────────────────────────────────────────── */
-  --status-online:  #3FB950;
-  --status-focus:   #3FB950;
-  --status-break:   #D29922;
-  --status-gaming:  #8B5CF6;
-  --status-away:    #6E7681;
-  --status-dnd:     #F85149;
+  /* Статусы */
+  --status-online:  #4a8a78;
+  --status-focus:   #c4784a;
+  --status-break:   #4a8a78;
+  --status-gaming:  #c4784a;
+  --status-away:    #b0a090;
+  --status-dnd:     #c4555a;
 
-  /* ── Semantic ──────────────────────────────────────────────────── */
-  --success: #3FB950;
-  --warning: #D29922;
-  --danger:  #F85149;
-  --info:    #58A6FF;
+  /* Семантика */
+  --success: #4a8a78;
+  --warning: #c4784a;
+  --danger:  #c4555a;
+  --info:    #4a8a78;
 
-  /* ── Shadows (deep but soft, with a faint top highlight) ───────── */
-  --shadow-sm: 0 1px 2px rgba(0,0,0,0.40);
-  --shadow-md: 0 6px 20px rgba(0,0,0,0.45), 0 2px 6px rgba(0,0,0,0.30);
-  --shadow-lg: 0 20px 56px rgba(0,0,0,0.60), 0 8px 20px rgba(0,0,0,0.40);
-  --shadow-glow: 0 0 0 1px rgba(91,99,211,0.30), 0 8px 30px rgba(91,99,211,0.35);
-  --shadow-inset: inset 0 1px 0 rgba(255,255,255,0.05);
+  /* Тени (тёплые, мягкие) */
+  --shadow-sm: 0 1px 2px rgba(90,70,40,0.08);
+  --shadow-md: 0 4px 14px rgba(90,70,40,0.10), 0 2px 4px rgba(90,70,40,0.06);
+  --shadow-lg: 0 24px 60px rgba(90,70,40,0.16), 0 6px 16px rgba(90,70,40,0.08);
+  --shadow-glow: 0 0 22px var(--accent-glow);
 
-  /* ── Radii ─────────────────────────────────────────────────────── */
+  /* Радиусы */
   --radius-sm:  6px;
   --radius-md:  8px;
   --radius-lg:  12px;
   --radius-xl:  16px;
   --radius-2xl: 20px;
+}
+
+.light-mode {
+  --bg-page:     #efe8dd;
+  --bg-card:     #ffffff;
+  --bg-subtle:   #f7f4ef;
+  --bg-hover:    #f0ece4;
+  --bg-elevated: #ffffff;
+  --bg-input:    #f0ece4;
+
+  --text-primary:   #2a2018;
+  --text-secondary: #7a6a55;
+  --text-muted:     #b0a090;
+
+  --border:        rgba(90,70,40,0.10);
+  --border-strong: rgba(90,70,40,0.20);
 }
 
 @tailwind base;
@@ -79,146 +91,78 @@ html, body {
   color: var(--text-primary);
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
-  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  font-feature-settings: 'cv02','cv03','cv04','cv11','ss01';
+  font-family: 'Space Mono', 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
   min-height: 100vh;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-/* Ambient backdrop: a single soft accent glow up top + a faint dotted grid.
-   Fixed so content scrolls over it — subtle "product page" depth. */
-body {
-  position: relative;
-}
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: -2;
-  background:
-    radial-gradient(60rem 40rem at 50% -12%, rgba(91,99,211,0.16) 0%, transparent 60%),
-    radial-gradient(50rem 36rem at 92% 4%, rgba(139,92,246,0.10) 0%, transparent 58%);
-  pointer-events: none;
-}
-body::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: -1;
+/* notebook ruled-paper background — тетрадка в линейку */
+.lined-paper {
+  background-color: #fffdf6;
   background-image:
-    linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
-  background-size: 44px 44px;
-  mask-image: radial-gradient(70rem 50rem at 50% 0%, #000 0%, transparent 75%);
-  -webkit-mask-image: radial-gradient(70rem 50rem at 50% 0%, #000 0%, transparent 75%);
-  pointer-events: none;
+    repeating-linear-gradient(180deg, transparent 0 25px, rgba(74,108,150,0.16) 25px 26px),
+    linear-gradient(90deg, transparent 0 21px, rgba(196,90,80,0.30) 21px 22px, transparent 22px);
+  background-repeat: repeat, repeat-y;
 }
 
-/* ── Headings — tighter tracking for the premium feel ────────────── */
-h1, h2, h3 { letter-spacing: -0.02em; }
-
-/* ── Typography helpers ──────────────────────────────────────────── */
-.text-balance { text-wrap: balance; }
-.tnum { font-variant-numeric: tabular-nums; }
-.gradient-text {
-  background: linear-gradient(180deg, #FFFFFF 0%, #B9BCC6 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-.gradient-accent-text {
-  background: var(--accent-grad);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
-/* ── Surface utilities ───────────────────────────────────────────── */
-.surface {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow-inset);
-}
-.surface-hover {
-  transition: border-color .15s ease, background-color .15s ease, transform .15s ease, box-shadow .15s ease;
-}
-.surface-hover:hover {
-  border-color: var(--border-strong);
-  background: var(--bg-hover);
-}
-.glass {
-  background: rgba(16,17,19,0.72);
-  backdrop-filter: blur(16px) saturate(160%);
-  -webkit-backdrop-filter: blur(16px) saturate(160%);
-}
-.glow-accent { box-shadow: var(--shadow-glow); }
-
-/* hairline divider helper */
-.divider { height: 1px; background: var(--divider); }
-
-/* ── Scrollbar (thin, unobtrusive) ───────────────────────────────── */
-::-webkit-scrollbar { width: 10px; height: 10px; }
-::-webkit-scrollbar-track { background: transparent; }
+/* Discord-style scrollbar — тонкий, заметный на hover */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--bg-subtle); }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.10);
-  border-radius: 6px;
-  border: 2px solid transparent;
-  background-clip: padding-box;
+  background: var(--bg-page);
+  border-radius: 4px;
+  border: 2px solid var(--bg-subtle);
 }
-::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.18); background-clip: padding-box; }
+::-webkit-scrollbar-thumb:hover { background: var(--border-strong); }
 ::-webkit-scrollbar-corner { background: transparent; }
-.scrollbar-thin::-webkit-scrollbar { width: 5px; }
-.scrollbar-thin::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border: none; }
 
-/* Selection / focus */
-::selection { background: rgba(91,99,211,0.40); color: #fff; }
+/* тонкий вариант для side-panel */
+.scrollbar-thin::-webkit-scrollbar { width: 4px; }
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: var(--border-strong); border: none;
+}
+
+/* Selection */
+::selection { background: var(--accent); color: white; }
+
+/* Focus ring */
 :focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 2px var(--bg-page), 0 0 0 4px rgba(91,99,211,0.55);
-  border-radius: 6px;
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
-/* Respect reduced motion */
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; }
-  .hover-lift:hover { transform: none; }
-}
-
-/* ── Animations ──────────────────────────────────────────────────── */
+/* Animations */
 @keyframes fadeSlideIn {
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
 @keyframes pulse-dot {
   0%, 100% { opacity: 1; transform: scale(1); }
   50%       { opacity: 0.55; transform: scale(0.9); }
 }
 @keyframes speaking-ring {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(63,185,80,0.55); }
-  50%       { box-shadow: 0 0 0 5px rgba(63,185,80,0.0); }
+  0%, 100% { box-shadow: 0 0 0 0 var(--status-online); }
+  50%       { box-shadow: 0 0 0 4px rgba(35,165,90,0.4); }
 }
 @keyframes pulse-glow {
   0%, 100% { box-shadow: 0 0 0 0 var(--accent-glow); }
-  50%       { box-shadow: 0 0 0 8px transparent; }
-}
-@keyframes shimmer {
-  0%   { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  50%       { box-shadow: 0 0 0 6px transparent; }
 }
 
-.animate-fade-in       { animation: fadeIn 0.22s ease-out; }
-.animate-fade-slide-in { animation: fadeSlideIn 0.3s cubic-bezier(0.22,1,0.36,1); }
+.animate-fade-in       { animation: fadeIn 0.2s ease-out; }
+.animate-fade-slide-in { animation: fadeSlideIn 0.25s ease-out; }
 .animate-speaking      { animation: speaking-ring 1.4s ease-in-out infinite; }
 .animate-pulse-dot     { animation: pulse-dot 2s ease-in-out infinite; }
 
-/* skeleton shimmer */
-.skeleton {
-  background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.09) 37%, rgba(255,255,255,0.04) 63%);
-  background-size: 200% 100%;
-  animation: shimmer 1.4s ease-in-out infinite;
+/* Дополнительные утилиты */
+.text-balance { text-wrap: balance; }
+.glass {
+  background: rgba(255,255,255,0.72);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
 }
-
-/* hover-lift for cards */
-.hover-lift { transition: transform .2s cubic-bezier(.22,1,.36,1), box-shadow .2s ease, border-color .2s ease; }
-.hover-lift:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }

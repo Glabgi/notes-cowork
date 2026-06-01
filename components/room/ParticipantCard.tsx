@@ -6,12 +6,11 @@ import type { Participant } from '@/types';
 import Avatar from '@/components/ui/Avatar';
 import { getStatusLabel, formatDuration } from '@/lib/utils';
 import { cn } from '@/lib/utils';
-import { Timer, Clock, Gamepad2 } from 'lucide-react';
+import { Timer, Clock } from 'lucide-react';
 
 interface ParticipantCardProps {
   participant: Participant;
   isMe?: boolean;
-  onInviteGame?: (userId: string) => void;
 }
 
 function getStatusDotColor(status: string) {
@@ -23,7 +22,7 @@ function getStatusDotColor(status: string) {
   }
 }
 
-export default function ParticipantCard({ participant, isMe, onInviteGame }: ParticipantCardProps) {
+export default function ParticipantCard({ participant, isMe }: ParticipantCardProps) {
   const [showTooltip, setShowTooltip] = useState(false);
 
   return (
@@ -88,14 +87,6 @@ export default function ParticipantCard({ participant, isMe, onInviteGame }: Par
             <p className="flex items-center gap-1.5"><Timer size={11} /> Помидорок: {participant.pomodoroCount}</p>
             <p className="flex items-center gap-1.5"><Clock size={11} /> Фокус: {formatDuration(participant.focusMinutes)}</p>
           </div>
-          {onInviteGame && participant.status === 'break' && (
-            <button
-              onClick={() => onInviteGame(participant.id)}
-              className="mt-2.5 w-full py-1.5 flex items-center justify-center gap-1.5 bg-[var(--accent-light)] hover:bg-[var(--accent)] hover:text-white border border-[var(--accent)] text-[var(--accent)] rounded-[8px] transition-colors duration-150 font-medium text-xs"
-            >
-              <Gamepad2 size={12} /> Сыграть
-            </button>
-          )}
           <div className="absolute left-1/2 -translate-x-1/2 bottom-0 translate-y-full w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-[var(--border)]" />
         </motion.div>
       )}

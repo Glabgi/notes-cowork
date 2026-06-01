@@ -62,7 +62,7 @@ export default function VoicePanel() {
           onClick={handleJoin}
           disabled={v.connecting}
           className={cn(
-            'px-6 py-3 rounded-[10px] bg-[var(--status-online)] hover:bg-[#1F8C4D] text-white font-semibold text-sm transition-all disabled:opacity-60 inline-flex items-center gap-2',
+            'px-6 py-3 rounded-[10px] bg-[var(--status-online)] hover:bg-[#4a8a78] text-white font-semibold text-sm transition-all disabled:opacity-60 inline-flex items-center gap-2',
             'shadow-md hover:shadow-glow active:scale-[0.98]'
           )}
         >
@@ -221,7 +221,7 @@ function CtrlBtn({
       className={cn(
         'flex flex-col items-center justify-center gap-1 py-2 rounded-[8px] text-[10px] font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed active:scale-95',
         leave
-          ? 'bg-[var(--danger)] text-white hover:bg-[#D63239]'
+          ? 'bg-[var(--danger)] text-white hover:bg-[#c4555a]'
           : danger
             ? 'bg-[rgba(242,63,67,0.15)] text-[var(--danger)] hover:bg-[rgba(242,63,67,0.25)]'
             : highlight

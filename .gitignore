@@ -9,3 +9,4 @@ out
 tsconfig.tsbuildinfo
 sfu/node_modules
 sfu/.env
+.lazyweb/

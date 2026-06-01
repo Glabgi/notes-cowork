@@ -4,17 +4,11 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Users } from 'lucide-react';
 import { useRoomStore } from '@/store/roomStore';
 import ParticipantCard from './ParticipantCard';
-import { useGameStore } from '@/store/gameStore';
 
 export default function ParticipantsGrid() {
   const { room, currentUser } = useRoomStore();
-  const { setGameOpen } = useGameStore();
 
   if (!room) return null;
-
-  const handleInviteGame = (userId: string) => {
-    setGameOpen(true);
-  };
 
   return (
     <div className="flex-1 p-6 overflow-y-auto">
@@ -34,7 +28,6 @@ export default function ParticipantsGrid() {
               key={participant.id}
               participant={participant}
               isMe={participant.id === currentUser?.id}
-              onInviteGame={handleInviteGame}
             />
           ))}
         </AnimatePresence>

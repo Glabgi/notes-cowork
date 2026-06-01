@@ -64,7 +64,7 @@ function MiniBar({ value, max, color, label }: { value: number; max: number; col
   return (
     <div className="flex flex-col items-center gap-1.5 flex-1">
       <span className="text-[10px] text-[var(--text-muted)] tabular-nums font-medium">{value || ''}</span>
-      <div className="w-full flex-1 bg-[#F1F5F9] rounded-[4px] overflow-hidden flex items-end" style={{ minHeight: 48 }}>
+      <div className="w-full flex-1 bg-[#f0ece4] rounded-[4px] overflow-hidden flex items-end" style={{ minHeight: 48 }}>
         <div
           className="w-full rounded-t-[4px]"
           style={{
@@ -81,11 +81,11 @@ function MiniBar({ value, max, color, label }: { value: number; max: number; col
 }
 
 const TAG_META: Record<string, { label: string; Icon: React.ElementType; color: string; pill: string }> = {
-  work:     { label: 'Работа',     Icon: Briefcase,     color: '#2563EB', pill: 'bg-[var(--accent-light)] text-[var(--accent)] border-[var(--border-accent)]' },
-  study:    { label: 'Учёба',      Icon: GraduationCap, color: '#16A34A', pill: 'bg-[#F0FDF4] text-[#16A34A] border-[#BBF7D0]' },
-  personal: { label: 'Личное',     Icon: Home,          color: '#EA580C', pill: 'bg-[#FFF7ED] text-[#EA580C] border-[#FED7AA]' },
-  creative: { label: 'Творчество', Icon: Palette,       color: '#9333EA', pill: 'bg-[#FDF4FF] text-[#9333EA] border-[#E9D5FF]' },
-  other:    { label: 'Другое',     Icon: FolderOpen,    color: '#64748B', pill: 'bg-[#F1F5F9] text-[var(--text-secondary)] border-[var(--border)]' },
+  work:     { label: 'Работа',     Icon: Briefcase,     color: '#c4784a', pill: 'bg-[var(--accent-light)] text-[var(--accent)] border-[var(--border-accent)]' },
+  study:    { label: 'Учёба',      Icon: GraduationCap, color: '#4a8a78', pill: 'bg-[#eef3ee] text-[#4a8a78] border-[#cfe3d6]' },
+  personal: { label: 'Личное',     Icon: Home,          color: '#c4784a', pill: 'bg-[#fbf4ea] text-[#c4784a] border-[#ecd6c0]' },
+  creative: { label: 'Творчество', Icon: Palette,       color: '#b5734e', pill: 'bg-[#faf7f1] text-[#b5734e] border-[#ecd6c0]' },
+  other:    { label: 'Другое',     Icon: FolderOpen,    color: '#7a6a55', pill: 'bg-[#f0ece4] text-[var(--text-secondary)] border-[var(--border)]' },
 };
 
 const DAYS_SHORT = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
@@ -173,7 +173,7 @@ export default function DashboardPage() {
             </h3>
             <div className="flex items-end gap-1.5 h-28">
               {weekData.map((d, i) => (
-                <MiniBar key={i} value={d.pomodoros} max={maxPom} color="#2563EB" label={d.label} />
+                <MiniBar key={i} value={d.pomodoros} max={maxPom} color="#c4784a" label={d.label} />
               ))}
             </div>
           </div>
@@ -196,7 +196,7 @@ export default function DashboardPage() {
                         </span>
                         <span className="text-[var(--text-muted)] tabular-nums">{count} · {pct}%</span>
                       </div>
-                      <div className="h-1.5 bg-[#F1F5F9] rounded-full overflow-hidden">
+                      <div className="h-1.5 bg-[#f0ece4] rounded-full overflow-hidden">
                         <div
                           className="h-full rounded-full transition-all duration-700"
                           style={{ width: `${pct}%`, backgroundColor: meta.color }}
@@ -235,11 +235,11 @@ export default function DashboardPage() {
               {completedTasks.slice(0, 10).map((task, i) => (
                 <div
                   key={task.id}
-                  className="flex items-center gap-3 py-2.5 border-b border-[#F1F5F9] last:border-0 group"
+                  className="flex items-center gap-3 py-2.5 border-b border-[#f0ece4] last:border-0 group"
                   style={{ animation: `fadeSlideIn 0.3s ease-out ${i * 0.04}s both` }}
                 >
-                  <div className="w-4 h-4 rounded-full bg-[#DCFCE7] border border-[#86EFAC] flex items-center justify-center flex-shrink-0">
-                    <Check size={8} className="text-[#16A34A]" strokeWidth={3} />
+                  <div className="w-4 h-4 rounded-full bg-[#e3efe6] border border-[#a9cdbf] flex items-center justify-center flex-shrink-0">
+                    <Check size={8} className="text-[#4a8a78]" strokeWidth={3} />
                   </div>
                   <span className="flex-1 text-sm text-[var(--text-muted)] line-through truncate">{task.title}</span>
                   <div className="flex items-center gap-2 flex-shrink-0">
@@ -249,7 +249,7 @@ export default function DashboardPage() {
                       </span>
                     )}
                     {task.completedAt && (
-                      <span className="text-[10px] text-[#CBD5E1] hidden group-hover:block">
+                      <span className="text-[10px] text-[#ddd2c2] hidden group-hover:block">
                         {new Date(task.completedAt).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}
                       </span>
                     )}
@@ -262,7 +262,7 @@ export default function DashboardPage() {
             </div>
           ) : (
             <div className="text-center py-10">
-              <div className="w-12 h-12 rounded-full bg-[#F1F5F9] flex items-center justify-center mx-auto mb-3">
+              <div className="w-12 h-12 rounded-full bg-[#f0ece4] flex items-center justify-center mx-auto mb-3">
                 <ListChecks size={20} className="text-[var(--text-muted)]" />
               </div>
               <p className="text-sm font-medium text-[var(--text-secondary)]">Нет выполненных задач</p>
@@ -311,7 +311,7 @@ export default function DashboardPage() {
                     'p-3 rounded-[16px] border text-center transition-all',
                     unlocked
                       ? 'bg-[var(--accent-light)] border-[var(--border-accent)] shadow-[0_2px_8px_rgba(37,99,235,0.08)]'
-                      : 'bg-[var(--bg-subtle)] border-[#F1F5F9] opacity-50 grayscale'
+                      : 'bg-[var(--bg-subtle)] border-[#f0ece4] opacity-50 grayscale'
                   )}
                 >
                   <div className="w-10 h-10 mx-auto mb-1.5 rounded-[10px] bg-white border border-[var(--border)] flex items-center justify-center">

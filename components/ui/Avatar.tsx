@@ -16,17 +16,17 @@ export default function Avatar({ id, size = 40, className, showRing, status }: A
   const color = getAvatarColor(id);
 
   const statusRings: Record<string, string> = {
-    focus:   'ring-[#16A34A]',
-    break:   'ring-[#D97706]',
-    gaming:  'ring-[#7C3AED]',
-    away:    'ring-[#CBD5E1]',
+    focus:   'ring-[#4a8a78]',
+    break:   'ring-[#b06838]',
+    gaming:  'ring-[#9a5a2e]',
+    away:    'ring-[#ddd2c2]',
   };
 
   return (
     <div
       className={cn(
         'relative rounded-full overflow-hidden flex-shrink-0',
-        showRing && status && `ring-2 ring-offset-2 ring-offset-white ${statusRings[status] || 'ring-[#CBD5E1]'}`,
+        showRing && status && `ring-2 ring-offset-2 ring-offset-white ${statusRings[status] || 'ring-[#ddd2c2]'}`,
         className
       )}
       style={{ width: size, height: size, background: color + '22' }}

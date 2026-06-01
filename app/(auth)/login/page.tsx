@@ -44,7 +44,7 @@ export default function LoginPage() {
             <div className="w-14 h-14 bg-[var(--accent-light)] rounded-[16px] flex items-center justify-center mx-auto mb-4">
               <LogIn size={24} className="text-[var(--accent)]" />
             </div>
-            <h2 className="text-xl font-bold text-[var(--text-primary)]">Вход в Notes Cowork</h2>
+            <h2 className="text-xl font-bold text-[var(--text-primary)]">Вход в «тихий зал»</h2>
             <p className="text-[var(--text-muted)] text-sm mt-1">Только логин и пароль — никаких данных</p>
           </div>
 
@@ -53,7 +53,7 @@ export default function LoginPage() {
             <Input label="Пароль" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" required autoComplete="current-password" />
 
             {err && (
-              <p className="text-sm text-[#DC2626] bg-[#FEF2F2] border border-[#FECACA] rounded-[10px] px-3 py-2 flex items-start gap-2">
+              <p className="text-sm text-[#c4555a] bg-[#f7eeec] border border-[#eccfcb] rounded-[10px] px-3 py-2 flex items-start gap-2">
                 <AlertTriangle size={14} className="flex-shrink-0 mt-0.5" /> <span>{err}</span>
               </p>
             )}

@@ -13,10 +13,10 @@ import { cn } from '@/lib/utils';
 
 const TAG_OPTIONS: { value: TaskTag; label: string; color: string }[] = [
   { value: 'work',     label: 'Работа',    color: 'bg-[var(--accent-light)] text-[var(--accent)] border-[var(--border-accent)]' },
-  { value: 'study',    label: 'Учёба',     color: 'bg-[#F0FDF4] text-[#16A34A] border-[#BBF7D0]' },
-  { value: 'personal', label: 'Личное',    color: 'bg-[#FFF7ED] text-[#EA580C] border-[#FED7AA]' },
-  { value: 'creative', label: 'Творчество',color: 'bg-[#FDF4FF] text-[#9333EA] border-[#E9D5FF]' },
-  { value: 'other',    label: 'Другое',    color: 'bg-[#F1F5F9] text-[var(--text-secondary)] border-[var(--border)]' },
+  { value: 'study',    label: 'Учёба',     color: 'bg-[#eef3ee] text-[#4a8a78] border-[#cfe3d6]' },
+  { value: 'personal', label: 'Личное',    color: 'bg-[#fbf4ea] text-[#c4784a] border-[#ecd6c0]' },
+  { value: 'creative', label: 'Творчество',color: 'bg-[#faf7f1] text-[#b5734e] border-[#ecd6c0]' },
+  { value: 'other',    label: 'Другое',    color: 'bg-[#f0ece4] text-[var(--text-secondary)] border-[var(--border)]' },
 ];
 
 const TAG_ICONS: Record<TaskTag, React.ElementType> = {
@@ -56,7 +56,7 @@ export default function TaskPanel() {
             onChange={(e) => setNewTask(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
             placeholder="Новая задача..."
-            className="flex-1 bg-[var(--bg-card)] border border-[var(--border)] rounded-[10px] px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[#94A3B8] focus:outline-none focus:border-[var(--accent)] focus:ring-4 focus:ring-[#DBEAFE]/50 transition-all"
+            className="flex-1 bg-[var(--bg-card)] border border-[var(--border)] rounded-[10px] px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[#b0a090] focus:outline-none focus:border-[var(--accent)] focus:ring-4 focus:ring-[#f1e3d4]/50 transition-all"
           />
           <button
             onClick={() => setShowTagPicker(!showTagPicker)}
@@ -115,8 +115,8 @@ export default function TaskPanel() {
         )}
       </div>
 
-      {/* Tasks list */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-1">
+      {/* Tasks list — notebook ruled paper */}
+      <div className="flex-1 overflow-y-auto p-3 space-y-1 lined-paper">
         <AnimatePresence>
           {activeTasks.map((task) => (
             <TaskItem
@@ -135,8 +135,8 @@ export default function TaskPanel() {
             animate={{ opacity: 1 }}
             className="text-center py-10"
           >
-            <div className="w-12 h-12 rounded-full bg-[#F0FDF4] flex items-center justify-center mx-auto mb-3">
-              <Check size={20} className="text-[#16A34A]" />
+            <div className="w-12 h-12 rounded-full bg-[#eef3ee] flex items-center justify-center mx-auto mb-3">
+              <Check size={20} className="text-[#4a8a78]" />
             </div>
             <p className="text-sm font-medium text-[var(--text-primary)]">Все задачи выполнены!</p>
             <p className="text-xs text-[var(--text-muted)] mt-1">Добавьте новую задачу выше</p>
@@ -197,7 +197,7 @@ function TaskItem({
         className={cn(
           'w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all duration-150',
           completed
-            ? 'bg-[#16A34A] border-[#16A34A]'
+            ? 'bg-[#4a8a78] border-[#4a8a78]'
             : 'border-[var(--border-strong)] hover:border-[var(--accent)] hover:bg-[var(--accent-light)]'
         )}
       >
@@ -218,7 +218,7 @@ function TaskItem({
         return (
           <span className={cn(
             'inline-flex items-center justify-center flex-shrink-0 w-5 h-5 rounded-full border',
-            tagOption?.color || 'bg-[#F1F5F9] text-[var(--text-secondary)] border-[var(--border)]'
+            tagOption?.color || 'bg-[#f0ece4] text-[var(--text-secondary)] border-[var(--border)]'
           )}>
             <TagIcon size={10} />
           </span>
@@ -241,14 +241,14 @@ function TaskItem({
             'p-1 rounded-[6px] transition-colors duration-150',
             task.isPublic
               ? 'text-[var(--accent)] bg-[var(--accent-light)]'
-              : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[#F1F5F9]'
+              : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[#f0ece4]'
           )}
         >
           {task.isPublic ? <Eye size={11} /> : <EyeOff size={11} />}
         </button>
         <button
           onClick={() => onDelete(task.id)}
-          className="p-1 rounded-[6px] text-[var(--text-muted)] hover:text-[#EF4444] hover:bg-[#FEE2E2] transition-colors duration-150"
+          className="p-1 rounded-[6px] text-[var(--text-muted)] hover:text-[#d06a5e] hover:bg-[#f3e0dc] transition-colors duration-150"
         >
           <Trash2 size={11} />
         </button>

@@ -31,7 +31,7 @@ function HomeFooterLinks({ router }: { router: any }) {
   if (isAnonymous) {
     return (
       <div className="flex items-center justify-center gap-2 text-xs text-[var(--text-muted)] pt-2">
-        <span className="opacity-60">I.C-E.F Notes project</span>
+        <span className="opacity-60">тихий зал · учимся вместе</span>
       </div>
     );
   }
@@ -41,7 +41,7 @@ function HomeFooterLinks({ router }: { router: any }) {
       <span>·</span>
       <button onClick={() => router.push('/settings')} className="hover:text-[var(--accent)] transition-colors">Настройки</button>
       <span>·</span>
-      <span className="opacity-60">I.C-E.F Notes</span>
+      <span className="opacity-60">тихий зал</span>
     </div>
   );
 }
@@ -221,26 +221,23 @@ function RoomCard({ room }: { room: ActiveRoom }) {
   return (
     <button
       onClick={() => router.push(`/room/${room.slug}`)}
-      className="w-full surface surface-hover hover-lift rounded-[14px] p-4 cursor-pointer text-left group"
+      className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-[12px] p-4 hover:border-[var(--accent)] hover:bg-[var(--bg-hover)] hover:shadow-md cursor-pointer transition-all duration-150 text-left group"
     >
       {/* Row 1: name + participant count */}
       <div className="flex items-center justify-between gap-2">
-        <p className="font-semibold text-[var(--text-primary)] truncate text-sm group-hover:text-white transition-colors">
+        <p className="font-semibold text-[var(--text-primary)] truncate text-sm group-hover:text-[var(--accent)] transition-colors">
           {room.name}
         </p>
-        <span className="flex-shrink-0 text-[11px] bg-[var(--accent-light)] text-[var(--text-link)] border border-[var(--accent)]/25 px-2 py-0.5 rounded-full font-medium tnum">
+        <span className="flex-shrink-0 text-xs bg-[var(--accent-light)] text-[var(--accent)] border border-[var(--accent)]/30 px-2 py-0.5 rounded-full font-medium">
           {room.participantCount} уч.
         </span>
       </div>
 
       {/* Row 2: slug + online indicator */}
-      <div className="flex items-center justify-between mt-1.5">
+      <div className="flex items-center justify-between mt-1">
         <p className="font-mono text-xs text-[var(--text-muted)]">#{room.slug}</p>
-        <div className="flex items-center gap-1.5">
-          <span className="relative flex w-1.5 h-1.5">
-            <span className="absolute inset-0 rounded-full bg-[var(--status-online)] animate-pulse-dot" />
-            <span className="relative w-1.5 h-1.5 rounded-full bg-[var(--status-online)]" />
-          </span>
+        <div className="flex items-center gap-1">
+          <span className="w-1.5 h-1.5 rounded-full bg-[var(--status-online)] animate-pulse-dot" />
           <span className="text-[10px] text-[var(--status-online)] font-medium">онлайн</span>
         </div>
       </div>
@@ -271,14 +268,14 @@ function RoomCard({ room }: { room: ActiveRoom }) {
 /* ─── Skeleton Card ─────────────────────────────────────────────────── */
 function SkeletonCard() {
   return (
-    <div className="surface rounded-[14px] p-4">
+    <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[16px] p-4 animate-pulse">
       <div className="flex items-center justify-between gap-2">
-        <div className="h-4 skeleton rounded-full w-32" />
-        <div className="h-5 skeleton rounded-full w-14" />
+        <div className="h-4 bg-[var(--bg-subtle)] rounded-full w-32" />
+        <div className="h-5 bg-[var(--bg-subtle)] rounded-full w-14" />
       </div>
-      <div className="flex items-center justify-between mt-3">
-        <div className="h-3 skeleton rounded-full w-20" />
-        <div className="h-3 skeleton rounded-full w-12" />
+      <div className="flex items-center justify-between mt-2">
+        <div className="h-3 bg-[var(--bg-subtle)] rounded-full w-20" />
+        <div className="h-3 bg-[var(--bg-subtle)] rounded-full w-12" />
       </div>
     </div>
   );
@@ -360,56 +357,32 @@ export default function HomePage() {
       <AppHeader showDashboard={true} />
 
       {/* Body */}
-      <main className="max-w-2xl mx-auto px-6 sm:px-8 py-10 space-y-8">
-
-        {/* Hero */}
-        <div className="text-center pt-4 pb-2">
-          <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-[var(--text-secondary)] bg-[var(--bg-card)] border border-[var(--border)] rounded-full px-3 py-1 mb-5">
-            <span className="w-1.5 h-1.5 rounded-full bg-[var(--status-online)]" />
-            Совместная работа в реальном времени
-          </span>
-          <h1 className="gradient-text text-4xl sm:text-5xl font-bold tracking-tightest leading-[1.05]">
-            Работайте вместе.<br/>В одном пространстве.
-          </h1>
-          <p className="text-[var(--text-secondary)] text-base mt-4 max-w-md mx-auto text-balance">
-            Голос, экран, задачи и фокус-таймер — создайте сессию и пригласите команду по ссылке.
-          </p>
-        </div>
+      <main className="max-w-2xl mx-auto px-6 sm:px-8 py-8 space-y-6">
 
         {/* Create card */}
         <button
           onClick={() => setShowCreate(true)}
-          className="relative w-full overflow-hidden rounded-[18px] p-[1px] cursor-pointer text-left group active:scale-[0.99] transition-transform duration-150"
-          style={{ background: 'linear-gradient(135deg, rgba(110,121,232,0.6), rgba(139,92,246,0.35))' }}
+          className="w-full bg-gradient-to-br from-[var(--accent)] to-[var(--accent-hover)] hover:from-[var(--accent-hover)] hover:to-[var(--accent-active)] rounded-[16px] p-6 cursor-pointer text-white transition-all duration-150 shadow-glow hover:shadow-lg text-left group active:scale-[0.99]"
         >
-          <div className="rounded-[17px] p-6 bg-[var(--bg-card)] group-hover:bg-[var(--bg-hover)] transition-colors duration-150">
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-[12px] bg-accent-grad flex items-center justify-center shadow-glow flex-shrink-0">
-                <Plus size={24} strokeWidth={2.5} className="text-white" />
-              </div>
-              <div className="min-w-0">
-                <p className="font-semibold text-xl text-[var(--text-primary)] flex items-center gap-2">
-                  Создать сессию
-                  <ArrowRight size={18} className="text-[var(--text-muted)] group-hover:text-[var(--text-link)] group-hover:translate-x-0.5 transition-all" />
-                </p>
-                <p className="text-[var(--text-secondary)] text-sm mt-1">Поделитесь ссылкой — участники подключатся сразу</p>
-              </div>
-            </div>
+          <div className="text-3xl opacity-80 mb-2 group-hover:opacity-100 transition-opacity">
+            <Plus size={32} strokeWidth={2.5} />
           </div>
+          <p className="font-bold text-xl">Создать сессию</p>
+          <p className="text-white/70 text-sm mt-1">Поделись ссылкой — друзья подключатся сразу</p>
         </button>
 
         {/* Quick join */}
-        <div className="surface rounded-[14px] p-4">
-          <p className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-3">Быстрый вход</p>
+        <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[16px] p-4">
+          <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-3">Быстрый вход</p>
           <div className="flex gap-2">
             <input
               value={joinInput}
               onChange={e => setJoinInput(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleJoin()}
-              placeholder="Вставьте ссылку или код комнаты…"
-              className="flex-1 bg-[var(--bg-input)] border border-[var(--border)] rounded-[8px] px-3.5 py-2.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/25 transition-all"
+              placeholder="Ссылка или код комнаты..."
+              className="flex-1 bg-[var(--bg-input)] border border-[var(--border)] rounded-[8px] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/30 transition-all"
             />
-            <Button size="md" onClick={handleJoin} disabled={!joinInput.trim()}>
+            <Button size="sm" onClick={handleJoin} disabled={!joinInput.trim()}>
               Войти <ArrowRight size={14} />
             </Button>
           </div>
@@ -418,10 +391,10 @@ export default function HomePage() {
         {/* Active sessions */}
         <div>
           <div className="flex items-center justify-between mb-3">
-            <p className="text-[var(--text-primary)] font-semibold text-base tracking-tight">Активные сессии</p>
+            <p className="text-[var(--text-primary)] font-semibold text-base">Активные сессии</p>
             <button
               onClick={() => window.location.reload()}
-              className="text-xs font-medium text-[var(--text-muted)] hover:text-[var(--text-link)] transition-colors"
+              className="text-xs text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors"
             >
               Обновить
             </button>

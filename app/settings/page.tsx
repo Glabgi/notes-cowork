@@ -30,11 +30,11 @@ const THEMES = [
     label: 'Светлая',
     preview: (
       <div className="w-full h-10 rounded-[6px] overflow-hidden flex flex-col">
-        <div className="h-3 bg-white border-b border-slate-200 flex items-center px-1.5 gap-1">
-          <div className="w-5 h-1 bg-blue-400 rounded-full" />
-          <div className="w-3 h-1 bg-slate-200 rounded-full" />
+        <div className="h-3 bg-white border-b border-[#e8e3d8] flex items-center px-1.5 gap-1">
+          <div className="w-5 h-1 bg-[#cf8a5e] rounded-full" />
+          <div className="w-3 h-1 bg-[#e8e3d8] rounded-full" />
         </div>
-        <div className="flex-1 bg-slate-100 px-1.5 py-1 flex gap-1">
+        <div className="flex-1 bg-[#f0ece4] px-1.5 py-1 flex gap-1">
           <div className="w-6 h-full bg-white rounded-[3px]" />
           <div className="flex-1 bg-white rounded-[3px]" />
         </div>
@@ -46,13 +46,13 @@ const THEMES = [
     label: 'Тёмная',
     preview: (
       <div className="w-full h-10 rounded-[6px] overflow-hidden flex flex-col">
-        <div className="h-3 bg-slate-800 border-b border-slate-700 flex items-center px-1.5 gap-1">
-          <div className="w-5 h-1 bg-blue-500 rounded-full" />
-          <div className="w-3 h-1 bg-slate-600 rounded-full" />
+        <div className="h-3 bg-[#3a322a] border-b border-[#4a4030] flex items-center px-1.5 gap-1">
+          <div className="w-5 h-1 bg-[#c4784a] rounded-full" />
+          <div className="w-3 h-1 bg-[#7a6a55] rounded-full" />
         </div>
-        <div className="flex-1 bg-slate-900 px-1.5 py-1 flex gap-1">
-          <div className="w-6 h-full bg-slate-800 rounded-[3px]" />
-          <div className="flex-1 bg-slate-800 rounded-[3px]" />
+        <div className="flex-1 bg-[#2a2018] px-1.5 py-1 flex gap-1">
+          <div className="w-6 h-full bg-[#3a322a] rounded-[3px]" />
+          <div className="flex-1 bg-[#3a322a] rounded-[3px]" />
         </div>
       </div>
     ),
@@ -297,7 +297,7 @@ export default function SettingsPage() {
                 type="range" min={0} max={1} step={0.05}
                 value={s.ambientVolume}
                 onChange={e => s.setAmbientVolume(+e.target.value)}
-                className="w-full accent-[#2563EB]"
+                className="w-full accent-[#c4784a]"
               />
             </div>
           )}
@@ -313,7 +313,7 @@ export default function SettingsPage() {
             <Toggle on={s.pushNotifications} onToggle={togglePush} />
           </div>
           {notifBlocked && s.pushNotifications && (
-            <div className="text-xs text-[#B45309] bg-[#FFFBEB] border border-[#FDE68A] rounded-[10px] px-3 py-2.5 flex items-start gap-2">
+            <div className="text-xs text-[#9a5a2e] bg-[#fbf6ec] border border-[#e8c4a0] rounded-[10px] px-3 py-2.5 flex items-start gap-2">
               <AlertTriangle size={13} className="flex-shrink-0 mt-0.5" />
               <div>
                 <p className="font-semibold">Системные уведомления заблокированы браузером</p>
