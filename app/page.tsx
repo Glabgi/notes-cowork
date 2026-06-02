@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { v4 as uuidv4 } from 'uuid';
-import { generateSlug } from '@/lib/utils';
+import { generateSlug, parseRoomInput } from '@/lib/utils';
 import { AVATARS, getAvatarSvg } from '@/lib/avatars';
 import { isFaceId, decodeFace } from '@/lib/faceAvatar';
 import AvatarBuilder from '@/components/avatar/AvatarBuilder';
@@ -355,11 +355,12 @@ export default function HomePage() {
   const router = useRouter();
   const [showCreate, setShowCreate] = useState(false);
   const [joinInput, setJoinInput] = useState('');
+  const [joinErr, setJoinErr] = useState('');
 
   const handleJoin = () => {
-    if (!joinInput.trim()) return;
-    let slug = joinInput.trim();
-    if (slug.includes('/room/')) slug = slug.split('/room/')[1].split('?')[0];
+    const slug = parseRoomInput(joinInput);
+    if (!slug) { setJoinErr('Введите ссылку или код комнаты'); return; }
+    setJoinErr('');
     // Save recent
     try {
       const recent = JSON.parse(localStorage.getItem('vc_recent_rooms') || '[]');
@@ -401,7 +402,7 @@ export default function HomePage() {
           <div className="flex gap-2">
             <input
               value={joinInput}
-              onChange={e => setJoinInput(e.target.value)}
+              onChange={e => { setJoinInput(e.target.value); setJoinErr(''); }}
               onKeyDown={e => e.key === 'Enter' && handleJoin()}
               placeholder="Ссылка или код комнаты..."
               className="flex-1 bg-[var(--bg-input)] border border-[var(--border)] rounded-[8px] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/30 transition-all"
@@ -410,6 +411,11 @@ export default function HomePage() {
               Войти <ArrowRight size={14} />
             </Button>
           </div>
+          {joinErr && (
+            <p className="mt-2 text-xs text-[var(--danger)] flex items-center gap-1.5">
+              <AlertTriangle size={12} className="flex-shrink-0" /> {joinErr}
+            </p>
+          )}
         </div>
 
         {/* Active sessions */}

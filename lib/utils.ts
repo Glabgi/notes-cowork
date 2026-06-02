@@ -22,6 +22,18 @@ export function generateSlug(): string {
   return `${adj}-${noun}-${num}`;
 }
 
+/** Returns a clean room slug from a URL or raw code, or null if the input is not a plausible room code. */
+export function parseRoomInput(raw: string): string | null {
+  let s = (raw || '').trim();
+  if (!s) return null;
+  const m = s.match(/\/room\/([^/?#\s]+)/i);
+  if (m) s = m[1];
+  s = s.replace(/[?#].*$/, '').trim().toLowerCase();
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)+$/.test(s)) return null;
+  if (s.length < 5 || s.length > 60) return null;
+  return s;
+}
+
 export function formatTime(seconds: number): string {
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
