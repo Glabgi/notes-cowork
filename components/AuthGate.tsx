@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Lock, LogIn, ArrowLeft } from 'lucide-react';
@@ -21,17 +21,31 @@ export default function AuthGate({ children, softWall = true, pageName }: Props)
   const router = useRouter();
   const { user, loading, configured } = useAuth();
 
+  // Room participants enter with just a lightweight `vc_user` nickname (no
+  // Supabase/local account). The dashboard is built from locally-persisted data,
+  // so a nickname user should be allowed through too.
+  const [localOk, setLocalOk] = useState(false);
+  const [checked, setChecked] = useState(false);
   useEffect(() => {
-    if (!configured || loading) return;
-    if (!user && !softWall) router.replace('/login');
-  }, [user, loading, configured, softWall, router]);
+    try {
+      const s = localStorage.getItem('vc_user');
+      if (s) { const u = JSON.parse(s); if (u && u.name) setLocalOk(true); }
+    } catch {}
+    setChecked(true);
+  }, []);
+
+  useEffect(() => {
+    if (!configured || loading || !checked) return;
+    // Only redirect when truly anonymous (no real user AND no nickname session).
+    if (!user && !localOk && !softWall) router.replace('/login');
+  }, [user, localOk, checked, loading, configured, softWall, router]);
 
   // No auth backend → open
   if (!configured) return <>{children}</>;
-  // Loading session → blank to avoid flicker
-  if (loading) return null;
-  // Signed in → show content
-  if (user) return <>{children}</>;
+  // Loading session (or local nickname check pending) → blank to avoid wall→content flash
+  if (loading || !checked) return null;
+  // Signed in OR has a local nickname session → show content
+  if (user || localOk) return <>{children}</>;
 
   // Anonymous + softWall → show login wall
   return (
