@@ -4,14 +4,17 @@ import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import {
   ArrowLeft, Bell, Palette, Volume2, User, Check, Settings as SettingsIcon,
-  Coffee, TreePine, Wind, Waves, Flame, Moon, VolumeX, AlertTriangle, BarChart3, Calendar, Home,
+  Coffee, TreePine, Wind, Waves, Flame, Moon, VolumeX, AlertTriangle, BarChart3, Calendar, Home, Sparkles,
 } from 'lucide-react';
-import { getLocalSession } from '@/lib/localAuth';
+import { getLocalSession, setLocalAvatar } from '@/lib/localAuth';
 import AppHeader from '@/components/AppHeader';
 import AuthGate from '@/components/AuthGate';
 import { useSettingsStore } from '@/store/settingsStore';
-import { AVATARS, getAvatarSvg } from '@/lib/avatars';
+import AvatarBuilder from '@/components/avatar/AvatarBuilder';
+import { isFaceId, decodeFace } from '@/lib/faceAvatar';
+import Avatar from '@/components/ui/Avatar';
 import Button from '@/components/ui/Button';
+// (legacy AVATARS grid removed — avatar is now built via AvatarBuilder)
 import Input from '@/components/ui/Input';
 import { cn } from '@/lib/utils';
 
@@ -106,9 +109,24 @@ export default function SettingsPage() {
   const router = useRouter();
   const s = useSettingsStore();
   const [notifBlocked, setNotifBlocked] = useState(false);
+  const [showBuilder, setShowBuilder] = useState(false);
   // Registration login is the locked nickname. If a local account session exists,
   // the username cannot be edited from settings.
   const [lockedUsername, setLockedUsername] = useState<string | null>(null);
+
+  const avatarId = s.avatarId;
+  // Persist the avatar consistently across every storage the app reads from:
+  // the settings store (which an effect below mirrors into vc_user.avatarId)
+  // and the local account record (so getLocalSession keeps the same face).
+  const applyAvatar = (id: string) => {
+    s.setAvatarId(id);
+    try {
+      const stored = localStorage.getItem('vc_user');
+      const u = stored ? JSON.parse(stored) : {};
+      localStorage.setItem('vc_user', JSON.stringify({ ...u, avatarId: id }));
+    } catch {}
+    setLocalAvatar(id);
+  };
 
   // Pull initial name/avatar from vc_user on first load (so settings shows current session identity)
   useEffect(() => {
@@ -197,29 +215,20 @@ export default function SettingsPage() {
           )}
           <div>
             <label className="block text-sm font-medium text-[var(--text-secondary)] mb-3">Аватар</label>
-            <div className="grid grid-cols-5 gap-2">
-              {AVATARS.map(a => (
-                <button
-                  key={a.id}
-                  onClick={() => s.setAvatarId(a.id)}
-                  title={a.label}
-                  className={cn(
-                    'p-1.5 rounded-[12px] border-2 transition-all duration-150 relative',
-                    s.avatarId === a.id
-                      ? 'border-[var(--accent)] bg-[var(--accent-light)] shadow-[0_0_0_3px_rgba(37,99,235,0.15)]'
-                      : 'border-transparent bg-[var(--bg-subtle)] hover:border-[var(--border-strong)]'
-                  )}
-                >
-                  <div className="w-10 h-10 rounded-[8px] overflow-hidden"
-                    dangerouslySetInnerHTML={{ __html: getAvatarSvg(a.id, 40) }} />
-                  {s.avatarId === a.id && (
-                    <div className="absolute -top-1 -right-1 w-4 h-4 bg-[var(--accent)] rounded-full flex items-center justify-center">
-                      <Check size={8} className="text-white" strokeWidth={3} />
-                    </div>
-                  )}
-                </button>
-              ))}
+            <div className="flex items-center gap-3">
+              <Avatar id={avatarId} size={64} className="ring-2 ring-[var(--border)]" />
+              <button type="button" onClick={() => setShowBuilder(true)}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-[12px] border border-[var(--border)] text-sm text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors">
+                <Sparkles size={14} /> Изменить аватар
+              </button>
             </div>
+            {showBuilder && (
+              <AvatarBuilder
+                initial={isFaceId(avatarId) ? decodeFace(avatarId) : undefined}
+                onDone={(id) => { applyAvatar(id); setShowBuilder(false); }}
+                onClose={() => setShowBuilder(false)}
+              />
+            )}
           </div>
           <div>
             <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">Часовой пояс</label>
