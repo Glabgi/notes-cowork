@@ -2,18 +2,21 @@
 
 import { motion } from 'framer-motion';
 import {
-  Coffee, TreePine, Wind, Waves, Volume2, VolumeX, Disc3, Play, Pause,
+  Coffee, TreePine, Wind, Waves, Flame, Moon, Volume2, VolumeX, Disc3, Play, Pause,
 } from 'lucide-react';
 import { useSettingsStore } from '@/store/settingsStore';
 import { getAmbientEngine } from '@/lib/ambientAudio';
 import { cn } from '@/lib/utils';
 
-type SoundId = 'cafe' | 'forest' | 'white-noise' | 'rain';
+type SoundId = 'cafe' | 'forest' | 'white-noise' | 'rain' | 'ocean' | 'fire' | 'night';
 
 const TRACKS: { id: SoundId; title: string; desc: string; Icon: React.ElementType }[] = [
   { id: 'cafe',        title: 'Уютная кофейня',   desc: 'Тёплый гул кафе',   Icon: Coffee },
   { id: 'forest',      title: 'Лесное утро',      desc: 'Птицы и листва',    Icon: TreePine },
   { id: 'rain',        title: 'Тихий дождь',      desc: 'Капли по стеклу',   Icon: Waves },
+  { id: 'ocean',       title: 'Океан',            desc: 'Шум прибоя',        Icon: Waves },
+  { id: 'fire',        title: 'Камин',            desc: 'Треск камина',      Icon: Flame },
+  { id: 'night',       title: 'Ночь',             desc: 'Сверчки в ночи',    Icon: Moon },
   { id: 'white-noise', title: 'Белый шум',        desc: 'Глубокий фокус',    Icon: Wind },
 ];
 

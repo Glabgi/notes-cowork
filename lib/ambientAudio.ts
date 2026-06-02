@@ -1,6 +1,6 @@
 // Ambient sound engine using Web Audio API — no external dependencies
 
-type AmbientSoundType = 'cafe' | 'forest' | 'white-noise' | 'rain' | 'none';
+type AmbientSoundType = 'cafe' | 'forest' | 'white-noise' | 'rain' | 'ocean' | 'fire' | 'night' | 'none';
 
 class AmbientAudioEngine {
   private ctx: AudioContext | null = null;
@@ -91,10 +91,90 @@ class AmbientAudioEngine {
     this.extraNodes.push(osc, gain);
   }
 
+  // Fire crackle: short bursts of high-pass-filtered white noise, scheduled on the
+  // same single-interval slot used by chirps so stop() tears it down cleanly.
+  private scheduleCrackle() {
+    if (this.chirpInterval) clearInterval(this.chirpInterval);
+    const tick = () => {
+      if (!this.ctx || this.ctx.state !== 'running') return;
+      const pops = 1 + Math.floor(Math.random() * 3);
+      for (let i = 0; i < pops; i++) {
+        setTimeout(() => {
+          if (!this.ctx || this.ctx.state !== 'running') return;
+          this.playCrackle();
+        }, i * (40 + Math.random() * 120));
+      }
+    };
+    this.chirpInterval = setInterval(tick, 250 + Math.random() * 450);
+  }
+
+  private playCrackle() {
+    const ctx = this.getCtx();
+    const buf = this.makeNoiseBuffer(0.08, 'white');
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'highpass';
+    filter.frequency.value = 1500 + Math.random() * 2500;
+    const gain = ctx.createGain();
+    src.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.masterGain!);
+    const t = ctx.currentTime;
+    const peak = 0.05 + Math.random() * 0.07;
+    gain.gain.setValueAtTime(0, t);
+    gain.gain.linearRampToValueAtTime(peak, t + 0.005);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.04 + Math.random() * 0.05);
+    src.start(t);
+    src.stop(t + 0.12);
+    this.extraNodes.push(src, filter, gain);
+  }
+
+  // Cricket chirps for the night soundscape — mirrors playChirp() with higher,
+  // tighter triangle-wave bursts on the shared chirp interval.
+  private scheduleCrickets() {
+    if (this.chirpInterval) clearInterval(this.chirpInterval);
+    this.chirpInterval = setInterval(() => {
+      if (!this.ctx || this.ctx.state !== 'running') return;
+      this.playCricket();
+    }, 1500 + Math.random() * 2500);
+  }
+
+  private playCricket() {
+    const ctx = this.getCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(this.masterGain!);
+    const freq = 2500 + Math.random() * 1500;
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(freq, ctx.currentTime);
+    // A cricket call is a quick train of short pulses.
+    const t0 = ctx.currentTime;
+    gain.gain.setValueAtTime(0, t0);
+    const pulses = 3 + Math.floor(Math.random() * 4);
+    for (let i = 0; i < pulses; i++) {
+      const t = t0 + i * 0.05;
+      gain.gain.setValueAtTime(0, t);
+      gain.gain.linearRampToValueAtTime(0.03, t + 0.01);
+      gain.gain.linearRampToValueAtTime(0, t + 0.035);
+    }
+    osc.start(t0);
+    osc.stop(t0 + pulses * 0.05 + 0.05);
+    this.extraNodes.push(osc, gain);
+  }
+
   private stopCurrent() {
     try { this.currentSource?.stop(); } catch {}
     this.currentSource = null;
     if (this.chirpInterval) { clearInterval(this.chirpInterval); this.chirpInterval = null; }
+    // Stop any continuously-running source nodes (e.g. the ocean LFO) so they
+    // don't keep modulating/playing after the sound is switched off.
+    for (const node of this.extraNodes) {
+      if ('stop' in node && typeof (node as AudioScheduledSourceNode).stop === 'function') {
+        try { (node as AudioScheduledSourceNode).stop(); } catch {}
+      }
+    }
     this.extraNodes = [];
   }
 
@@ -169,6 +249,76 @@ class AmbientAudioEngine {
       this.currentSource = src;
       this.extraNodes.push(filter, gain);
       this.scheduleChirps();
+    }
+
+    if (type === 'ocean') {
+      // Brown noise through a low-pass whose cutoff is swelled by an LFO to
+      // mimic waves washing in and out.
+      const buf = this.makeNoiseBuffer(8, 'brown');
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.value = 500;
+      filter.Q.value = 0.4;
+      const gain = ctx.createGain();
+      gain.gain.value = 0.7;
+      gain.connect(this.masterGain!);
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      src.loop = true;
+      src.connect(filter);
+      filter.connect(gain);
+      src.start(0);
+      // LFO swelling the filter cutoff (slow wave wash).
+      const lfo = ctx.createOscillator();
+      const lfoGain = ctx.createGain();
+      lfo.type = 'sine';
+      lfo.frequency.value = 0.12;
+      lfoGain.gain.value = 350;
+      lfo.connect(lfoGain);
+      lfoGain.connect(filter.frequency);
+      lfo.start(0);
+      this.currentSource = src;
+      this.extraNodes.push(filter, gain, lfo, lfoGain);
+    }
+
+    if (type === 'fire') {
+      // Warm brown noise bed (low-pass) + random crackle pops.
+      const buf = this.makeNoiseBuffer(8, 'brown');
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.value = 800;
+      const gain = ctx.createGain();
+      gain.gain.value = 0.45;
+      gain.connect(this.masterGain!);
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      src.loop = true;
+      src.connect(filter);
+      filter.connect(gain);
+      src.start(0);
+      this.currentSource = src;
+      this.extraNodes.push(filter, gain);
+      this.scheduleCrackle();
+    }
+
+    if (type === 'night') {
+      // Low pink-noise bed (quiet night air) + periodic cricket chirps.
+      const buf = this.makeNoiseBuffer(8, 'pink');
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.value = 500;
+      const gain = ctx.createGain();
+      gain.gain.value = 0.3;
+      gain.connect(this.masterGain!);
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      src.loop = true;
+      src.connect(filter);
+      filter.connect(gain);
+      src.start(0);
+      this.currentSource = src;
+      this.extraNodes.push(filter, gain);
+      this.scheduleCrickets();
     }
   }
 

@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 type Theme = 'light' | 'dark';
-type AmbientSound = 'cafe' | 'forest' | 'white-noise' | 'none';
+type AmbientSound = 'cafe' | 'forest' | 'white-noise' | 'rain' | 'ocean' | 'fire' | 'night' | 'none';
 
 interface SettingsStore {
   theme: Theme;

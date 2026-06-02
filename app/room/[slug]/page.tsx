@@ -25,7 +25,7 @@ import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 import {
   WifiOff, Zap, Coffee, Ghost, BarChart2, Calendar,
-  ChevronRight, Volume2, VolumeX, Wind, TreePine, Waves,
+  ChevronRight, Volume2, VolumeX, Wind, TreePine, Waves, Flame, Moon,
   ArrowRight, ArrowLeft, Settings, Pencil, Sparkles, Smile,
 } from 'lucide-react';
 
@@ -170,7 +170,7 @@ function MiniSchedule() {
 }
 
 /* ─── Ambient Sound Control ───────────────────────────────────────────────── */
-type AmbientType = 'none' | 'cafe' | 'forest' | 'white-noise' | 'rain';
+type AmbientType = 'none' | 'cafe' | 'forest' | 'white-noise' | 'rain' | 'ocean' | 'fire' | 'night';
 
 function AmbientControl() {
   const { ambientSound, ambientVolume, setAmbientSound, setAmbientVolume } = useSettingsStore();
@@ -182,6 +182,9 @@ function AmbientControl() {
     { id: 'forest',      label: 'Лес',       desc: 'Птицы и листва',   Icon: TreePine },
     { id: 'white-noise', label: 'Белый шум', desc: 'Концентрация',     Icon: Wind },
     { id: 'rain',        label: 'Дождь',     desc: 'Умиротворение',    Icon: Waves },
+    { id: 'ocean',       label: 'Океан',     desc: 'Шум прибоя',       Icon: Waves },
+    { id: 'fire',        label: 'Камин',     desc: 'Треск камина',     Icon: Flame },
+    { id: 'night',       label: 'Ночь',      desc: 'Сверчки в ночи',   Icon: Moon },
   ];
 
   const toggle = (id: AmbientType) => {

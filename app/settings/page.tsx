@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import {
   ArrowLeft, Bell, Palette, Volume2, User, Check, Settings as SettingsIcon,
-  Coffee, TreePine, Wind, VolumeX, AlertTriangle, BarChart3, Calendar, Home,
+  Coffee, TreePine, Wind, Waves, Flame, Moon, VolumeX, AlertTriangle, BarChart3, Calendar, Home,
 } from 'lucide-react';
 import { getLocalSession } from '@/lib/localAuth';
 import AppHeader from '@/components/AppHeader';
@@ -15,12 +15,16 @@ import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { cn } from '@/lib/utils';
 
-type AmbientSound = 'cafe' | 'forest' | 'white-noise' | 'none';
+type AmbientSound = 'cafe' | 'forest' | 'white-noise' | 'rain' | 'ocean' | 'fire' | 'night' | 'none';
 
 const AMBIENT_SOUNDS: { id: AmbientSound; label: string; Icon: React.ElementType }[] = [
   { id: 'cafe',        label: 'Кафе',       Icon: Coffee },
   { id: 'forest',      label: 'Лес',        Icon: TreePine },
+  { id: 'rain',        label: 'Дождь',      Icon: Waves },
   { id: 'white-noise', label: 'Белый шум',  Icon: Wind },
+  { id: 'ocean',       label: 'Океан',      Icon: Waves },
+  { id: 'fire',        label: 'Камин',      Icon: Flame },
+  { id: 'night',       label: 'Ночь',       Icon: Moon },
   { id: 'none',        label: 'Тишина',     Icon: VolumeX },
 ];
 
