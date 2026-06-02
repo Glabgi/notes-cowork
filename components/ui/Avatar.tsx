@@ -16,9 +16,9 @@ export default function Avatar({ id, size = 40, className, showRing, status }: A
   const color = getAvatarColor(id);
 
   const statusRings: Record<string, string> = {
-    focus:   'ring-[#c4784a]',
-    break:   'ring-[#4a8a78]',
-    away:    'ring-[#ddd2c2]',
+    focus:   'ring-[#5b8cff]',
+    break:   'ring-[#4cc2a8]',
+    away:    'ring-[#475069]',
   };
 
   return (

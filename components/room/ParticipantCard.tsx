@@ -34,7 +34,7 @@ interface ParticipantCardProps {
 function getStatusDotColor(status: string) {
   switch (status) {
     case 'focus':  return 'bg-[var(--accent)]';
-    case 'break':  return 'bg-[#4a8a78]';
+    case 'break':  return 'bg-[#4cc2a8]';
     default:       return 'bg-[var(--status-away)]';
   }
 }

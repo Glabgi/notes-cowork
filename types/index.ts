@@ -239,7 +239,7 @@ export interface ServerToClientEvents {
 export interface ClientToServerEvents {
   'room:join': (data: { slug: string; participant: Omit<Participant, 'socketId'> }) => void;
   'room:leave': (roomId: string) => void;
-  'room:update-status': (data: { roomId: string; status: UserStatus; currentTask?: string }) => void;
+  'room:update-status': (data: { roomId: string; status: UserStatus; currentTask?: string; avatarId?: string }) => void;
   'chat:send': (data: { roomId: string; content: string }) => void;
   'chat:react': (data: { roomId: string; messageId: string; emoji: string }) => void;
   'timer:start': (data: { roomId: string; settings: TimerSettings }) => void;

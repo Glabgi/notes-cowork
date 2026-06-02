@@ -44,7 +44,7 @@ export default function LoginPage() {
             <div className="w-14 h-14 bg-[var(--accent-light)] rounded-[16px] flex items-center justify-center mx-auto mb-4">
               <LogIn size={24} className="text-[var(--accent)]" />
             </div>
-            <h2 className="text-xl font-bold text-[var(--text-primary)]">Вход в «тихий зал»</h2>
+            <h2 className="text-xl font-bold text-[var(--text-primary)]">Вход в Notes Cowork</h2>
             <p className="text-[var(--text-muted)] text-sm mt-1">Только логин и пароль — никаких данных</p>
           </div>
 

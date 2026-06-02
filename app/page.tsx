@@ -34,7 +34,7 @@ function HomeFooterLinks({ router }: { router: any }) {
   if (isAnonymous) {
     return (
       <div className="flex items-center justify-center gap-2 text-xs text-[var(--text-muted)] pt-2">
-        <span className="opacity-60">тихий зал · учимся вместе</span>
+        <span className="opacity-60">I.C-E.F Notes project</span>
       </div>
     );
   }
@@ -44,7 +44,7 @@ function HomeFooterLinks({ router }: { router: any }) {
       <span>·</span>
       <button onClick={() => router.push('/settings')} className="hover:text-[var(--accent)] transition-colors">Настройки</button>
       <span>·</span>
-      <span className="opacity-60">тихий зал</span>
+      <span className="opacity-60">I.C-E.F Notes</span>
     </div>
   );
 }

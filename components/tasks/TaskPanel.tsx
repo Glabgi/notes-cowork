@@ -135,8 +135,8 @@ export default function TaskPanel() {
             animate={{ opacity: 1 }}
             className="text-center py-10"
           >
-            <div className="w-12 h-12 rounded-full bg-[#eef3ee] flex items-center justify-center mx-auto mb-3">
-              <Check size={20} className="text-[#4a8a78]" />
+            <div className="w-12 h-12 rounded-full bg-[var(--accent-light)] flex items-center justify-center mx-auto mb-3">
+              <Check size={20} className="text-[var(--accent)]" />
             </div>
             <p className="text-sm font-medium text-[var(--text-primary)]">Все задачи выполнены!</p>
             <p className="text-xs text-[var(--text-muted)] mt-1">Добавьте новую задачу выше</p>
@@ -197,7 +197,7 @@ function TaskItem({
         className={cn(
           'w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all duration-150',
           completed
-            ? 'bg-[#4a8a78] border-[#4a8a78]'
+            ? 'bg-[#4cc2a8] border-[#4cc2a8]'
             : 'border-[var(--border-strong)] hover:border-[var(--accent)] hover:bg-[var(--accent-light)]'
         )}
       >

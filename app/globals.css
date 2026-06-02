@@ -1,7 +1,7 @@
 /* =====================================================================
-   Тихий зал — тёплая lo-fi / «бумажная» тема
-   Палитра: кремовая бумага (#f7f4ef), тёрракотовый акцент (#c4784a),
-   приглушённый teal (#4a8a78), чернильный текст (#2a2018).
+   Notes Cowork — тёмно-синяя (navy) тема
+   Палитра: глубокий navy-фон (#0a0f1e), синий акцент (#5b8cff),
+   тёплый teal-cyan (#4cc2a8), светлый текст (#e7ecf7).
    Моноширинный Space Mono + Roboto Mono (кириллица).
    ===================================================================== */
 
@@ -11,49 +11,49 @@
 .dark,
 .light {
   /* Фоны */
-  --bg-page:       #efe8dd;   /* задник за карточками */
-  --bg-card:       #ffffff;   /* панели, карточки, контент */
-  --bg-subtle:     #f7f4ef;   /* основная рабочая зона */
-  --bg-hover:      #f0ece4;   /* hover / bg2 */
-  --bg-elevated:   #ffffff;   /* модалки, попап */
-  --bg-input:      #f0ece4;   /* инпуты */
+  --bg-page:       #0a0f1e;   /* самый тёмный задник */
+  --bg-card:       #141d33;   /* панели, карточки, контент */
+  --bg-subtle:     #0f1729;   /* основная рабочая зона */
+  --bg-hover:      #1c2942;   /* hover */
+  --bg-elevated:   #1a2540;   /* модалки, попап */
+  --bg-input:      #0f1729;   /* инпуты */
 
   /* Текст */
-  --text-primary:   #2a2018;
-  --text-secondary: #7a6a55;
-  --text-muted:     #b0a090;
-  --text-link:      #c4784a;
+  --text-primary:   #e7ecf7;
+  --text-secondary: #9fb0d0;
+  --text-muted:     #647396;
+  --text-link:      #5b8cff;
 
   /* Границы */
-  --border:        rgba(90,70,40,0.10);
-  --border-strong: rgba(90,70,40,0.20);
-  --border-accent: #c4784a;
+  --border:        rgba(120,150,210,0.12);
+  --border-strong: rgba(120,150,210,0.24);
+  --border-accent: #5b8cff;
 
-  /* Акцент — тёрракот / amber */
-  --accent:        #c4784a;
-  --accent-hover:  #b06838;
-  --accent-active: #9a5a2e;
-  --accent-light:  rgba(196,120,74,0.12);
-  --accent-glow:   rgba(196,120,74,0.30);
+  /* Акцент — синий */
+  --accent:        #5b8cff;
+  --accent-hover:  #4d7cf0;
+  --accent-active: #3d68dd;
+  --accent-light:  rgba(91,140,255,0.15);
+  --accent-glow:   rgba(91,140,255,0.35);
 
   /* Статусы */
-  --status-online:  #4a8a78;
-  --status-focus:   #c4784a;
-  --status-break:   #4a8a78;
-  --status-gaming:  #c4784a;
-  --status-away:    #b0a090;
-  --status-dnd:     #c4555a;
+  --status-online:  #4cc2a8;
+  --status-focus:   #5b8cff;
+  --status-break:   #4cc2a8;
+  --status-gaming:  #5b8cff;
+  --status-away:    #647396;
+  --status-dnd:     #f0676f;
 
   /* Семантика */
-  --success: #4a8a78;
-  --warning: #c4784a;
-  --danger:  #c4555a;
-  --info:    #4a8a78;
+  --success: #4cc2a8;
+  --warning: #e0a13c;
+  --danger:  #f0676f;
+  --info:    #5b8cff;
 
-  /* Тени (тёплые, мягкие) */
-  --shadow-sm: 0 1px 2px rgba(90,70,40,0.08);
-  --shadow-md: 0 4px 14px rgba(90,70,40,0.10), 0 2px 4px rgba(90,70,40,0.06);
-  --shadow-lg: 0 24px 60px rgba(90,70,40,0.16), 0 6px 16px rgba(90,70,40,0.08);
+  /* Тени (глубокие, тёмные) */
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.40);
+  --shadow-md: 0 4px 14px rgba(0,0,0,0.45), 0 2px 4px rgba(0,0,0,0.30);
+  --shadow-lg: 0 24px 60px rgba(0,0,0,0.55), 0 6px 16px rgba(0,0,0,0.35);
   --shadow-glow: 0 0 22px var(--accent-glow);
 
   /* Радиусы */
@@ -65,19 +65,19 @@
 }
 
 .light-mode {
-  --bg-page:     #efe8dd;
-  --bg-card:     #ffffff;
-  --bg-subtle:   #f7f4ef;
-  --bg-hover:    #f0ece4;
-  --bg-elevated: #ffffff;
-  --bg-input:    #f0ece4;
+  --bg-page:     #0a0f1e;
+  --bg-card:     #141d33;
+  --bg-subtle:   #0f1729;
+  --bg-hover:    #1c2942;
+  --bg-elevated: #1a2540;
+  --bg-input:    #0f1729;
 
-  --text-primary:   #2a2018;
-  --text-secondary: #7a6a55;
-  --text-muted:     #b0a090;
+  --text-primary:   #e7ecf7;
+  --text-secondary: #9fb0d0;
+  --text-muted:     #647396;
 
-  --border:        rgba(90,70,40,0.10);
-  --border-strong: rgba(90,70,40,0.20);
+  --border:        rgba(120,150,210,0.12);
+  --border-strong: rgba(120,150,210,0.24);
 }
 
 @tailwind base;
@@ -96,12 +96,12 @@ html, body {
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-/* notebook ruled-paper background — тетрадка в линейку */
+/* notebook ruled-paper background — «blueprint» в линейку (navy) */
 .lined-paper {
-  background-color: #fffdf6;
+  background-color: #0e1730;
   background-image:
-    repeating-linear-gradient(180deg, transparent 0 25px, rgba(74,108,150,0.16) 25px 26px),
-    linear-gradient(90deg, transparent 0 21px, rgba(196,90,80,0.30) 21px 22px, transparent 22px);
+    repeating-linear-gradient(180deg, transparent 0 25px, rgba(120,160,230,0.16) 25px 26px),
+    linear-gradient(90deg, transparent 0 21px, rgba(91,140,255,0.40) 21px 22px, transparent 22px);
   background-repeat: repeat, repeat-y;
 }
 
@@ -147,7 +147,7 @@ html, body {
 }
 @keyframes speaking-ring {
   0%, 100% { box-shadow: 0 0 0 0 var(--status-online); }
-  50%       { box-shadow: 0 0 0 4px rgba(35,165,90,0.4); }
+  50%       { box-shadow: 0 0 0 4px rgba(76,194,168,0.4); }
 }
 @keyframes pulse-glow {
   0%, 100% { box-shadow: 0 0 0 0 var(--accent-glow); }

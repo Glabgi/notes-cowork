@@ -26,7 +26,7 @@ import Button from '@/components/ui/Button';
 import {
   WifiOff, Zap, Coffee, Ghost, BarChart2, Calendar,
   ChevronRight, Volume2, VolumeX, Wind, TreePine, Waves,
-  ArrowRight, ArrowLeft, Settings, Pencil, Sparkles,
+  ArrowRight, ArrowLeft, Settings, Pencil, Sparkles, Smile,
 } from 'lucide-react';
 
 // Per-status icon animation — the icon itself comes alive when the status is active.
@@ -416,7 +416,7 @@ function StatusSelector({ slug }: { slug: string }) {
 
   const statuses: { status: 'focus' | 'break' | 'away'; label: string; Icon: React.ElementType; activeColor: string }[] = [
     { status: 'focus', label: 'В фокусе', Icon: Zap,    activeColor: 'bg-[var(--accent-light)] text-[var(--accent)] border-[var(--border-accent)]' },
-    { status: 'break', label: 'Перерыв',  Icon: Coffee, activeColor: 'bg-[rgba(74,138,120,0.12)] text-[#4a8a78] border-[rgba(74,138,120,0.35)]' },
+    { status: 'break', label: 'Перерыв',  Icon: Coffee, activeColor: 'bg-[rgba(76,194,168,0.14)] text-[#4cc2a8] border-[rgba(76,194,168,0.40)]' },
     { status: 'away',  label: 'Отошёл',   Icon: Ghost,  activeColor: 'bg-[var(--bg-hover)] text-[var(--text-secondary)] border-[var(--border)]' },
   ];
 
@@ -436,7 +436,7 @@ function StatusSelector({ slug }: { slug: string }) {
   };
 
   const STATUS_DOTS: Record<string, string> = {
-    focus: 'var(--accent)', break: '#4a8a78', away: 'var(--status-away)',
+    focus: 'var(--accent)', break: '#4cc2a8', away: 'var(--status-away)',
   };
 
   return (
@@ -584,6 +584,7 @@ export default function RoomPage() {
   const [showJoin, setShowJoin] = useState(false);
   const [connError, setConnError] = useState('');
   const [needsPassword, setNeedsPassword] = useState(false);
+  const [showAvatarEdit, setShowAvatarEdit] = useState(false);
 
   useEffect(() => {
     if (initialized.current) return;
@@ -897,13 +898,22 @@ export default function RoomPage() {
         <aside className="w-[300px] flex-shrink-0 bg-[var(--bg-card)] border-r border-[var(--border)] p-3 overflow-y-auto hidden lg:flex flex-col gap-2.5">
           <WallClock slug={slug} />
           <StatusSelector slug={slug} />
-          <button
-            onClick={() => router.push('/dashboard')}
-            className="mt-auto flex items-center gap-2 px-3 py-2 rounded-[10px] text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] transition-colors duration-150"
-          >
-            <BarChart2 size={13} />
-            Мой прогресс
-          </button>
+          <div className="mt-auto flex flex-col gap-1">
+            <button
+              onClick={() => setShowAvatarEdit(true)}
+              className="flex items-center gap-2 px-3 py-2 rounded-[10px] text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] transition-colors duration-150"
+            >
+              <Smile size={13} />
+              Изменить аватар
+            </button>
+            <button
+              onClick={() => router.push('/dashboard')}
+              className="flex items-center gap-2 px-3 py-2 rounded-[10px] text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] transition-colors duration-150"
+            >
+              <BarChart2 size={13} />
+              Мой прогресс
+            </button>
+          </div>
         </aside>
 
         {/* Center column: screen share + participants + bottom dock */}
@@ -937,6 +947,27 @@ export default function RoomPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Edit my character */}
+      {showAvatarEdit && store.currentUser && (
+        <AvatarBuilder
+          initial={isFaceId(store.currentUser.avatarId) ? decodeFace(store.currentUser.avatarId) : undefined}
+          onClose={() => setShowAvatarEdit(false)}
+          onDone={(avatarId) => {
+            const cu = useRoomStore.getState().currentUser;
+            if (cu) {
+              store.setCurrentUser({ ...cu, avatarId });
+              try {
+                const saved = JSON.parse(localStorage.getItem('vc_user') || '{}');
+                localStorage.setItem('vc_user', JSON.stringify({ ...saved, avatarId }));
+              } catch {}
+              // broadcast so everyone sees the new avatar live
+              try { getSocket().emit('room:update-status', { roomId: slug, status: cu.status, currentTask: cu.currentTask, avatarId }); } catch {}
+            }
+            setShowAvatarEdit(false);
+          }}
+        />
+      )}
     </div>
   );
 }

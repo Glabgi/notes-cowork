@@ -273,15 +273,16 @@ io.on('connection', (socket) => {
     currentRoom = null;
   });
 
-  socket.on('room:update-status', ({ roomId, status, currentTask }) => {
+  socket.on('room:update-status', ({ roomId, status, currentTask, avatarId }) => {
     const room = rooms.get(roomId);
     if (!room) return;
 
     const participant = room.participants.find(p => p.id === currentUserId);
     if (participant) {
       room.lastActive = Date.now();
-      participant.status = status;
+      if (status !== undefined) participant.status = status;
       if (currentTask !== undefined) participant.currentTask = currentTask;
+      if (avatarId !== undefined) participant.avatarId = avatarId; // live avatar edit
       io.to(roomId).emit('room:participant-updated', participant);
     }
   });
