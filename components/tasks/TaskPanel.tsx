@@ -115,8 +115,8 @@ export default function TaskPanel() {
         )}
       </div>
 
-      {/* Tasks list — notebook ruled paper */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-1 lined-paper">
+      {/* Tasks list */}
+      <div className="flex-1 overflow-y-auto p-3 space-y-1">
         <AnimatePresence>
           {activeTasks.map((task) => (
             <TaskItem

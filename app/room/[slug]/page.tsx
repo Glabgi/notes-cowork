@@ -518,7 +518,7 @@ function StatusSelector({ slug }: { slug: string }) {
         )}
 
         {/* Lined-paper input box (pencil + input + send), tag chips below */}
-        <div className="lined-paper rounded-[12px] border border-[var(--border)] overflow-hidden transition-all focus-within:border-[var(--accent)] focus-within:ring-2 focus-within:ring-[var(--accent)]/12">
+        <div className="bg-[var(--bg-subtle)] rounded-[12px] border border-[var(--border)] overflow-hidden transition-all focus-within:border-[var(--accent)] focus-within:ring-2 focus-within:ring-[var(--accent)]/12">
           <div className="flex items-center gap-2 px-2.5 py-2">
             <Pencil size={13} className="text-[var(--accent)] flex-shrink-0" />
             <input

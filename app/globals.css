@@ -59,15 +59,6 @@ html, body {
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-/* notebook ruled-paper background — «blueprint» в линейку (navy) */
-.lined-paper {
-  background-color: #0e1730;
-  background-image:
-    repeating-linear-gradient(180deg, transparent 0 25px, rgba(120,160,230,0.16) 25px 26px),
-    linear-gradient(90deg, transparent 0 21px, rgba(91,140,255,0.40) 21px 22px, transparent 22px);
-  background-repeat: repeat, repeat-y;
-}
-
 /* Discord-style scrollbar — тонкий, заметный на hover */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: var(--bg-subtle); }
