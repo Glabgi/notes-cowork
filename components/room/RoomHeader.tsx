@@ -234,11 +234,11 @@ export default function RoomHeader() {
 
           <div className="grid grid-cols-2 gap-2">
             <Button variant="secondary" size="sm"
-              onClick={() => shareUrl(roomUrl, 'telegram', `Присоединяйся к «${room.name}» в Notes Cowork!`)}>
+              onClick={() => shareUrl(roomUrl, 'telegram', `Присоединяйся к «${room.name}» в ICF Notes!`)}>
               <Send size={14} /> Telegram
             </Button>
             <Button variant="secondary" size="sm"
-              onClick={() => shareUrl(roomUrl, 'whatsapp', `Присоединяйся к «${room.name}» в Notes Cowork!`)}>
+              onClick={() => shareUrl(roomUrl, 'whatsapp', `Присоединяйся к «${room.name}» в ICF Notes!`)}>
               <MessageCircle size={14} /> WhatsApp
             </Button>
           </div>
