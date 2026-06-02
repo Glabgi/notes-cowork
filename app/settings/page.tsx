@@ -30,11 +30,11 @@ const THEMES = [
     label: 'Светлая',
     preview: (
       <div className="w-full h-10 rounded-[6px] overflow-hidden flex flex-col">
-        <div className="h-3 bg-white border-b border-[#e8e3d8] flex items-center px-1.5 gap-1">
-          <div className="w-5 h-1 bg-[#cf8a5e] rounded-full" />
-          <div className="w-3 h-1 bg-[#e8e3d8] rounded-full" />
+        <div className="h-3 bg-white border-b border-[#eef2fb] flex items-center px-1.5 gap-1">
+          <div className="w-5 h-1 bg-[#2f6df0] rounded-full" />
+          <div className="w-3 h-1 bg-[#eef2fb] rounded-full" />
         </div>
-        <div className="flex-1 bg-[#f0ece4] px-1.5 py-1 flex gap-1">
+        <div className="flex-1 bg-[#eef2fb] px-1.5 py-1 flex gap-1">
           <div className="w-6 h-full bg-white rounded-[3px]" />
           <div className="flex-1 bg-white rounded-[3px]" />
         </div>
@@ -46,13 +46,13 @@ const THEMES = [
     label: 'Тёмная',
     preview: (
       <div className="w-full h-10 rounded-[6px] overflow-hidden flex flex-col">
-        <div className="h-3 bg-[#3a322a] border-b border-[#4a4030] flex items-center px-1.5 gap-1">
-          <div className="w-5 h-1 bg-[#c4784a] rounded-full" />
-          <div className="w-3 h-1 bg-[#7a6a55] rounded-full" />
+        <div className="h-3 bg-[#141d33] border-b border-[#0a0f1e] flex items-center px-1.5 gap-1">
+          <div className="w-5 h-1 bg-[#5b8cff] rounded-full" />
+          <div className="w-3 h-1 bg-[#0a0f1e] rounded-full" />
         </div>
-        <div className="flex-1 bg-[#2a2018] px-1.5 py-1 flex gap-1">
-          <div className="w-6 h-full bg-[#3a322a] rounded-[3px]" />
-          <div className="flex-1 bg-[#3a322a] rounded-[3px]" />
+        <div className="flex-1 bg-[#0a0f1e] px-1.5 py-1 flex gap-1">
+          <div className="w-6 h-full bg-[#141d33] rounded-[3px]" />
+          <div className="flex-1 bg-[#141d33] rounded-[3px]" />
         </div>
       </div>
     ),
@@ -231,36 +231,33 @@ export default function SettingsPage() {
             <label className="block text-sm font-medium text-[var(--text-secondary)] mb-3">Тема</label>
             <div className="grid grid-cols-2 gap-3">
               {THEMES.map(t => {
-                // The app ships a single Discord-like dark palette (see ThemeProvider).
-                // Dark is permanently active; the light option is shown but locked.
-                const isDark = t.id === 'dark';
+                const isActive = s.theme === t.id;
                 return (
                   <button
                     key={t.id}
                     type="button"
-                    disabled={!isDark}
-                    aria-disabled={!isDark}
-                    onClick={() => { if (isDark) s.setTheme('dark'); }}
+                    aria-pressed={isActive}
+                    onClick={() => s.setTheme(t.id)}
                     className={cn(
                       'p-3 rounded-[14px] border-2 transition-all duration-150 text-left',
-                      isDark
+                      isActive
                         ? 'border-[var(--accent)] bg-[var(--accent-light)]'
-                        : 'border-[var(--border)] bg-[var(--bg-card)] opacity-50 cursor-not-allowed'
+                        : 'border-[var(--border)] bg-[var(--bg-card)] hover:border-[var(--border-strong)]'
                     )}
                   >
                     {t.preview}
                     <p className={cn(
                       'text-xs font-semibold mt-2 flex items-center gap-1',
-                      isDark ? 'text-[var(--accent)]' : 'text-[var(--text-muted)]'
+                      isActive ? 'text-[var(--accent)]' : 'text-[var(--text-muted)]'
                     )}>
-                      {isDark && <Check size={11} strokeWidth={3} />}{t.label}
+                      {isActive && <Check size={11} strokeWidth={3} />}{t.label}
                     </p>
                   </button>
                 );
               })}
             </div>
             <p className="text-xs text-[var(--text-muted)] mt-2">
-              Приложение использует тёмную тему. Светлая тема пока недоступна.
+              Выберите светлую или тёмную тему.
             </p>
           </div>
         </Section>

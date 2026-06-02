@@ -7,77 +7,40 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Roboto+Mono:wght@400;500;700&display=swap');
 
+/* DARK (default) — navy-blue */
 :root,
-.dark,
-.light {
-  /* Фоны */
-  --bg-page:       #0a0f1e;   /* самый тёмный задник */
-  --bg-card:       #141d33;   /* панели, карточки, контент */
-  --bg-subtle:     #0f1729;   /* основная рабочая зона */
-  --bg-hover:      #1c2942;   /* hover */
-  --bg-elevated:   #1a2540;   /* модалки, попап */
-  --bg-input:      #0f1729;   /* инпуты */
-
-  /* Текст */
-  --text-primary:   #e7ecf7;
-  --text-secondary: #9fb0d0;
-  --text-muted:     #647396;
-  --text-link:      #5b8cff;
-
-  /* Границы */
-  --border:        rgba(120,150,210,0.12);
-  --border-strong: rgba(120,150,210,0.24);
-  --border-accent: #5b8cff;
-
-  /* Акцент — синий */
-  --accent:        #5b8cff;
-  --accent-hover:  #4d7cf0;
-  --accent-active: #3d68dd;
-  --accent-light:  rgba(91,140,255,0.15);
-  --accent-glow:   rgba(91,140,255,0.35);
-
-  /* Статусы */
-  --status-online:  #4cc2a8;
-  --status-focus:   #5b8cff;
-  --status-break:   #4cc2a8;
-  --status-gaming:  #5b8cff;
-  --status-away:    #647396;
-  --status-dnd:     #f0676f;
-
-  /* Семантика */
-  --success: #4cc2a8;
-  --warning: #e0a13c;
-  --danger:  #f0676f;
-  --info:    #5b8cff;
-
-  /* Тени (глубокие, тёмные) */
+.dark {
+  --bg-page: #0a0f1e;  --bg-card: #141d33;  --bg-subtle: #0f1729;
+  --bg-hover: #1c2942; --bg-elevated: #1a2540; --bg-input: #0f1729;
+  --text-primary: #e7ecf7; --text-secondary: #9fb0d0; --text-muted: #647396; --text-link: #5b8cff;
+  --border: rgba(120,150,210,0.12); --border-strong: rgba(120,150,210,0.24); --border-accent: #5b8cff;
+  --accent: #5b8cff; --accent-hover: #4d7cf0; --accent-active: #3d68dd;
+  --accent-light: rgba(91,140,255,0.15); --accent-glow: rgba(91,140,255,0.35);
+  --status-online: #4cc2a8; --status-focus: #5b8cff; --status-break: #4cc2a8;
+  --status-gaming: #5b8cff; --status-away: #647396; --status-dnd: #f0676f;
+  --success: #4cc2a8; --warning: #e0a13c; --danger: #f0676f; --info: #5b8cff;
   --shadow-sm: 0 1px 2px rgba(0,0,0,0.40);
   --shadow-md: 0 4px 14px rgba(0,0,0,0.45), 0 2px 4px rgba(0,0,0,0.30);
   --shadow-lg: 0 24px 60px rgba(0,0,0,0.55), 0 6px 16px rgba(0,0,0,0.35);
   --shadow-glow: 0 0 22px var(--accent-glow);
-
-  /* Радиусы */
-  --radius-sm:  6px;
-  --radius-md:  8px;
-  --radius-lg:  12px;
-  --radius-xl:  16px;
-  --radius-2xl: 20px;
+  --radius-sm: 6px; --radius-md: 8px; --radius-lg: 12px; --radius-xl: 16px; --radius-2xl: 20px;
 }
 
-.light-mode {
-  --bg-page:     #0a0f1e;
-  --bg-card:     #141d33;
-  --bg-subtle:   #0f1729;
-  --bg-hover:    #1c2942;
-  --bg-elevated: #1a2540;
-  --bg-input:    #0f1729;
-
-  --text-primary:   #e7ecf7;
-  --text-secondary: #9fb0d0;
-  --text-muted:     #647396;
-
-  --border:        rgba(120,150,210,0.12);
-  --border-strong: rgba(120,150,210,0.24);
+/* LIGHT — white-blue corporate ICF Notes */
+.light {
+  --bg-page: #eef2fb;  --bg-card: #ffffff;  --bg-subtle: #f4f7fd;
+  --bg-hover: #e8eef9; --bg-elevated: #ffffff; --bg-input: #f4f7fd;
+  --text-primary: #16223a; --text-secondary: #45587a; --text-muted: #8a98b5; --text-link: #2f6df0;
+  --border: rgba(40,70,130,0.12); --border-strong: rgba(40,70,130,0.22); --border-accent: #2f6df0;
+  --accent: #2f6df0; --accent-hover: #2860da; --accent-active: #1f4fb8;
+  --accent-light: rgba(47,109,240,0.10); --accent-glow: rgba(47,109,240,0.22);
+  --status-online: #1ca896; --status-focus: #2f6df0; --status-break: #1ca896;
+  --status-gaming: #2f6df0; --status-away: #8a98b5; --status-dnd: #e0455a;
+  --success: #1ca896; --warning: #d98a1f; --danger: #e0455a; --info: #2f6df0;
+  --shadow-sm: 0 1px 2px rgba(40,70,130,0.08);
+  --shadow-md: 0 4px 14px rgba(40,70,130,0.10), 0 2px 4px rgba(40,70,130,0.06);
+  --shadow-lg: 0 24px 60px rgba(40,70,130,0.16), 0 6px 16px rgba(40,70,130,0.08);
+  --shadow-glow: 0 0 22px var(--accent-glow);
 }
 
 @tailwind base;

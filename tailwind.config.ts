@@ -9,6 +9,7 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      // dark defaults; theme-reactive UI must use var(--token), not these named colors
       colors: {
         // Тёмно-синяя (navy) палитра
         page:     '#0a0f1e',

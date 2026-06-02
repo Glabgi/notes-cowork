@@ -70,7 +70,7 @@ function AddBlockModal({ onAdd, onClose }: { onAdd: (b: Omit<ScheduleBlock, 'id'
           value={title}
           onChange={e => setTitle(e.target.value)}
           placeholder="Например: Курс по React"
-          className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-[10px] px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[#b0a090] focus:outline-none focus:border-[var(--accent)] focus:ring-4 focus:ring-[#f1e3d4]/50 transition-all"
+          className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-[10px] px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] focus:ring-4 focus:ring-[#f1e3d4]/50 transition-all"
         />
       </div>
 

@@ -379,7 +379,7 @@ export default function HomePage() {
       <main className="max-w-2xl mx-auto px-6 sm:px-8 py-8 space-y-6">
 
         {/* Retro-PC hero */}
-        <div className="rounded-[16px] overflow-hidden border border-[var(--border)] bg-[#f5f0e8] shadow-[0_1px_3px_rgba(15,23,42,0.04)]">
+        <div className="rounded-[16px] overflow-hidden border border-[var(--border)] bg-[var(--bg-subtle)] shadow-[0_1px_3px_rgba(15,23,42,0.04)]">
           <RetroPC className="w-full block" />
         </div>
 

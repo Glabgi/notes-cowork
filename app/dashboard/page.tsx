@@ -85,7 +85,7 @@ const TAG_META: Record<string, { label: string; Icon: React.ElementType; color: 
   study:    { label: 'Учёба',      Icon: GraduationCap, color: '#4a8a78', pill: 'bg-[#eef3ee] text-[#4a8a78] border-[#cfe3d6]' },
   personal: { label: 'Личное',     Icon: Home,          color: '#c4784a', pill: 'bg-[#fbf4ea] text-[#c4784a] border-[#ecd6c0]' },
   creative: { label: 'Творчество', Icon: Palette,       color: '#b5734e', pill: 'bg-[#faf7f1] text-[#b5734e] border-[#ecd6c0]' },
-  other:    { label: 'Другое',     Icon: FolderOpen,    color: '#7a6a55', pill: 'bg-[#f0ece4] text-[var(--text-secondary)] border-[var(--border)]' },
+  other:    { label: 'Другое',     Icon: FolderOpen,    color: 'var(--text-secondary)', pill: 'bg-[#f0ece4] text-[var(--text-secondary)] border-[var(--border)]' },
 };
 
 const DAYS_SHORT = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
