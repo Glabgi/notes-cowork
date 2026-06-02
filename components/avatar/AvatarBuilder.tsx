@@ -7,7 +7,7 @@
  * onDone returns the encoded avatarId string + the raw FaceConfig.
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Shuffle, Check, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Avatar from '@/components/ui/Avatar';
@@ -86,6 +86,19 @@ export default function AvatarBuilder({ initial, onDone, onClose }: {
 }) {
   const [cfg, setCfg] = useState<FaceConfig>(initial || DEFAULT_FACE);
   const set = (patch: Partial<FaceConfig>) => setCfg(c => ({ ...c, ...patch }));
+
+  // Lock background scroll while the builder is open and restore the exact
+  // scroll position on close — otherwise opening/closing the modal made the
+  // page jump to the top ("аватар улетает наверх" in Settings).
+  useEffect(() => {
+    const y = window.scrollY;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      window.scrollTo(0, y);
+    };
+  }, []);
 
   return (
     <div className="fixed inset-0 z-[100] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
