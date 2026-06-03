@@ -34,7 +34,7 @@ function HomeFooterLinks({ router }: { router: any }) {
   if (isAnonymous) {
     return (
       <div className="flex items-center justify-center gap-2 text-xs text-[var(--text-muted)] pt-2">
-        <span className="opacity-60">ICF Notes</span>
+        <span className="opacity-60">ICEF Notes Cowork</span>
       </div>
     );
   }
@@ -44,7 +44,7 @@ function HomeFooterLinks({ router }: { router: any }) {
       <span>·</span>
       <button onClick={() => router.push('/settings')} className="hover:text-[var(--accent)] transition-colors">Настройки</button>
       <span>·</span>
-      <span className="opacity-60">ICF Notes</span>
+      <span className="opacity-60">ICEF Notes Cowork</span>
     </div>
   );
 }

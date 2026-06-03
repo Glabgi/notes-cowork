@@ -109,24 +109,11 @@ export default function SettingsPage() {
   const router = useRouter();
   const s = useSettingsStore();
   const [notifBlocked, setNotifBlocked] = useState(false);
-  const [showBuilder, setShowBuilder] = useState(false);
   // Registration login is the locked nickname. If a local account session exists,
   // the username cannot be edited from settings.
   const [lockedUsername, setLockedUsername] = useState<string | null>(null);
 
   const avatarId = s.avatarId;
-  // Persist the avatar consistently across every storage the app reads from:
-  // the settings store (which an effect below mirrors into vc_user.avatarId)
-  // and the local account record (so getLocalSession keeps the same face).
-  const applyAvatar = (id: string) => {
-    s.setAvatarId(id);
-    try {
-      const stored = localStorage.getItem('vc_user');
-      const u = stored ? JSON.parse(stored) : {};
-      localStorage.setItem('vc_user', JSON.stringify({ ...u, avatarId: id }));
-    } catch {}
-    setLocalAvatar(id);
-  };
 
   // Pull initial name/avatar from vc_user on first load (so settings shows current session identity)
   useEffect(() => {
@@ -217,18 +204,8 @@ export default function SettingsPage() {
             <label className="block text-sm font-medium text-[var(--text-secondary)] mb-3">Аватар</label>
             <div className="flex items-center gap-3">
               <Avatar id={avatarId} size={64} className="ring-2 ring-[var(--border)]" />
-              <button type="button" onClick={() => setShowBuilder(true)}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-[12px] border border-[var(--border)] text-sm text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors">
-                <Sparkles size={14} /> Изменить аватар
-              </button>
+              <p className="text-xs text-[var(--text-muted)] leading-relaxed">Аватар задаётся при создании сессии</p>
             </div>
-            {showBuilder && (
-              <AvatarBuilder
-                initial={isFaceId(avatarId) ? decodeFace(avatarId) : undefined}
-                onDone={(id) => { applyAvatar(id); setShowBuilder(false); }}
-                onClose={() => setShowBuilder(false)}
-              />
-            )}
           </div>
           <div>
             <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">Часовой пояс</label>
