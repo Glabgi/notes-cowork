@@ -4,11 +4,11 @@ import ThemeProvider from '@/components/ThemeProvider';
 import { AuthProvider } from '@/components/AuthProvider';
 
 export const metadata: Metadata = {
-  title: 'ICF Notes — учимся вместе',
+  title: 'ICEF Notes Cowork — учимся вместе',
   description: 'Тихая комната для совместной учёбы и работы: помодоро-таймер, расписание, голос и атмосферные звуки для фокуса.',
   keywords: 'icf notes, coworking, pomodoro, focus, study together',
   openGraph: {
-    title: 'ICF Notes',
+    title: 'ICEF Notes Cowork',
     description: 'Учимся и работаем вместе, в тишине и фокусе',
     type: 'website',
   },

@@ -201,13 +201,6 @@ export default function SettingsPage() {
             />
           )}
           <div>
-            <label className="block text-sm font-medium text-[var(--text-secondary)] mb-3">Аватар</label>
-            <div className="flex items-center gap-3">
-              <Avatar id={avatarId} size={64} className="ring-2 ring-[var(--border)]" />
-              <p className="text-xs text-[var(--text-muted)] leading-relaxed">Аватар задаётся при создании сессии</p>
-            </div>
-          </div>
-          <div>
             <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">Часовой пояс</label>
             <div className="px-3 py-2.5 bg-[var(--bg-subtle)] border border-[var(--border)] rounded-[10px] text-sm text-[var(--text-muted)] font-mono">
               {s.timezone}

@@ -12,8 +12,8 @@ const GREEN_A = '#3adc34';
 const GREEN_B = '#2aac26';
 
 const SETS: string[][] = [
-  ['C:\\> STUDY.EXE', 'Loading...', 'ICF NOTES', 'ver 1.0  (c)1984', 'session start...', 'lo-fi mode ON', 'focus: ACTIVE'],
-  ['ICF NOTES', '───────────────', 'Садись и учись.', 'Lo-fi играет.', 'Рядом — тишина.', 'Все в фокусе.', 'together'],
+  ['C:\\> STUDY.EXE', 'Loading...', 'ICEF NOTES', 'ver 1.0  (c)1984', 'session start...', 'lo-fi mode ON', 'focus: ACTIVE'],
+  ['ICEF NOTES', '───────────────', 'Садись и учись.', 'Lo-fi играет.', 'Рядом — тишина.', 'Все в фокусе.', 'together'],
   ['C:\\> RUN FOCUS', 'OK...', '> session start', '> mode: quiet', '> music: lo-fi', '> status: ON', 'учимся вместе'],
 ];
 
@@ -95,7 +95,7 @@ export default function RetroPC({ className }: { className?: string }) {
       {/* nameplate */}
       <rect x="245" y="220" width="162" height="12" rx="3" fill="#a8a29a" />
       <text x="326" y="229" fontFamily="'Courier New',monospace" fontSize="6" fill="#7a7470" textAnchor="middle" letterSpacing="1">
-        ICF-PC
+        ICEF-PC
       </text>
       <rect x="255" y="232" width="48" height="5" rx="1" fill="#b8b2aa" />
       <rect x="309" y="232" width="30" height="5" rx="1" fill="#b8b2aa" />

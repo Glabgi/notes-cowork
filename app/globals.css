@@ -1,5 +1,5 @@
 /* =====================================================================
-   ICF Notes — тёмно-синяя (navy) тема
+   ICEF Notes Cowork — тёмно-синяя (navy) тема
    Палитра: глубокий navy-фон (#0a0f1e), синий акцент (#5b8cff),
    тёплый teal-cyan (#4cc2a8), светлый текст (#e7ecf7).
    Моноширинный Space Mono + Roboto Mono (кириллица).
@@ -27,7 +27,7 @@
   --radius-sm: 6px; --radius-md: 8px; --radius-lg: 12px; --radius-xl: 16px; --radius-2xl: 20px;
 }
 
-/* LIGHT — white-blue corporate ICF Notes */
+/* LIGHT — white-blue corporate ICEF Notes Cowork */
 .light {
   --bg-page: #eef2fb;  --bg-card: #ffffff;  --bg-subtle: #f4f7fd;
   --bg-hover: #e8eef9; --bg-elevated: #ffffff; --bg-input: #f4f7fd;
