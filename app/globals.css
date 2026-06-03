@@ -16,6 +16,7 @@
   --border: rgba(120,150,210,0.12); --border-strong: rgba(120,150,210,0.24); --border-accent: #5b8cff;
   --accent: #5b8cff; --accent-hover: #4d7cf0; --accent-active: #3d68dd;
   --accent-light: rgba(91,140,255,0.15); --accent-glow: rgba(91,140,255,0.35);
+  --glass-bg: rgba(20,29,51,0.78);
   --status-online: #4cc2a8; --status-focus: #5b8cff; --status-break: #4cc2a8;
   --status-gaming: #5b8cff; --status-away: #647396; --status-dnd: #f0676f;
   --success: #4cc2a8; --warning: #e0a13c; --danger: #f0676f; --info: #5b8cff;
@@ -34,6 +35,7 @@
   --border: rgba(40,70,130,0.12); --border-strong: rgba(40,70,130,0.22); --border-accent: #2f6df0;
   --accent: #2f6df0; --accent-hover: #2860da; --accent-active: #1f4fb8;
   --accent-light: rgba(47,109,240,0.10); --accent-glow: rgba(47,109,240,0.22);
+  --glass-bg: rgba(255,255,255,0.72);
   --status-online: #1ca896; --status-focus: #2f6df0; --status-break: #1ca896;
   --status-gaming: #2f6df0; --status-away: #8a98b5; --status-dnd: #e0455a;
   --success: #1ca896; --warning: #d98a1f; --danger: #e0455a; --info: #2f6df0;
@@ -116,7 +118,7 @@ html, body {
 /* Дополнительные утилиты */
 .text-balance { text-wrap: balance; }
 .glass {
-  background: rgba(255,255,255,0.72);
+  background: var(--glass-bg, rgba(255,255,255,0.72));
   backdrop-filter: blur(12px) saturate(140%);
   -webkit-backdrop-filter: blur(12px) saturate(140%);
 }

@@ -20,7 +20,7 @@ export default function PomodoroSettings({ onClose }: { onClose: () => void }) {
     <div className="fixed inset-0 z-[100] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
       <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[20px] w-full max-w-xs p-5 space-y-4 shadow-2xl" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between">
-          <h3 className="font-bold text-[var(--text-primary)] text-sm">Помодоро</h3>
+          <h3 className="font-bold text-[var(--text-primary)] text-sm">Pomodoro Timer</h3>
           <button onClick={onClose} className="text-[var(--text-muted)] hover:text-[var(--text-primary)]"><X size={16} /></button>
         </div>
 

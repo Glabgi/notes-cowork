@@ -59,7 +59,7 @@ export default function RegisterPage() {
           </div>
 
           <form onSubmit={submit} className="space-y-4">
-            <Input label="Логин" value={username} onChange={e => setUsername(e.target.value)} placeholder="например: albert" autoComplete="username" required autoFocus />
+            <Input label="Логин" value={username} onChange={e => setUsername(e.target.value)} placeholder="придумайте логин" autoComplete="username" required autoFocus />
             <Input label="Пароль" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="минимум 6 символов" autoComplete="new-password" required />
             <Input label="Повторите пароль" type="password" value={password2} onChange={e => setPassword2(e.target.value)} placeholder="ещё раз" autoComplete="new-password" required />
 

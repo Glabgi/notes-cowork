@@ -24,11 +24,11 @@ export default function IcefLogo({ size = 40 }: { size?: number }) {
       </span>
       {/* Wordmark */}
       <span className="hidden sm:flex flex-col leading-none">
-        <span className="font-black tracking-tight text-[17px]" style={{ color: INK }}>
-          ICF
+        <span className="font-black tracking-tight text-[15px]" style={{ color: INK }}>
+          ICEF Notes
         </span>
-        <span className="font-extrabold tracking-tight text-[13px] -mt-0.5 lowercase" style={{ color: BLUE }}>
-          notes
+        <span className="font-extrabold tracking-tight text-[10px] -mt-0.5 uppercase tracking-[0.18em]" style={{ color: BLUE }}>
+          cowork
         </span>
       </span>
     </span>

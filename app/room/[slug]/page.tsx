@@ -959,12 +959,14 @@ export default function RoomPage() {
           onDone={(avatarId) => {
             const cu = useRoomStore.getState().currentUser;
             if (cu) {
-              store.setCurrentUser({ ...cu, avatarId });
+              const next = { ...cu, avatarId };
+              store.setCurrentUser(next);
+              store.updateParticipant(next); // update my own card in the grid immediately (local)
               try {
                 const saved = JSON.parse(localStorage.getItem('vc_user') || '{}');
                 localStorage.setItem('vc_user', JSON.stringify({ ...saved, avatarId }));
               } catch {}
-              // broadcast so everyone sees the new avatar live
+              // broadcast so everyone else sees the new avatar live (server applies avatarId)
               try { getSocket().emit('room:update-status', { roomId: slug, status: cu.status, currentTask: cu.currentTask, avatarId }); } catch {}
             }
             setShowAvatarEdit(false);
