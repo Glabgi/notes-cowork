@@ -225,6 +225,7 @@ function YouTubeMode() {
   const createdRef = useRef(false);
   const queueRef = useRef<YtTrack[]>([]);
   const currentIdRef = useRef<string | null>(null);
+  const errorCountRef = useRef(0); // consecutive unavailable/non-embeddable tracks
 
   const [tab, setTab] = useState<YtTab>('search');
   const [query, setQuery] = useState('');
@@ -293,10 +294,18 @@ function YouTubeMode() {
             if (e.data === State.ENDED) {
               advance(1);
             } else if (e.data === State.PLAYING) {
+              errorCountRef.current = 0; // played fine — reset the skip guard
               setIsPlaying(true);
             } else if (e.data === State.PAUSED) {
               setIsPlaying(false);
             }
+          },
+          onError: () => {
+            // Video unavailable / removed / embedding disabled by owner → skip
+            // to the next track. Guard against an all-broken queue.
+            errorCountRef.current += 1;
+            if (errorCountRef.current <= queueRef.current.length) advance(1);
+            else setIsPlaying(false);
           },
         },
       });

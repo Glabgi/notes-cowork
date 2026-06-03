@@ -22,13 +22,10 @@ export default function IcefLogo({ size = 40 }: { size?: number }) {
           <path d="M6 15c1.6 1.8 3.3 1.8 6 1.8s4.4 0 6-1.8c-1.5.6-3 .6-3.4-.2-.5 1-1.7 1-2.6 1s-2.1 0-2.6-1c-.4.8-1.9.8-3.4.2Z" fill={INK} />
         </svg>
       </span>
-      {/* Wordmark */}
-      <span className="hidden sm:flex flex-col leading-none">
-        <span className="font-black tracking-tight text-[15px]" style={{ color: INK }}>
+      {/* Wordmark — "ICEF Notes" (the "cowork" lives centered in the top bar) */}
+      <span className="hidden sm:flex items-baseline leading-none">
+        <span className="font-black tracking-tight text-[16px]" style={{ color: INK }}>
           ICEF Notes
-        </span>
-        <span className="font-extrabold tracking-tight text-[10px] -mt-0.5 uppercase tracking-[0.18em]" style={{ color: BLUE }}>
-          cowork
         </span>
       </span>
     </span>

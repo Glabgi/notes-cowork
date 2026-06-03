@@ -17,7 +17,7 @@ import { useAuth } from '@/components/AuthProvider';
 import { signOut, isSupabaseConfigured } from '@/lib/supabase';
 import { getAvatarSvg as getAvatarSvgHeader } from '@/lib/avatars';
 import AppHeader from '@/components/AppHeader';
-import RetroPC from '@/components/RetroPC';
+import DeskWriter from '@/components/DeskWriter';
 
 /* ─── Types ─────────────────────────────────────────────────────────── */
 interface ActiveRoom {
@@ -374,14 +374,14 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-[var(--bg-page)]">
-      <AppHeader showDashboard={true} />
+      <AppHeader showDashboard={true} centerBrand />
 
       {/* Body */}
       <main className="max-w-2xl mx-auto px-6 sm:px-8 py-8 space-y-6">
 
-        {/* Retro-PC hero */}
+        {/* Desk-writer hero — follows the cursor */}
         <div className="rounded-[16px] overflow-hidden border border-[var(--border)] bg-[var(--bg-subtle)] shadow-[0_1px_3px_rgba(15,23,42,0.04)]">
-          <RetroPC className="w-full block" />
+          <DeskWriter className="w-full block" />
         </div>
 
         {/* Create card */}

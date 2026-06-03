@@ -15,6 +15,7 @@ interface Props {
   showSchedule?: boolean;
   showDashboard?: boolean;
   rightExtra?: React.ReactNode;
+  centerBrand?: boolean;
 }
 
 export default function AppHeader({
@@ -23,6 +24,7 @@ export default function AppHeader({
   showSchedule = true,
   showDashboard = true,
   rightExtra,
+  centerBrand = false,
 }: Props) {
   const router = useRouter();
   const { user, profile, loading } = useAuth();
@@ -40,7 +42,12 @@ export default function AppHeader({
   const btn = 'h-9 px-3 inline-flex items-center gap-1.5 text-xs font-medium text-[var(--text-secondary)] bg-[var(--bg-card)] border border-[var(--border)] rounded-[10px] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)] transition-colors';
 
   return (
-    <header className="h-14 glass border-b border-[var(--border)] flex items-center px-3 sm:px-4 gap-2 sticky top-0 z-30">
+    <header className="relative h-14 glass border-b border-[var(--border)] flex items-center px-3 sm:px-4 gap-2 sticky top-0 z-30">
+      {centerBrand && (
+        <span className="hidden sm:block absolute left-1/2 -translate-x-1/2 font-black uppercase tracking-[0.34em] text-[var(--accent)] text-[22px] pointer-events-none select-none">
+          cowork
+        </span>
+      )}
       {showBack && (
         <button
           onClick={() => router.back()}
