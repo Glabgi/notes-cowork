@@ -226,7 +226,7 @@ export default function DayScheduler() {
         </div>
 
         {/* Summary + actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           {totalFocusMin > 0 && (
             <div className="flex gap-3 text-xs text-[var(--text-muted)]">
               <span className="inline-flex items-center gap-1">

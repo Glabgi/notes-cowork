@@ -49,7 +49,7 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen bg-[var(--bg-page)] flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
-        <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[28px] p-8 shadow-[0_8px_32px_rgba(15,23,42,0.10)]">
+        <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[28px] p-6 sm:p-8 shadow-[0_8px_32px_rgba(15,23,42,0.10)]">
           <div className="text-center mb-6">
             <div className="w-14 h-14 bg-[var(--accent-light)] rounded-[16px] flex items-center justify-center mx-auto mb-4">
               <UserPlus size={24} className="text-[var(--accent)]" />

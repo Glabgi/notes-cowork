@@ -43,13 +43,13 @@ export default function Modal({ open, onClose, title, children, size = 'md', sho
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
       <div
         className={cn(
-          'relative w-full bg-[var(--bg-elevated)] rounded-[12px] border border-[var(--border)] overflow-hidden shadow-lg',
+          'relative w-full max-h-[90vh] flex flex-col bg-[var(--bg-elevated)] rounded-[12px] border border-[var(--border)] overflow-hidden shadow-lg',
           sizes[size]
         )}
         style={{ animation: 'fadeSlideIn 0.2s ease-out' }}
       >
         {(title || showClose) && (
-          <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border)]">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border)] flex-shrink-0">
             {title && <h2 className="text-lg font-semibold text-[var(--text-primary)]">{title}</h2>}
             {showClose && (
               <button
@@ -61,7 +61,7 @@ export default function Modal({ open, onClose, title, children, size = 'md', sho
             )}
           </div>
         )}
-        <div className="overflow-y-auto max-h-[85vh]">
+        <div className="overflow-y-auto flex-1 min-h-0">
           {children}
         </div>
       </div>

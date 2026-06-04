@@ -895,9 +895,9 @@ export default function RoomPage() {
     <div className="h-screen flex flex-col overflow-hidden bg-[var(--bg-page)]">
       <RoomHeader />
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-col lg:flex-row flex-1 overflow-y-auto lg:overflow-hidden">
         {/* Left: Timer + Status only */}
-        <aside className="w-[300px] flex-shrink-0 bg-[var(--bg-card)] border-r border-[var(--border)] p-3 overflow-y-auto hidden lg:flex flex-col gap-2.5">
+        <aside className="w-full lg:w-[300px] flex-shrink-0 bg-[var(--bg-card)] lg:border-r border-b lg:border-b-0 border-[var(--border)] p-3 lg:overflow-y-auto flex flex-col gap-2.5">
           <WallClock slug={slug} />
           <StatusSelector slug={slug} />
           <button
@@ -910,8 +910,8 @@ export default function RoomPage() {
         </aside>
 
         {/* Center column: screen share + participants + bottom dock */}
-        <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-          <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 flex flex-col lg:overflow-hidden min-w-0">
+          <div className="flex-1 lg:overflow-y-auto">
             <ScreenShareTile />
             <ParticipantsGrid />
           </div>
@@ -920,7 +920,7 @@ export default function RoomPage() {
         </div>
 
         {/* Right panel — музыка / люди / задачи */}
-        <div className="h-full overflow-hidden lg:pr-3 lg:py-3">
+        <div className="w-full lg:w-auto h-[420px] lg:h-full overflow-hidden lg:pr-3 lg:py-3">
           <SidePanel />
         </div>
       </div>

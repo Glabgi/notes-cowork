@@ -42,7 +42,7 @@ const ACHIEVEMENTS: AchievementMeta[] = [
 function StatCard({ Icon, label, value, sub, delay = 0 }: { Icon: React.ElementType; label: string; value: string | number; sub?: string; delay?: number }) {
   return (
     <div
-      className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[20px] p-5 shadow-[0_2px_8px_rgba(15,23,42,0.04)] hover:border-[var(--border-accent)] hover:shadow-[0_4px_16px_rgba(15,23,42,0.08)] transition-all duration-150"
+      className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[20px] p-4 sm:p-5 shadow-[0_2px_8px_rgba(15,23,42,0.04)] hover:border-[var(--border-accent)] hover:shadow-[0_4px_16px_rgba(15,23,42,0.08)] transition-all duration-150"
       style={{ animation: `fadeSlideIn 0.4s ease-out ${delay}s both` }}
     >
       <div className="flex items-start justify-between gap-2">
@@ -156,7 +156,7 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-[var(--bg-page)]">
       <AppHeader title="Мой прогресс" showBack showDashboard={false} />
 
-      <div className="max-w-3xl mx-auto px-6 sm:px-8 py-6 space-y-5">
+      <div className="max-w-3xl mx-auto px-4 sm:px-8 py-6 space-y-5">
         {/* Top stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <StatCard Icon={Timer}        label="Помидорок" value={pomodoroCount}                sub="всего завершено" delay={0} />

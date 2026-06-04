@@ -27,7 +27,7 @@ export default function SidePanel() {
   ];
 
   return (
-    <div className="w-72 flex-shrink-0 bg-[var(--bg-card)] border-l border-[var(--border)] flex flex-col h-full overflow-hidden lg:rounded-[12px] lg:border lg:shadow-md">
+    <div className="w-full lg:w-72 flex-shrink-0 bg-[var(--bg-card)] border-t lg:border-t-0 lg:border-l border-[var(--border)] flex flex-col h-full overflow-hidden lg:rounded-[12px] lg:border lg:shadow-md">
       {/* Tab bar */}
       <div className="flex items-center gap-0.5 p-1.5 border-b border-[var(--border)] bg-[var(--bg-subtle)] flex-shrink-0">
         {tabs.map(({ id, icon: Icon, label, badge }) => (

@@ -377,7 +377,7 @@ export default function HomePage() {
       <AppHeader showDashboard={true} centerBrand />
 
       {/* Body */}
-      <main className="max-w-2xl mx-auto px-6 sm:px-8 py-8 space-y-6">
+      <main className="max-w-2xl mx-auto px-4 sm:px-8 py-8 space-y-6">
 
         {/* Desk-writer hero — follows the cursor */}
         <div className="rounded-[16px] overflow-hidden border border-[var(--border)] bg-[var(--bg-subtle)] shadow-[0_1px_3px_rgba(15,23,42,0.04)]">
@@ -405,9 +405,9 @@ export default function HomePage() {
               onChange={e => { setJoinInput(e.target.value); setJoinErr(''); }}
               onKeyDown={e => e.key === 'Enter' && handleJoin()}
               placeholder="Ссылка или код комнаты..."
-              className="flex-1 bg-[var(--bg-input)] border border-[var(--border)] rounded-[8px] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/30 transition-all"
+              className="flex-1 min-w-0 bg-[var(--bg-input)] border border-[var(--border)] rounded-[8px] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/30 transition-all"
             />
-            <Button size="sm" onClick={handleJoin} disabled={!joinInput.trim()}>
+            <Button size="sm" className="flex-shrink-0" onClick={handleJoin} disabled={!joinInput.trim()}>
               Войти <ArrowRight size={14} />
             </Button>
           </div>

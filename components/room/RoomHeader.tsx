@@ -158,7 +158,7 @@ export default function RoomHeader() {
 
   return (
     <>
-      <header className="h-14 bg-[var(--bg-card)]/95 backdrop-blur-sm border-b border-[var(--border)] flex items-center px-4 gap-3 flex-shrink-0 z-40">
+      <header className="h-14 bg-[var(--bg-card)]/95 backdrop-blur-sm border-b border-[var(--border)] flex items-center px-3 sm:px-4 gap-2 sm:gap-3 flex-shrink-0 z-40">
         {/* Connection dot */}
         <div className={cn('w-2 h-2 rounded-full flex-shrink-0', isConnected ? 'bg-[var(--status-online)]' : 'bg-[var(--danger)] animate-pulse-dot')} />
 

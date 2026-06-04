@@ -46,7 +46,7 @@ export default function DeskWriter({ className }: { className?: string }) {
 
   return (
     <div className={className}>
-      <div className="flex items-center justify-center py-6 px-4 select-none">
+      <div className="flex items-center justify-center py-4 sm:py-6 px-4 select-none">
         <svg ref={svgRef} viewBox="0 0 240 220" className="w-[260px] max-w-full h-auto" style={{ overflow: 'visible' }} aria-hidden="true">
           <g className="dw-float">
             {/* shadow */}

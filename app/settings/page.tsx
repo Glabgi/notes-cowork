@@ -179,7 +179,7 @@ export default function SettingsPage() {
     <div className="min-h-screen bg-[var(--bg-page)]">
       <AppHeader title="Настройки" showBack />
 
-      <div className="max-w-xl mx-auto px-6 sm:px-8 py-4 space-y-4 pb-12">
+      <div className="max-w-xl mx-auto px-4 sm:px-8 py-4 space-y-4 pb-12">
 
         {/* Profile */}
         <Section icon={User} title="Профиль" delay={0}>
@@ -304,7 +304,7 @@ export default function SettingsPage() {
         </Section>
 
         {/* Footer */}
-        <div className="flex gap-4 text-xs text-[var(--text-muted)] justify-center pt-2">
+        <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs text-[var(--text-muted)] justify-center pt-2">
           <button onClick={() => router.push('/dashboard')} className="hover:text-[var(--text-secondary)] transition-colors inline-flex items-center gap-1"><BarChart3 size={11} /> Прогресс</button>
           <span>·</span>
           <button onClick={() => router.push('/schedule')} className="hover:text-[var(--text-secondary)] transition-colors inline-flex items-center gap-1"><Calendar size={11} /> Расписание</button>

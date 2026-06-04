@@ -30,7 +30,7 @@ const LABELS: Record<string, Record<string, string>> = {
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex items-start gap-2">
-      <span className="w-[88px] flex-shrink-0 pt-1.5 text-[10px] uppercase tracking-wider text-[var(--text-muted)]">{label}</span>
+      <span className="w-[72px] sm:w-[88px] flex-shrink-0 pt-1.5 text-[10px] uppercase tracking-wider text-[var(--text-muted)]">{label}</span>
       <div className="flex flex-wrap gap-1.5">{children}</div>
     </div>
   );
@@ -116,7 +116,7 @@ export default function AvatarBuilder({ initial, onDone, onClose }: {
         </div>
 
         {/* preview */}
-        <div className="flex items-center justify-center gap-5 py-4 bg-[var(--bg-subtle)] border-b border-[var(--border)]">
+        <div className="flex items-center justify-center gap-4 sm:gap-5 py-4 bg-[var(--bg-subtle)] border-b border-[var(--border)]">
           <Avatar id={encodeFace(cfg)} size={112} className="ring-2 ring-[var(--border)] shadow-md" />
           <button
             onClick={() => setCfg(randomFace())}

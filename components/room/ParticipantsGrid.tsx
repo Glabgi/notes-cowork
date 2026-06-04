@@ -11,7 +11,7 @@ export default function ParticipantsGrid() {
   if (!room) return null;
 
   return (
-    <div className="flex-1 p-6 overflow-y-auto">
+    <div className="flex-1 p-4 sm:p-6 lg:overflow-y-auto">
       <div className="mb-5">
         <h2 className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">
           Участники · {room.participants.length}
