@@ -790,6 +790,44 @@ io.on('connection', (socket) => {
 
 app.get('/health', (_, res) => res.json({ status: 'ok', rooms: rooms.size }));
 
+// REST: live admin stats. Key-gated when ADMIN_KEY is set (the Next /api/admin
+// proxy validates the operator key, then forwards it here).
+let __peakOnline = 0;
+app.get('/stats', (req, res) => {
+  const key = process.env.ADMIN_KEY;
+  if (key && req.query.key !== key) return res.status(403).json({ error: 'forbidden' });
+  const now = Date.now();
+  const active = Array.from(rooms.values()).filter(r =>
+    !closedRooms.has(r.slug) &&
+    (r.participants.length > 0 || (r.emptyAt && now - r.emptyAt < EMPTY_TTL_MS))
+  );
+  const online = active.reduce((n, r) => n + r.participants.length, 0);
+  __peakOnline = Math.max(__peakOnline, online);
+  const publicRooms = active.filter(r => r.isPublic !== false && !r.isPrivate).length;
+  const focusing = active.reduce((n, r) => n + r.participants.filter(p => p.status === 'focus').length, 0);
+  res.json({
+    online,
+    rooms: active.length,
+    publicRooms,
+    privateRooms: active.length - publicRooms,
+    focusing,
+    peakOnline: __peakOnline,
+    sockets: io.engine.clientsCount,
+    uptimeSec: Math.floor(process.uptime()),
+    ts: now,
+    roomsList: active
+      .map(r => ({
+        slug: r.slug,
+        name: r.name,
+        participants: r.participants.length,
+        isPrivate: !!r.isPrivate,
+        focus: r.participants.filter(p => p.status === 'focus').length,
+      }))
+      .sort((a, b) => b.participants - a.participants)
+      .slice(0, 50),
+  });
+});
+
 // REST: list active rooms (for homepage) — only public ones
 app.get('/rooms', (_, res) => {
   const GRACE_MS = EMPTY_TTL_MS;
