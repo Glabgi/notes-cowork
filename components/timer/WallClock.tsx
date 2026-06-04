@@ -1,12 +1,10 @@
 'use client';
 
 /**
- * WallClock — live analog clock for the room sidebar. Above the dial sits a
- * small current-time readout; BELOW the dial is a line that shows either the
- * study-session timer (counts up for the visit) OR, when a Pomodoro is running,
- * the phase countdown. The фокус / перерыв / длинный tabs start / pause the
- * Pomodoro (25 / 5 / 15 min) and set the user's presence status — no new UI,
- * the design is unchanged, only the existing line + tabs gain behaviour.
+ * WallClock — room sidebar timer. Small current-time readout on top, then a
+ * prominent Pomodoro countdown (MM:SS) with explicit play/pause + reset, and
+ * the фокус / перерыв / длинный phase tabs (which pick the phase + set the
+ * user's presence status). Durations are configurable via the gear.
  */
 
 import { useEffect, useRef, useState } from 'react';
@@ -15,17 +13,8 @@ import { useRoomStore } from '@/store/roomStore';
 import { useTimerStore } from '@/store/timerStore';
 import type { TimerPhase } from '@/types';
 import { getSocket } from '@/lib/socket';
-import { Settings as SettingsIcon } from 'lucide-react';
+import { Settings as SettingsIcon, Play, Pause, RotateCcw } from 'lucide-react';
 import PomodoroSettings from './PomodoroSettings';
-
-function fmtDuration(ms: number): string {
-  const total = Math.max(0, Math.floor(ms / 1000));
-  const h = Math.floor(total / 3600);
-  const m = Math.floor((total % 3600) / 60);
-  const s = total % 60;
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
-}
 
 function mmss(totalSec: number): string {
   const t = Math.max(0, Math.floor(totalSec));
@@ -55,11 +44,10 @@ function playChime() {
 }
 
 export default function WallClock({ slug }: { slug: string }) {
-  const { currentUser, updateMyStatus } = useRoomStore();
+  const { updateMyStatus } = useRoomStore();
   const timer = useTimerStore();
   const [now, setNow] = useState<Date | null>(null);
   const [showCfg, setShowCfg] = useState(false);
-  const startRef = useRef<number | null>(null);
 
   const syncPresence = (next: 'focus' | 'break') => {
     const cu = useRoomStore.getState().currentUser;
@@ -69,9 +57,8 @@ export default function WallClock({ slug }: { slug: string }) {
     } catch {}
   };
 
-  // Tick every second: drive the wall clock AND the Pomodoro countdown.
+  // Tick every second: update the wall clock + drive the Pomodoro countdown.
   useEffect(() => {
-    startRef.current = Date.now();
     setNow(new Date());
     const i = setInterval(() => {
       setNow(new Date());
@@ -83,7 +70,6 @@ export default function WallClock({ slug }: { slug: string }) {
           const np = useTimerStore.getState().phase;
           syncPresence(np === 'focus' ? 'focus' : 'break');
           if (wasFocus) {
-            // reflect a completed pomodoro on my own participant card
             const cu = useRoomStore.getState().currentUser;
             if (cu) useRoomStore.getState().setCurrentUser({ ...cu, pomodoroCount: (cu.pomodoroCount || 0) + 1 });
           }
@@ -101,29 +87,25 @@ export default function WallClock({ slug }: { slug: string }) {
     ? `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
     : '--:--';
 
-  // Pomodoro active = running OR partially elapsed (paused mid-phase)
-  const pomoActive = timer.isRunning || timer.timeLeft < timer.totalTime;
-  const sessionLabel = pomoActive ? PHASE_LABEL[timer.phase] : 'Занятие';
-  const sessionValue = pomoActive
-    ? mmss(timer.timeLeft)
-    : (now && startRef.current ? fmtDuration(now.getTime() - startRef.current) : '00:00');
-  const paused = pomoActive && !timer.isRunning;
+  const running = timer.isRunning;
+  const paused = !running && timer.timeLeft < timer.totalTime;
 
-  const pick = (tab: 'focus' | 'break' | 'long') => {
+  // Play / pause the current phase
+  const toggle = () => {
     const t = useTimerStore.getState();
-    const phase = TAB_TO_PHASE[tab];
-    const samePhaseActive = t.phase === phase && (t.isRunning || t.timeLeft < t.totalTime);
-    if (samePhaseActive) {
-      t.setRunning(!t.isRunning); // toggle pause / resume (no new control needed)
-    } else {
-      t.setPhase(phase); // reset to phase duration
-      t.setRunning(true); // start the Pomodoro
-    }
+    const nextRunning = !t.isRunning;
+    t.setRunning(nextRunning);
+    if (nextRunning) syncPresence(t.phase === 'focus' ? 'focus' : 'break');
+  };
+  const resetTimer = () => useTimerStore.getState().reset();
+
+  // Pick a phase (sets its duration, stopped) + presence; play starts it.
+  const pick = (tab: 'focus' | 'break' | 'long') => {
+    useTimerStore.getState().setPhase(TAB_TO_PHASE[tab]);
     syncPresence(tab === 'focus' ? 'focus' : 'break');
   };
 
   const activeTab = timer.phase === 'focus' ? 'focus' : timer.phase === 'longBreak' ? 'long' : 'break';
-
   const tabs: { key: 'focus' | 'break' | 'long'; label: string }[] = [
     { key: 'focus', label: 'фокус' },
     { key: 'break', label: 'перерыв' },
@@ -137,26 +119,45 @@ export default function WallClock({ slug }: { slug: string }) {
         <SettingsIcon size={13} />
       </button>
 
-      {/* digital clock */}
-      <div className="flex items-baseline gap-1 py-1">
-        <span className="text-[36px] font-bold tabular-nums tracking-[0.04em] text-[var(--text-primary)] leading-none">
-          {timeLabel}
+      {/* current time */}
+      <div className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.16em] text-[var(--text-muted)] -mt-1">
+        <span className="w-1 h-1 rounded-full bg-[var(--accent)]" />
+        сейчас {timeLabel}
+      </div>
+
+      {/* Pomodoro countdown */}
+      <div className="flex flex-col items-center leading-none mt-1">
+        <span className="text-[10px] uppercase tracking-[0.2em] text-[var(--text-muted)]">
+          {PHASE_LABEL[timer.phase]}{paused && ' · пауза'}
         </span>
-        <span className="text-[13px] font-semibold tabular-nums text-[var(--text-muted)]">
-          {now ? String(now.getSeconds()).padStart(2, '0') : '--'}
+        <span className={cn(
+          'text-[42px] font-bold tabular-nums tracking-[0.02em] mt-1.5 leading-none transition-colors',
+          running ? 'text-[var(--accent)]' : paused ? 'text-[var(--text-secondary)]' : 'text-[var(--text-primary)]'
+        )}>
+          {mmss(timer.timeLeft)}
         </span>
       </div>
 
-      {/* session / pomodoro line — below the dial (same slot for both) */}
-      <div className="flex flex-col items-center leading-none -mt-0.5">
-        <span className="text-[9px] uppercase tracking-[0.18em] text-[var(--text-muted)]">{sessionLabel}</span>
-        <span className={cn('text-[16px] font-bold tabular-nums tracking-[0.08em] text-[var(--accent)] mt-1', paused && 'opacity-50')}>
-          {sessionValue}
-        </span>
+      {/* controls: reset + play/pause */}
+      <div className="flex items-center gap-3 mt-2">
+        <button
+          onClick={resetTimer}
+          title="Сбросить"
+          className="w-8 h-8 rounded-full border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-[var(--border-strong)] flex items-center justify-center transition-colors active:scale-95"
+        >
+          <RotateCcw size={14} />
+        </button>
+        <button
+          onClick={toggle}
+          title={running ? 'Пауза' : 'Старт'}
+          className="w-12 h-12 rounded-full bg-[var(--accent)] text-white hover:bg-[var(--accent-hover)] flex items-center justify-center transition-all active:scale-95 shadow-glow"
+        >
+          {running ? <Pause size={20} /> : <Play size={20} className="ml-0.5" />}
+        </button>
       </div>
 
-      {/* Phase tabs — also start / pause the Pomodoro */}
-      <div className="flex gap-1 w-full mt-1">
+      {/* phase tabs — pick the phase */}
+      <div className="flex gap-1 w-full mt-2">
         {tabs.map(({ key, label }) => (
           <button
             key={key}
