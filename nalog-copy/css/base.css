@@ -1,0 +1,71 @@
+/* Reset + базовая типографика + утилиты */
+
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--c-ink);
+  background: var(--bg-page);
+}
+
+img { max-width: 100%; display: block; }
+
+h1, h2, h3, h4 {
+  font-family: var(--font-head);
+  font-weight: 500;
+  line-height: var(--lh-tight);
+  color: var(--c-ink);
+  margin: 0;
+}
+h1 { font-size: var(--fs-h1); }
+h2 { font-size: var(--fs-h2); }
+h3 { font-size: var(--fs-h3); }
+
+p { margin: 0 0 1em; }
+
+a {
+  color: var(--c-link);
+  text-decoration: none;
+  transition: color var(--t-fast);
+}
+a:hover { color: var(--c-brand); text-decoration: underline; }
+
+button { font-family: inherit; cursor: pointer; }
+
+ul { margin: 0; padding: 0; list-style: none; }
+
+/* Доступность: видимый фокус для клавиатуры */
+:focus-visible {
+  outline: 2px solid var(--c-link);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  margin: -1px; padding: 0; border: 0;
+  clip: rect(0 0 0 0); clip-path: inset(50%);
+  overflow: hidden; white-space: nowrap;
+}
+
+.skip-link {
+  position: absolute;
+  left: 8px; top: -60px;
+  background: var(--c-brand);
+  color: #fff;
+  padding: 10px 16px;
+  border-radius: var(--radius);
+  z-index: 100;
+  transition: top var(--t-fast);
+}
+.skip-link:focus { top: 8px; text-decoration: none; }
+
+.uppercase { text-transform: uppercase; letter-spacing: 0.04em; }

@@ -1,0 +1,58 @@
+/* Контейнер, сетки и брейкпоинты (десктоп — реконструкция) */
+
+.container {
+  width: 100%;
+  max-width: var(--container);
+  margin-inline: auto;
+  padding-inline: var(--side-pad);
+}
+
+main { display: block; }
+
+/* Вертикальный ритм секций */
+.section { padding-block: 24px; }
+.section + .section { padding-top: 0; }
+
+/* Общая сетка карточек-сервисов */
+.grid {
+  display: grid;
+  gap: var(--gap);
+  grid-template-columns: 1fr;
+}
+
+/* Промо ФЛ/ИП/ЮЛ */
+.promo-grid {
+  display: grid;
+  gap: var(--gap);
+  grid-template-columns: 1fr;
+}
+
+/* Сетка иконочных ссылок (страница «Деятельность») */
+.tiles {
+  display: grid;
+  gap: var(--gap);
+  grid-template-columns: 1fr;
+}
+
+.two-col { display: grid; gap: 28px; grid-template-columns: 1fr; }
+
+/* --- Планшет 768+ --- */
+@media (min-width: 768px) {
+  .grid { grid-template-columns: repeat(2, 1fr); }
+  .promo-grid { grid-template-columns: repeat(2, 1fr); }
+  .tiles { grid-template-columns: repeat(2, 1fr); }
+  .section { padding-block: 32px; }
+}
+
+/* --- Малый десктоп 1024+ --- */
+@media (min-width: 1024px) {
+  .grid { grid-template-columns: repeat(3, 1fr); }
+  .promo-grid { grid-template-columns: repeat(3, 1fr); }
+  .tiles { grid-template-columns: repeat(3, 1fr); }
+  .two-col { grid-template-columns: minmax(0, 1fr) 320px; }
+}
+
+/* --- Десктоп 1200+ --- */
+@media (min-width: 1200px) {
+  .promo-grid { grid-template-columns: repeat(3, 1fr); }
+}

@@ -1,0 +1,66 @@
+/* :root — все токены дизайн-системы.
+   Цвета и кегли — измерены из PDF-скриншотов оригинала.
+   Отступы/радиусы/тени/тайминги — приближение (см. design-notes.md). */
+
+:root {
+  /* --- Цвета: бренд и текст (измерено) --- */
+  --c-navy: #3b4256;          /* тёмная верхняя панель */
+  --c-navy-text: #272e42;
+  --c-ink: #405965;           /* основной текст и заголовки */
+  --c-ink-soft: #5a6f7a;
+  --c-link: #0088ff;
+  --c-link-alt: #3367cc;
+  --c-brand: #0066b3;
+  --c-brand-deep: #1b559e;
+  --c-orange: #f15a22;
+  --c-orange-dark: #d94f1d;   /* hover (приближение) */
+  --c-green: #0bbb3c;
+  --c-green-dark: #0a9e33;
+  --c-gray-tab: #808d9c;
+  --c-red: #ed1c24;
+
+  /* --- Фоны и границы (измерено / приближение) --- */
+  --bg-page: #f4f7fc;
+  --bg-panel: #e9ebf0;
+  --bg-card: #ffffff;
+  --c-muted: #a9a9a9;
+  --c-border: #e0e4ea;
+  --c-border-soft: #eef1f6;
+
+  /* --- Типографика --- */
+  --font-head: "Oswald", "PT Sans Narrow", "Roboto Condensed", "Arial Narrow", sans-serif;
+  --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", "PT Astra Sans",
+               "Roboto", Arial, sans-serif;
+
+  --fs-h1: 2rem;         /* ~28.8pt из PDF */
+  --fs-h2: 1.5rem;
+  --fs-h3: 1.3rem;
+  --fs-body: 1rem;       /* 16px */
+  --fs-sm: 0.9375rem;    /* 15px */
+  --fs-xs: 0.875rem;     /* 14px */
+  --fs-2xs: 0.7rem;      /* ~11.2px, uppercase-подписи */
+
+  --lh-tight: 1.1;
+  --lh-body: 1.35;
+
+  /* --- Раскладка и ритм --- */
+  --container: 1180px;
+  --gap: 16px;
+  --gap-sm: 10px;
+  --pad-card: 20px;
+  --side-pad: 16px;
+
+  /* --- Скругления и тени (приближение) --- */
+  --radius: 3px;
+  --radius-lg: 6px;
+  --shadow-card: 0 1px 2px rgba(39, 46, 66, 0.06);
+  --shadow-pop: 0 6px 24px rgba(39, 46, 66, 0.15);
+
+  /* --- Переходы (приближение) --- */
+  --t-fast: 0.15s ease;
+  --t-med: 0.25s ease;
+  --t-slow: 0.4s ease;
+
+  --header-z: 50;
+  --overlay-z: 80;
+}

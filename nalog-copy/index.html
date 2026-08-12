@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ФНС России | Федеральная налоговая служба (учебная копия)</title>
+  <meta name="description" content="Учебная фронтенд-копия сайта nalog.gov.ru. Только вёрстка, без серверной логики.">
+  <link rel="icon" href="assets/img/emblem.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/fonts.css">
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Перейти к содержимому</a>
+
+  <!-- Верхняя панель региона -->
+  <div class="region-bar">
+    <div class="container region-bar__inner">
+      <button class="region-btn" aria-haspopup="true" aria-expanded="false" aria-controls="region-menu">
+        <svg width="16" height="20" viewBox="0 0 16 20" fill="none" aria-hidden="true">
+          <path d="M8 0C3.6 0 0 3.6 0 8c0 5.5 8 12 8 12s8-6.5 8-12c0-4.4-3.6-8-8-8Zm0 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6Z" fill="#fff"/>
+        </svg>
+        <span class="region-label">77 город Москва</span>
+        <svg class="chevron" width="14" height="9" viewBox="0 0 14 9" fill="none" aria-hidden="true">
+          <path d="M1 1l6 6 6-6" stroke="#fff" stroke-width="2" fill="none"/>
+        </svg>
+      </button>
+      <div class="region-menu" id="region-menu" data-open="false" role="menu" aria-label="Выбор региона">
+        <button type="button" data-region role="menuitem">77 город Москва</button>
+        <button type="button" data-region role="menuitem">78 город Санкт-Петербург</button>
+        <button type="button" data-region role="menuitem">50 Московская область</button>
+        <button type="button" data-region role="menuitem">66 Свердловская область</button>
+        <button type="button" data-region role="menuitem">23 Краснодарский край</button>
+        <button type="button" data-region role="menuitem">16 Республика Татарстан</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Шапка -->
+  <header class="site-header">
+    <div class="container site-header__inner">
+      <a class="brand" href="index.html" aria-label="ФНС России, на главную">
+        <img class="brand__emblem" src="assets/img/emblem.svg" alt="Эмблема ФНС России (плейсхолдер)">
+        <span class="brand__text">
+          <span class="brand__title">Федеральная<br>налоговая служба</span>
+          <span class="brand__subtitle">Официальный сайт</span>
+        </span>
+      </a>
+
+      <span class="header-spacer"></span>
+
+      <nav class="main-nav" aria-label="Основное меню">
+        <ul>
+          <li><a href="#" data-action="Физические лица">Физлицам</a></li>
+          <li><a href="#" data-action="ИП">ИП</a></li>
+          <li><a href="#" data-action="Юридические лица">Юрлицам</a></li>
+          <li><a href="about.html">О ФНС России</a></li>
+          <li><a href="#" data-action="Сервисы">Сервисы</a></li>
+        </ul>
+      </nav>
+
+      <button class="burger" aria-label="Открыть меню" aria-expanded="false" aria-controls="mobile-nav">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Мобильное меню -->
+  <div class="nav-overlay" id="nav-overlay" data-open="false"></div>
+  <nav class="mobile-nav" id="mobile-nav" data-open="false" aria-label="Мобильное меню">
+    <h2>Меню</h2>
+    <a href="#" data-action="Физические лица">Физические лица</a>
+    <a href="#" data-action="ИП">Индивидуальные предприниматели</a>
+    <a href="#" data-action="Юридические лица">Юридические лица</a>
+    <a href="about.html">О ФНС России</a>
+    <a href="#" data-action="Деятельность">Деятельность</a>
+    <a href="#" data-action="Сервисы">Сервисы и госуслуги</a>
+    <a href="#" data-action="Контакты">Контакты и обращения</a>
+  </nav>
+
+  <!-- Строка поиска -->
+  <div class="search">
+    <div class="container">
+      <form class="search__form" role="search" data-mock novalidate aria-label="Поиск по сайту">
+        <input class="search__input" type="search" name="q" placeholder="Поиск" aria-label="Поисковый запрос" required>
+        <button class="btn btn--primary btn--search" type="submit">Найти</button>
+      </form>
+      <p class="form-note" role="status" aria-live="polite"></p>
+    </div>
+  </div>
+
+  <main id="main">
+    <!-- Промо ФЛ / ИП / ЮЛ -->
+    <section class="section" aria-label="Категории налогоплательщиков">
+      <div class="container">
+        <div class="promo-grid">
+          <article class="promo-card">
+            <div class="promo-card__media ph" data-ph="Фото 375×300"></div>
+            <div class="promo-card__body">
+              <h2 class="promo-card__title">Физические лица</h2>
+              <div class="promo-card__links">
+                <a href="#" data-action="Личный кабинет ФЛ">Личный кабинет</a>
+                <a href="#" data-action="Мобильное приложение">Скачать моб. приложение</a>
+              </div>
+            </div>
+          </article>
+
+          <article class="promo-card">
+            <div class="promo-card__media ph" data-ph="Фото 375×300"></div>
+            <div class="promo-card__body">
+              <h2 class="promo-card__title">Индивидуальные предприниматели</h2>
+              <div class="promo-card__links">
+                <a href="#" data-action="Личный кабинет ИП">Личный кабинет</a>
+                <a href="#" data-action="Мобильное приложение">Скачать моб. приложение</a>
+              </div>
+            </div>
+          </article>
+
+          <article class="promo-card">
+            <div class="promo-card__media ph" data-ph="Фото 375×300"></div>
+            <div class="promo-card__body">
+              <h2 class="promo-card__title">Юридические лица</h2>
+              <div class="promo-card__links">
+                <a href="#" data-action="Личный кабинет ЮЛ">Личный кабинет</a>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- Карточки-сервисы -->
+    <section class="section" aria-label="Актуальные сервисы">
+      <div class="container">
+        <div class="grid">
+          <a class="service-card" href="#" data-action="Налоги 2026">
+            <span class="service-card__icon" aria-hidden="true">
+              <svg viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="18" stroke="#0066b3" stroke-width="2"/><text x="20" y="25" text-anchor="middle" font-size="12" fill="#0066b3" font-family="Arial">2026</text></svg>
+            </span>
+            <span class="service-card__title">Налоги 2026</span>
+          </a>
+          <a class="service-card" href="#" data-action="Погашение задолженности">
+            <span class="service-card__icon" aria-hidden="true">
+              <svg viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="18" stroke="#f15a22" stroke-width="2"/><text x="20" y="26" text-anchor="middle" font-size="18" fill="#f15a22" font-family="Arial">₽</text></svg>
+            </span>
+            <span class="service-card__title">Новый порядок погашения задолженности</span>
+          </a>
+          <a class="service-card" href="#" data-action="СПОТ">
+            <span class="service-card__icon" aria-hidden="true">
+              <svg viewBox="0 0 40 40" fill="none"><rect x="4" y="14" width="26" height="14" rx="2" stroke="#0066b3" stroke-width="2"/><circle cx="12" cy="30" r="3" stroke="#0066b3" stroke-width="2"/><circle cx="26" cy="30" r="3" stroke="#0066b3" stroke-width="2"/></svg>
+            </span>
+            <span class="service-card__title">Национальная система подтверждения ожидания поставки товаров (СПОТ)</span>
+          </a>
+          <a class="service-card" href="#" data-action="Частичная мобилизация">
+            <span class="service-card__icon" aria-hidden="true">
+              <svg viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="16" stroke="#0066b3" stroke-width="2"/><path d="M20 10l3 6 6 .5-4.5 4 1.5 6-6-3.2-6 3.2 1.5-6-4.5-4 6-.5z" fill="#0066b3"/></svg>
+            </span>
+            <span class="service-card__title">Налогообложение в период частичной мобилизации</span>
+          </a>
+          <a class="service-card" href="#" data-action="Электронная подпись">
+            <span class="service-card__icon" aria-hidden="true">
+              <svg viewBox="0 0 40 40" fill="none"><rect x="8" y="6" width="24" height="28" rx="2" stroke="#0066b3" stroke-width="2"/><path d="M13 26c4-6 8 2 14-4" stroke="#0066b3" stroke-width="2" fill="none"/></svg>
+            </span>
+            <span class="service-card__title">Как и где получить электронную подпись?</span>
+          </a>
+          <a class="service-card" href="#" data-action="Обратиться в ФНС">
+            <span class="service-card__icon" aria-hidden="true">
+              <svg viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="16" stroke="#0066b3" stroke-width="2"/><text x="20" y="27" text-anchor="middle" font-size="20" fill="#0066b3" font-family="Arial">?</text></svg>
+            </span>
+            <span class="service-card__title">Обратиться в ФНС России</span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Новости (слайдер) -->
+    <section class="section" aria-label="Новости">
+      <div class="container">
+        <div class="section-head">
+          <h2>Новости</h2>
+          <a class="more" href="#" data-action="Все новости">Все&nbsp;›</a>
+        </div>
+        <div class="slider" data-slider data-autoplay="true" aria-roledescription="карусель" aria-label="Новости">
+          <div class="slider__track">
+            <div class="slide">
+              <div class="ph" style="height:260px" data-ph="Фото новости 640×260"></div>
+              <p class="slide__caption">Разъяснения законодательных новшеств по НДС обсудят на вебинаре со специалистом ФНС России</p>
+            </div>
+            <div class="slide">
+              <div class="ph" style="height:260px" data-ph="Фото новости 640×260"></div>
+              <p class="slide__caption">ФНС России напоминает о сроках уплаты имущественных налогов физических лиц</p>
+            </div>
+            <div class="slide">
+              <div class="ph" style="height:260px" data-ph="Фото новости 640×260"></div>
+              <p class="slide__caption">Обновлён сервис «Личный кабинет налогоплательщика» для индивидуальных предпринимателей</p>
+            </div>
+            <div class="slide">
+              <div class="ph" style="height:260px" data-ph="Фото новости 640×260"></div>
+              <p class="slide__caption">О порядке предоставления налоговых льгот в 2026 году</p>
+            </div>
+            <div class="slide">
+              <div class="ph" style="height:260px" data-ph="Фото новости 640×260"></div>
+              <p class="slide__caption">Единый налоговый счёт: ответы на частые вопросы</p>
+            </div>
+          </div>
+          <button class="slider__arrow slider__arrow--prev" type="button" aria-label="Предыдущий слайд">‹</button>
+          <button class="slider__arrow slider__arrow--next" type="button" aria-label="Следующий слайд">›</button>
+          <div class="slider__dots" role="tablist" aria-label="Навигация по слайдам"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Обратиться в ФНС -->
+    <section class="section" aria-label="Обратиться в ФНС России">
+      <div class="container">
+        <div class="contact-block">
+          <div class="contact-block__head">Обратиться в ФНС</div>
+          <div class="contact-block__card">
+            <p class="contact-block__q">Как вам удобнее обратиться в ФНС России?</p>
+            <div class="channels">
+              <a class="channel" href="#" data-action="Чат-бот">
+                <span class="channel__icon channel__icon--bot" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="6" width="18" height="12" rx="3" fill="#fff"/><circle cx="9" cy="12" r="1.5" fill="#5b7ce0"/><circle cx="15" cy="12" r="1.5" fill="#5b7ce0"/></svg>
+                </span>
+                <span class="channel__label">чат-бот</span>
+              </a>
+              <a class="channel" href="#" data-action="По телефону">
+                <span class="channel__icon channel__icon--phone" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="#fff"><path d="M6 3l3 5-2 2c1 3 4 6 7 7l2-2 5 3-2 4c-9 0-18-9-18-18l2-4z"/></svg>
+                </span>
+                <span class="channel__label">по телефону</span>
+              </a>
+              <a class="channel" href="#" data-action="Обращение">
+                <span class="channel__icon channel__icon--mail" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none"><rect x="4" y="6" width="16" height="12" rx="2" fill="#fff"/><path d="M5 8l7 5 7-5" stroke="#f0a94a" stroke-width="2" fill="none"/></svg>
+                </span>
+                <span class="channel__label">обращение</span>
+              </a>
+            </div>
+          </div>
+          <ul class="link-list">
+            <li><a href="#" data-action="FAQ"><span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><text x="12" y="17" text-anchor="middle" font-size="13" fill="currentColor" font-family="Arial">?</text></svg></span>Ответы на часто задаваемые вопросы</a></li>
+            <li><a href="#" data-action="Запись на приём"><span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 7v5l3 3" stroke="currentColor" stroke-width="2" fill="none"/></svg></span>Записаться на приём в инспекцию</a></li>
+            <li><a href="#" data-action="Адрес инспекции"><span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7z" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="9" r="2.5" stroke="currentColor" stroke-width="2"/></svg></span>Адрес и реквизиты вашей инспекции</a></li>
+            <li><a href="#" data-action="Статус жалобы"><span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2"/></svg></span>Узнать статус жалобы</a></li>
+            <li><a href="#" data-action="Оперативная помощь"><span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3c2 4-2 5-2 8a2 2 0 0 0 4 0c2 2 2 8-2 9-5 1-8-3-6-8 1-3 4-3 4-6l2-3z" stroke="currentColor" stroke-width="2" fill="none"/></svg></span>Оперативная помощь: задолженность и ЕНС</a></li>
+            <li><a href="#" data-action="Техподдержка"><span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3.5" stroke="currentColor" stroke-width="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2" stroke="currentColor" stroke-width="2"/></svg></span>Техническая поддержка</a></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Слайдер баннеров -->
+    <section class="section" aria-label="Баннеры">
+      <div class="container">
+        <div class="slider banner-slider" data-slider aria-label="Баннеры">
+          <div class="slider__track">
+            <div class="slide"><div class="ph" style="height:120px" data-ph="Баннер 640×120"></div></div>
+            <div class="slide"><div class="ph" style="height:120px" data-ph="Баннер «Коды в ЕГРЮЛ»"></div></div>
+            <div class="slide"><div class="ph" style="height:120px" data-ph="Баннер «Офис иностранных интернет-компаний»"></div></div>
+          </div>
+          <button class="slider__arrow slider__arrow--prev" type="button" aria-label="Предыдущий баннер">‹</button>
+          <button class="slider__arrow slider__arrow--next" type="button" aria-label="Следующий баннер">›</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Боковые липкие ярлыки -->
+  <div class="side-tabs">
+    <button class="side-tab side-tab--feedback" type="button" data-action="Отзыв о сайте">Отзыв о сайте</button>
+    <button class="side-tab side-tab--control" type="button" data-action="Ваш контроль">Ваш контроль</button>
+  </div>
+
+  <!-- Футер -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-cols">
+        <div class="footer-col">
+          <h3>Сервисы и услуги</h3>
+          <ul>
+            <li><a href="#" data-action="Программные средства"><span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M14 6l4 4-8 8-4 1 1-4 7-9z" stroke="currentColor" stroke-width="2"/></svg></span>Программные средства</a></li>
+            <li><a href="#" data-action="Перечень требований"><span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><rect x="5" y="3" width="14" height="18" rx="2" stroke="currentColor" stroke-width="2"/><path d="M8 8h8M8 12h8M8 16h5" stroke="currentColor" stroke-width="2"/></svg></span>Перечень обязательных требований</a></li>
+            <li><a href="#" data-action="Открытые данные"><span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="16" height="16" rx="2" stroke="currentColor" stroke-width="2"/><path d="M8 15l3-4 2 2 3-5" stroke="currentColor" stroke-width="2" fill="none"/></svg></span>Открытые данные</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h3>О службе</h3>
+          <ul>
+            <li><a href="#" data-action="Противодействие коррупции"><span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6l7-3z" stroke="currentColor" stroke-width="2"/></svg></span>Противодействие коррупции</a></li>
+            <li><a href="#" data-action="Вакансии"><span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><rect x="4" y="8" width="16" height="11" rx="2" stroke="currentColor" stroke-width="2"/><path d="M9 8V6h6v2" stroke="currentColor" stroke-width="2"/></svg></span>Вакансии</a></li>
+            <li><a href="about.html"><span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 11v6M12 7v.01" stroke="currentColor" stroke-width="2"/></svg></span>О ФНС России</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h3>Обратная связь</h3>
+          <ul>
+            <li><a href="#" data-action="Контакты"><span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><rect x="4" y="6" width="16" height="12" rx="2" stroke="currentColor" stroke-width="2"/><path d="M5 8l7 5 7-5" stroke="currentColor" stroke-width="2" fill="none"/></svg></span>Контакты</a></li>
+            <li><a href="#" data-action="Подписка"><span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M6 8a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6z" stroke="currentColor" stroke-width="2"/><path d="M10 20a2 2 0 0 0 4 0" stroke="currentColor" stroke-width="2"/></svg></span>Подписка на новости</a></li>
+            <li><a href="#" data-action="Карта сайта"><span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M9 4L4 6v14l5-2 6 2 5-2V4l-5 2-6-2z" stroke="currentColor" stroke-width="2"/></svg></span>Карта сайта</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-partners" aria-label="Партнёры">
+        <div class="ph" style="width:150px;height:40px" data-ph="Правительство России"></div>
+        <div class="ph" style="width:150px;height:40px" data-ph="Госуслуги"></div>
+        <div class="ph" style="width:150px;height:40px" data-ph="Открытое правительство"></div>
+      </div>
+
+      <div class="footer-bottom">
+        <a class="brand" href="index.html" style="justify-content:center" aria-label="ФНС России">
+          <img class="brand__emblem" src="assets/img/emblem.svg" alt="Эмблема ФНС России (плейсхолдер)" style="width:44px;height:44px">
+        </a>
+        <div class="footer-social" aria-label="Мы в соцсетях">
+          <a href="#" data-action="ВКонтакте" aria-label="ВКонтакте"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 17c-5 0-8-3-8-9h3c0 4 2 6 3 6v-6h3v3c1 0 3-1 3-3h3c0 2-2 3-3 4 1 1 3 2 4 5h-3c-1-2-2-3-4-3v3h-1z"/></svg></a>
+          <a href="#" data-action="Одноклассники" aria-label="Одноклассники"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="7" r="4"/><path d="M7 13c1 1 3 2 5 2s4-1 5-2M12 15v5M12 20l-4 2M12 20l4 2" stroke="currentColor" stroke-width="1.5" fill="none"/></svg></a>
+          <a href="#" data-action="Telegram" aria-label="Telegram"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 4L3 11l5 2 2 6 3-4 5 4 3-15z"/></svg></a>
+        </div>
+        <div class="footer-copy">
+          <p>© 2005–2026</p>
+          <p>ФНС России</p>
+          <p>Дата обновления страницы 02.06.2026</p>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" data-show="false"></div>
+
+  <script src="js/main.js"></script>
+</body>
+</html>
